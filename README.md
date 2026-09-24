@@ -1,4 +1,4 @@
-# VolunteerConnect 
+# Benevolat-connect
 
 Plateforme  de mise en relation entre bénévoles et associations. Permet de publier des missions, postuler, suivre les heures et générer des certificats PDF valorisables.
 
