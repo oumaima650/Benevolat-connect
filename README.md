@@ -46,9 +46,6 @@ benevolat-connect/
 │   ├── pages/                  # Pages secondaires
 │   │   
 │   └── assets/images/
-├── docs/
-│   ├── cahier-des-charges.md   # Objectifs, acteurs, règles métier
-│   └── architecture.md         # Diagramme et explication des couches
 ├── database/
 │   ├── schema.sql              # Création de la base de données
 │   └── data.sql                # Données initiales (seed)
