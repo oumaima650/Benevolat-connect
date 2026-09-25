@@ -1,0 +1,16 @@
+# Fichiers et dossiers à ignorer par Git
+
+# --- IDEs ---
+.idea/
+*.iml
+.vscode/
+
+# --- Système d'exploitation ---
+.DS_Store
+Thumbs.db
+
+# --- Secrets et configuration locale ---
+.env
+
+# --- Build Maven (généré automatiquement) ---
+backend/target/
