@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CountMeIn — Bénévoles et associations, réunis</title>
+  <meta name="description" content="CountMeIn relie bénévoles et associations : inscription premier arrivé premier servi, liste d'attente automatique et certificat de bénévolat.">
+  
+  <!-- Open Graph / Social Meta -->
+  <meta property="og:title" content="CountMeIn — Bénévoles et associations, réunis">
+  <meta property="og:description" content="CountMeIn relie bénévoles et associations : inscription premier arrivé premier servi, liste d'attente automatique et certificat de bénévolat.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="border-b-4 border-ink bg-paper">
+    <div class="container header-container">
+      <a href="#" class="brand-logo" id="logo-link">
+        <img src="assets/images/logo.png" alt="CountMeIn — Connecter, Soutenir, Agir" class="logo-img">
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="nav-links">
+        <a href="#" class="nav-link">Accueil</a>
+        <a href="#missions" class="nav-link">Missions</a>
+        <a href="#comment" class="nav-link">Comment ça marche</a>
+        <a href="#associations" class="nav-link">Associations</a>
+        <a href="#" class="nav-link">Connexion</a>
+      </nav>
+
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <a href="#missions" class="btn-primary-pink">
+          Devenir bénévole
+        </a>
+
+        <!-- Mobile Menu Toggle Button -->
+        <button class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle Navigation Menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-nav-drawer" id="mobile-nav">
+      <a href="#" class="mobile-nav-link">Accueil</a>
+      <a href="#missions" class="mobile-nav-link">Missions</a>
+      <a href="#comment" class="mobile-nav-link">Comment ça marche</a>
+      <a href="#associations" class="mobile-nav-link">Associations</a>
+      <a href="#" class="mobile-nav-link">Connexion</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container hero-grid">
+        <div>
+          <span class="badge-tag">
+            <!-- Hands Motif Icon -->
+            <svg width="16" height="16" viewBox="0 0 64 64" fill="none" class="text-emerald" aria-hidden="true">
+              <rect x="2" y="26" width="26" height="12" rx="6" fill="currentColor"/>
+              <rect x="36" y="26" width="26" height="12" rx="6" fill="currentColor"/>
+              <path d="M22 32h20" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
+              <circle cx="32" cy="32" r="9" fill="currentColor" stroke="var(--ink)" stroke-width="4"/>
+            </svg>
+            Bénévoles &amp; associations
+          </span>
+
+          <h1 class="hero-title">
+            Le temps que tu donnes change une vie près de chez toi.
+          </h1>
+
+          <p class="hero-subtitle">
+            CountMeIn met en relation les bénévoles et les associations.
+            Inscription <strong>premier arrivé, premier servi</strong> : si la
+            mission est complète, tu rejoins la liste d'attente automatique et tu
+            es prévenu dès qu'une place se libère.
+          </p>
+
+          <div class="hero-cta-group">
+            <a href="#missions" class="btn-hero-dark">
+              Trouver une mission
+            </a>
+            <a href="#associations" class="btn-hero-paper">
+              Publier une mission
+            </a>
+          </div>
+        </div>
+
+        <div class="hero-image-wrapper">
+          <div class="green-backdrop"></div>
+          
+          <!-- Globe Motif Icon Overlay -->
+          <svg class="globe-motif-overlay" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <circle cx="32" cy="32" r="30" fill="currentColor"/>
+            <ellipse cx="32" cy="32" rx="13" ry="30" stroke="var(--ink)" stroke-width="4"/>
+            <path d="M2 32h60M7 17h50M7 47h50" stroke="var(--ink)" stroke-width="4"/>
+          </svg>
+
+          <img src="assets/images/hero-benevoles.jpg" alt="Des bénévoles souriants préparent des colis solidaires" class="hero-img" width="1200" height="1408">
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="comment" class="border-b-4 border-ink bg-paper section-padding">
+      <div class="container">
+        <h2 class="section-title">Comment ça marche</h2>
+        <p class="section-subtitle">
+          Trois étapes, aucune paperasse.
+        </p>
+
+        <div class="steps-grid">
+          <!-- Step 1 -->
+          <article class="step-card">
+            <div class="step-icon-box bg-emerald" style="background-color: rgba(16, 185, 129, 0.15);">
+              <!-- Globe Motif Icon -->
+              <svg width="36" height="36" viewBox="0 0 64 64" fill="none" class="text-emerald" aria-hidden="true">
+                <circle cx="32" cy="32" r="30" fill="currentColor"/>
+                <ellipse cx="32" cy="32" rx="13" ry="30" stroke="var(--ink)" stroke-width="4"/>
+                <path d="M2 32h60M7 17h50M7 47h50" stroke="var(--ink)" stroke-width="4"/>
+              </svg>
+            </div>
+            <p class="step-number">01</p>
+            <h3 class="step-card-title">Trouve la mission qui te ressemble</h3>
+            <p class="step-card-text">
+              Filtre par ville, domaine et disponibilité. La plateforme te recommande les missions les plus proches de ton profil.
+            </p>
+          </article>
+
+          <!-- Step 2 -->
+          <article class="step-card">
+            <div class="step-icon-box bg-pink" style="background-color: rgba(242, 84, 125, 0.15);">
+              <!-- Hands Motif Icon -->
+              <svg width="36" height="36" viewBox="0 0 64 64" fill="none" class="text-pink" aria-hidden="true">
+                <rect x="2" y="26" width="26" height="12" rx="6" fill="currentColor"/>
+                <rect x="36" y="26" width="26" height="12" rx="6" fill="currentColor"/>
+                <path d="M22 32h20" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="32" cy="32" r="9" fill="currentColor" stroke="var(--ink)" stroke-width="4"/>
+              </svg>
+            </div>
+            <p class="step-number">02</p>
+            <h3 class="step-card-title">Inscris-toi en un clic</h3>
+            <p class="step-card-text">
+              Premier arrivé, premier servi. Si la mission est complète, tu rejoins automatiquement la liste d'attente et tu es prévenu dès qu'une place se libère.
+            </p>
+          </article>
+
+          <!-- Step 3 -->
+          <article class="step-card">
+            <div class="step-icon-box bg-mustard" style="background-color: rgba(243, 183, 43, 0.25);">
+              <!-- Smile Motif Icon -->
+              <svg width="36" height="36" viewBox="0 0 64 64" fill="none" class="text-mustard" aria-hidden="true">
+                <circle cx="32" cy="32" r="30" fill="currentColor"/>
+                <circle cx="22" cy="25" r="4" fill="var(--ink)"/>
+                <circle cx="42" cy="25" r="4" fill="var(--ink)"/>
+                <path d="M18 38c4 8 24 8 28 0" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <p class="step-number">03</p>
+            <h3 class="step-card-title">Reçois ton certificat</h3>
+            <p class="step-card-text">
+              À la fin de la mission, l'association valide ta participation et t'envoie un certificat de bénévolat téléchargeable.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Missions Section -->
+    <section id="missions" class="border-b-4 border-ink bg-muted section-padding">
+      <div class="container">
+        <div class="missions-header-grid">
+          <div>
+            <h2 class="section-title">Missions à la une</h2>
+            <p class="section-subtitle">
+              Des besoins concrets, publiés par nos associations partenaires.
+            </p>
+          </div>
+          <a href="#missions" class="font-display" style="font-size: 0.875rem; text-decoration: underline;">
+            Voir tout
+          </a>
+        </div>
+
+        <!-- Filter Chips Bar -->
+        <div class="filter-container" id="filter-bar">
+          <button class="filter-chip active" data-filter="all">Toutes les missions</button>
+          <button class="filter-chip" data-filter="Solidarité">Solidarité</button>
+          <button class="filter-chip" data-filter="Éducation">Éducation</button>
+          <button class="filter-chip" data-filter="Environnement">Environnement</button>
+          <button class="filter-chip" data-filter="Santé & lien social">Santé &amp; lien social</button>
+        </div>
+
+        <div class="missions-grid" id="missions-container">
+          <!-- Mission Card 1 -->
+          <article class="mission-card" data-category="Solidarité">
+            <span class="mission-tag">Solidarité</span>
+            <h3 class="mission-title">Distribution de repas solidaires</h3>
+            <p class="mission-city">Casablanca</p>
+            <div class="mission-footer">
+              <span class="status-badge available">
+                4 places restantes
+              </span>
+            </div>
+          </article>
+
+          <!-- Mission Card 2 -->
+          <article class="mission-card" data-category="Éducation">
+            <span class="mission-tag">Éducation</span>
+            <h3 class="mission-title">Soutien scolaire au collège Al Amal</h3>
+            <p class="mission-city">Rabat</p>
+            <div class="mission-footer">
+              <span class="status-badge waiting-list">
+                Liste d'attente · 12 en attente
+              </span>
+            </div>
+          </article>
+
+          <!-- Mission Card 3 -->
+          <article class="mission-card" data-category="Environnement">
+            <span class="mission-tag">Environnement</span>
+            <h3 class="mission-title">Nettoyage de la plage des Sablettes</h3>
+            <p class="mission-city">Tanger</p>
+            <div class="mission-footer">
+              <span class="status-badge available">
+                9 places restantes
+              </span>
+            </div>
+          </article>
+
+          <!-- Mission Card 4 -->
+          <article class="mission-card" data-category="Santé & lien social">
+            <span class="mission-tag">Santé &amp; lien social</span>
+            <h3 class="mission-title">Accompagnement des personnes âgées</h3>
+            <p class="mission-city">Marrakech</p>
+            <div class="mission-footer">
+              <span class="status-badge available">
+                2 places restantes
+              </span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Impact Section -->
+    <section class="impact-section section-padding">
+      <div class="container">
+        <h2 class="section-title">Notre impact</h2>
+
+        <div class="stats-grid">
+          <div>
+            <p class="stat-value text-mustard">1 248</p>
+            <p class="stat-label">missions publiées</p>
+          </div>
+          <div>
+            <p class="stat-value text-pink">8 630</p>
+            <p class="stat-label">bénévoles inscrits</p>
+          </div>
+          <div>
+            <p class="stat-value text-emerald">312</p>
+            <p class="stat-label">associations partenaires</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- For Associations Section -->
+    <section id="associations" class="associations-section section-padding">
+      <div class="container associations-grid">
+        <div class="assoc-image-wrapper">
+          <!-- Hands Motif Icon Overlay -->
+          <svg class="assoc-hands-motif" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <rect x="2" y="26" width="26" height="12" rx="6" fill="currentColor"/>
+            <rect x="36" y="26" width="26" height="12" rx="6" fill="currentColor"/>
+            <path d="M22 32h20" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="32" cy="32" r="9" fill="currentColor" stroke="var(--ink)" stroke-width="4"/>
+          </svg>
+          <img src="assets/images/associations.jpg" alt="Une responsable d'association accueille un nouveau bénévole" class="assoc-img" width="1200" height="912" loading="lazy">
+        </div>
+
+        <div class="assoc-content">
+          <h2 class="section-title">Pour les associations</h2>
+          <p style="margin-top: 1rem; max-width: 28rem; line-height: 1.6;">
+            Trouvez des bénévoles motivés, sans tableurs ni appels sans fin.
+            CountMeIn s'occupe des inscriptions, vous vous occupez du terrain.
+          </p>
+
+          <ul class="assoc-list">
+            <li class="assoc-list-item">
+              <span class="assoc-bullet"></span>
+              <span style="font-size: 0.875rem;">Publiez une mission en 2 minutes, gratuitement.</span>
+            </li>
+            <li class="assoc-list-item">
+              <span class="assoc-bullet"></span>
+              <span style="font-size: 0.875rem;">Gérez les inscriptions et la liste d'attente automatiquement.</span>
+            </li>
+            <li class="assoc-list-item">
+              <span class="assoc-bullet"></span>
+              <span style="font-size: 0.875rem;">Délivrez un certificat de bénévolat en un clic.</span>
+            </li>
+          </ul>
+
+          <a href="#" class="btn-assoc">
+            Créer un compte association
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-paper">
+    <div class="container" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
+      <div class="footer-grid">
+        <div>
+          <a href="#" class="brand-logo" style="margin-bottom: 1rem;">
+            <img src="assets/images/logo.png" alt="CountMeIn — Connecter, Soutenir, Agir" class="logo-img" style="height: 3rem;">
+          </a>
+          <p style="margin-top: 1rem; max-width: 20rem; font-size: 0.875rem; color: var(--muted-foreground);">
+            La plateforme qui relie les bénévoles et les associations, près de chez vous.
+          </p>
+          <div class="social-badges">
+            <a href="#" class="social-badge">Instagram</a>
+            <a href="#" class="social-badge">LinkedIn</a>
+            <a href="#" class="social-badge">Facebook</a>
+          </div>
+        </div>
+
+        <div>
+          <p class="footer-col-title">Plateforme</p>
+          <ul class="footer-col-list">
+            <li><a href="#missions" class="footer-link">Missions</a></li>
+            <li><a href="#comment" class="footer-link">Comment ça marche</a></li>
+            <li><a href="#" class="footer-link">Certificats</a></li>
+            <li><a href="#" class="footer-link">Aide</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <p className="footer-col-title">Associations</p>
+          <ul className="footer-col-list">
+            <li><a href="#associations" className="footer-link">Publier une mission</a></li>
+            <li><a href="#" className="footer-link">Tarifs</a></li>
+            <li><a href="#" className="footer-link">Ressources</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <p className="footer-col-title">Légal</p>
+          <ul className="footer-col-list">
+            <li><a href="#" className="footer-link">Mentions légales</a></li>
+            <li><a href="#" className="footer-link">Confidentialité</a></li>
+            <li><a href="#" className="footer-link">Conditions d'utilisation</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="copyright-bar">
+        © <span id="current-year">2026</span> CountMeIn. Tous droits réservés.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Main JavaScript -->
+  <script src="js/main.js"></script>
+</body>
+</html>
