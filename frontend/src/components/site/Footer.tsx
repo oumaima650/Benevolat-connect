@@ -1,4 +1,4 @@
-import logoAsset from "@/assets/countmein-logo.png.asset.json";
+import { Logo } from "@/components/site/Logo";
 
 const colonnes = [
   { titre: "Plateforme", liens: ["Missions", "Comment ça marche", "Certificats", "Aide"] },
@@ -14,14 +14,9 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-5 py-14">
         <div className="grid gap-10 md:grid-cols-[1.3fr_repeat(3,1fr)]">
           <div className="min-w-0">
-            <img
-              src={logoAsset.url}
-              alt="CountMeIn — Connecter, Soutenir, Agir"
-              width={348}
-              height={96}
-              className="h-12 w-auto max-w-full"
-            />
+            <Logo />
             <p className="mt-4 max-w-xs text-sm text-muted-foreground">
+
               La plateforme qui relie les bénévoles et les associations, près de chez vous.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
