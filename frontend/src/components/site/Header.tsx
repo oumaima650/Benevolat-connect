@@ -1,4 +1,4 @@
-import logoAsset from "@/assets/countmein-logo.png.asset.json";
+import { Logo } from "@/components/site/Logo";
 
 const liens = ["Accueil", "Missions", "Comment ça marche", "Connexion"];
 
@@ -7,14 +7,9 @@ export function Header() {
     <header className="border-b-4 border-ink bg-paper">
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 lg:flex lg:justify-between">
         <a href="#" className="flex min-w-0 items-center gap-3">
-          <img
-            src={logoAsset.url}
-            alt="CountMeIn — Connecter, Soutenir, Agir"
-            width={348}
-            height={96}
-            className="h-10 w-auto max-w-full lg:h-11"
-          />
+          <Logo />
         </a>
+
 
         <nav className="hidden items-center gap-7 lg:flex">
           {liens.map((lien) => (
