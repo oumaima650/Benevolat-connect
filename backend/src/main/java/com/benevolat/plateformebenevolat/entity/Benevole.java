@@ -5,30 +5,43 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Entité JPA représentant un bénévole en base de données.
- * La table "benevoles" sera créée/mise à jour automatiquement
- * par Hibernate grâce à spring.jpa.hibernate.ddl-auto=update.
- * Lombok génère automatiquement les getters, setters et le constructeur vide.
+ * Entité Bénévole héritant d'Utilisateur selon le diagramme de classe.
  */
 @Entity
 @Table(name = "benevoles")
+@PrimaryKeyJoinColumn(name = "utilisateur_id")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Benevole {
+public class Benevole extends Utilisateur {
 
-    /** Identifiant unique auto-incrémenté par MySQL (stratégie IDENTITY). */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    /** Nom complet du bénévole. */
     private String nom;
-
-    /** Adresse email — servira d'identifiant de connexion. */
-    private String email;
-
-    /** Ville de résidence — utilisée pour le matching géographique (RG8). */
+    private String prenom;
+    private LocalDate dateNaissance;
+    private String adresse;
     private String ville;
+
+    @Column(length = 1000)
+    private String biographie;
+
+    private String photoUrl;
+    private double rayonDeplacementKm;
+
+    private Double latitude;
+    private Double longitude;
+
+    @ElementCollection
+    @CollectionTable(name = "benevole_competences", joinColumns = @JoinColumn(name = "benevole_id"))
+    @Column(name = "competence")
+    private List<String> competences = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "benevole_centres_interet", joinColumns = @JoinColumn(name = "benevole_id"))
+    @Column(name = "centre_interet")
+    private List<String> centresInteret = new ArrayList<>();
 }
