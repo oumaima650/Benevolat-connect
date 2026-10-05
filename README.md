@@ -1,115 +1,62 @@
-# Benevolat-connect
+# CountMeIn — Plateforme de Bénévolat
 
-Plateforme de mise en relation entre bénévoles et associations. Permet de publier des missions, postuler, suivre les heures et générer des certificats PDF valorisables.
-
----
-
-## Stack technique
-
-| Couche | Technologie |
-|---|---|
-| Frontend | React 19 / Vite / TypeScript / Tailwind CSS |
-| Backend | Spring Boot 4.1.1 (Java 21, Maven) |
-| Base de données | MySQL 8 |
-| Automatisation | n8n (webhooks, rappels email) |
+Application web pour la mise en relation de bénévoles et d'associations.
 
 ---
 
-## Prérequis
+## Périmètre Module Personne B (Landing Page, Missions & Certificats)
 
-- **Node.js 18+** (avec `npm`) ou **Bun** – pour exécuter le frontend React
-- **JDK 21** – [Télécharger](https://adoptium.net/)
-- **MySQL 8** – serveur local sur le port 3306
-- **IntelliJ IDEA** ou **VS Code**
+Ce module gère le catalogue public de missions, la recherche multi-critères, le détail des missions avec calcul des places restantes / liste d'attente, les statistiques d'impact ainsi que la vérification publique d'authenticité des certificats de bénévolat.
 
----
-
-## Structure du dépôt
-
-```
-benevolat-connect/
-├── backend/                    # Projet Spring Boot Maven
-│   └── src/main/java/com/benevolat/plateformebenevolat/
-│       ├── config/             # CORS (localhost:5173 autorisé), sécurité
-│       ├── controller/         # Endpoints REST
-│       ├── service/            # Logique métier
-│       ├── repository/         # Accès base de données (JPA)
-│       ├── entity/             # Entités JPA (tables MySQL)
-│       ├── dto/                # Objets de transfert
-│       └── exception/          # Exceptions personnalisées
-├── frontend/                   # Application Frontend React (Vite)
-│   ├── src/
-│   │   ├── components/         # Composants React (site UI, Header, Hero, Missions, etc.)
-│   │   ├── services/           # Service API (`api.ts` pour appeler Spring Boot)
-│   │   ├── assets/             # Images et logos
-│   │   ├── index.css           # Styles Tailwind CSS
-│   │   └── main.tsx            # Point d'entrée React
-│   ├── public/                 # Assets statiques publics
-│   ├── package.json            # Scripts Vite et dépendances
-│   ├── vite.config.ts          # Configuration Vite
-│   └── index.html              # HTML de l'application SPA
-├── database/
-│   ├── schema.sql              # Création de la base de données
-│   └── data.sql                # Données initiales (seed)
-└── README.md
-```
+> **Note :** Le module d'authentification (Spring Security, JWT, endpoints `/api/auth/*`, formulaires de login/register) est géré séparément par la Personne A. Les boutons d'orientation redirigent vers `/login?role=...` ou `/register?role=...`.
 
 ---
 
-## Lancement
+## 🚀 Lancement Rapide
 
-### 1. Préparer la base de données
-
-```bash
-mysql -u root -p < database/schema.sql
-```
-
-### 2. Démarrer le backend (Spring Boot)
+### 1. Démarrer le Backend (Spring Boot)
 
 ```bash
 cd backend
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
+L'API Spring Boot s'exécute sur `http://localhost:8080`.
+Des données de démonstration sont injectées automatiquement au premier démarrage (`DataSeeder`) : 4 associations, 6 bénévoles, 10 missions (dont certaines complètes) et 4 certificats.
 
-> Le serveur API démarrera sur `http://localhost:8080/api`
-
-### 3. Démarrer le frontend (React + Vite)
-
-Dans un second terminal :
+### 2. Démarrer le Frontend (React + Vite)
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-
-> L'application frontend démarrera sur `http://localhost:5173`
-
----
-
-## Variable d'environnement (Backend)
-
-Le mot de passe MySQL est lu depuis la variable `DB_PASSWORD`.
-
-```bash
-# Windows (PowerShell)
-$env:DB_PASSWORD = "votre_mot_de_passe"
-mvn spring-boot:run
-
-# Windows (CMD)
-set DB_PASSWORD=votre_mot_de_passe
-mvn spring-boot:run
-```
-
-Si la variable n'est pas définie, le mot de passe est vide par défaut (`root` sans mot de passe).
+Le serveur frontend s'exécute sur `http://localhost:5173`.
 
 ---
 
-## Test rapide de l'API Backend
+## 📡 Endpoints de l'API (Publics)
 
-Une fois le backend démarré : [http://localhost:8080/api/health](http://localhost:8080/api/health)
+### Missions
+- `GET /api/missions/search?q={keyword}&ville={ville}&domaine={domaine}` : Recherche multi-critères
+- `GET /api/missions/featured` : 4 missions à la une
+- `GET /api/missions/{id}` : Détails d'une mission
+- `GET /api/missions/cities` : Liste des villes ayant des missions actives
+- `GET /api/missions/domaines` : Liste des domaines d'activité
 
-Réponse attendue :
-```json
-{ "status": "OK", "message": "API Bénévolat opérationnelle" }
-```
+### Certificats
+- `GET /api/certificates/verify/{code}` : Vérification d'un certificat par son code unique
+
+### Statistiques
+- `GET /api/stats` : Statistiques globales (missions, bénévoles, associations, heures)
+
+---
+
+## 🧪 Codes de démonstration pour la vérification de certificats
+
+- **Valides :**
+  - `CERT-2026-8821` (Thomas Dubois - Maraude nocturne - 18h)
+  - `CERT-2026-9932` (Sarah Martin - Collecte alimentaire - 24h)
+  - `CERT-2026-1104` (Lucas Bernard - Nettoyage plage - 12h)
+  - `CERT-2026-7745` (Emma Petit - Soutien scolaire - 30h)
+- **Invalide :**
+  - N'importe quel code inexistant (ex : `CERT-INVALID-0000`)

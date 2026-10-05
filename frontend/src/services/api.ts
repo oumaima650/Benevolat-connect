@@ -2,7 +2,7 @@
  * Service API pour la communication avec le Backend Spring Boot (http://localhost:8080/api)
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env['VITE_API_BASE_URL'] || 'http://localhost:8080/api';
 
 /**
  * Fonction générique pour effectuer des requêtes HTTP vers l'API Spring Boot
@@ -28,6 +28,13 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 // --------------------------------------------------------------------------
 
 export const apiService = {
+  /**
+   * Effectue une requête GET vers l'API Spring Boot.
+   */
+  async get<T>(endpoint: string): Promise<T> {
+    return fetchApi<T>(endpoint);
+  },
+
   /**
    * Vérifie la santé du backend (GET /api/health)
    */
