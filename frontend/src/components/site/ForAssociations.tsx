@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import associationsImage from "@/assets/associations.jpg";
 import { HandsMotif } from "./icons";
 
@@ -39,12 +40,13 @@ export function ForAssociations() {
             ))}
           </ul>
 
-          <a
-            href="#"
+          <Link
+            to="/inscription"
+            search={{ profil: "association" }}
             className="mt-8 inline-flex items-center rounded-xl border-2 border-ink bg-paper px-5 py-3 text-sm font-semibold text-foreground shadow-[5px_5px_0_var(--color-ink)] transition-transform hover:-translate-y-0.5"
           >
             Créer un compte association
-          </a>
+          </Link>
         </div>
       </div>
     </section>

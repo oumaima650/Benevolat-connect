@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { BecomeVolunteer } from "@/components/site/BecomeVolunteer";
+import { CertificateCheck } from "@/components/site/CertificateCheck";
 import { FeaturedMissions } from "@/components/site/FeaturedMissions";
 import { Footer } from "@/components/site/Footer";
 import { ForAssociations } from "@/components/site/ForAssociations";
@@ -7,6 +9,8 @@ import { Header } from "@/components/site/Header";
 import { Hero } from "@/components/site/Hero";
 import { HowItWorks } from "@/components/site/HowItWorks";
 import { Impact } from "@/components/site/Impact";
+import { Marquee } from "@/components/site/Marquee";
+import { MissionSearch } from "@/components/site/MissionSearch";
 
 const title = "CountMeIn — Bénévoles et associations, réunis";
 const description =
@@ -32,10 +36,14 @@ function Index() {
       <Header />
       <main>
         <Hero />
+        <Marquee />
         <HowItWorks />
         <FeaturedMissions />
+        <MissionSearch limite={4} />
+        <BecomeVolunteer />
         <Impact />
         <ForAssociations />
+        <CertificateCheck />
       </main>
       <Footer />
     </div>
