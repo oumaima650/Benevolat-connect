@@ -10,8 +10,6 @@ import java.util.List;
 
 /**
  * Requête d'inscription d'un nouvel utilisateur (Bénévole ou Association).
- * Contient l'ensemble des champs requis par le MCD et le Diagramme de classe,
- * y compris la géolocalisation.
  */
 @Data
 public class RegisterRequest {
@@ -36,6 +34,7 @@ public class RegisterRequest {
     // --- Champs spécifiques Bénévole ---
     private String nom;
     private String prenom;
+    private String telephone;
     private String dateNaissance; // au format YYYY-MM-DD
     private String adresse;
     private String ville;
@@ -43,12 +42,13 @@ public class RegisterRequest {
     private String photoUrl;
     private Double rayonDeplacementKm;
     private List<String> competences;
-    private List<String> centresInteret;
 
     // --- Champs spécifiques Association ---
     private String nomAssociation;
     private String description;
-    private String domaine;
-    private String telephone; // Mappé sur contact
     private String logoUrl;
+    private String contact; // Téléphone association, mappé sur contact
+
+    // --- Domaines partagés (IDs sélectionnés par le bénévole ou l'association) ---
+    private List<Long> domaineIds;
 }

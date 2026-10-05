@@ -22,6 +22,7 @@ public class Benevole extends Utilisateur {
 
     private String nom;
     private String prenom;
+    private String telephone;
     private LocalDate dateNaissance;
     private String adresse;
     private String ville;
@@ -40,8 +41,12 @@ public class Benevole extends Utilisateur {
     @Column(name = "competence")
     private List<String> competences = new ArrayList<>();
 
-    @ElementCollection
-    @CollectionTable(name = "benevole_centres_interet", joinColumns = @JoinColumn(name = "benevole_id"))
-    @Column(name = "centre_interet")
-    private List<String> centresInteret = new ArrayList<>();
+    /** Relation ManyToMany avec la table partagée 'domaines' */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "benevole_domaines",
+        joinColumns = @JoinColumn(name = "benevole_id"),
+        inverseJoinColumns = @JoinColumn(name = "domaine_id")
+    )
+    private List<Domaine> domaines = new ArrayList<>();
 }

@@ -33,8 +33,6 @@ public abstract class Utilisateur {
     @Column(nullable = false)
     private StatutUtilisateur statut = StatutUtilisateur.ACTIF;
 
-    private String token;
-
     private boolean notifActivite = true;
 
     private LocalDateTime createdAt;

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { login } from "@/services/authApi";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: z.object({ reset: z.string().optional() }),
+  validateSearch: z.object({ reset: z.string().optional(), registered: z.string().optional() }),
   head: () => ({
     meta: [
       { title: "Connexion — CountMeIn" },
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { reset } = Route.useSearch();
+  const { reset, registered } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +48,7 @@ function LoginPage() {
   return (
     <AuthLayout title="Connexion" subtitle="Content de te revoir !">
       <form onSubmit={onSubmit} className="space-y-4">
+        {registered && <FormSuccess message="Compte créé avec succès ! Tu peux maintenant te connecter." />}
         {reset && <FormSuccess message="Mot de passe modifié. Tu peux te connecter." />}
         <FormSuccess message={success} />
         <FormError message={error} />

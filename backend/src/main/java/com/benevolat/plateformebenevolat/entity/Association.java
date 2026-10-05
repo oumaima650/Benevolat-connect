@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Entité Association héritant d'Utilisateur selon le diagramme de classe.
  */
@@ -21,7 +24,6 @@ public class Association extends Utilisateur {
     @Column(length = 1500)
     private String description;
 
-    private String domaine;
     private String ville;
     private String contact;
     private String logoUrl;
@@ -29,4 +31,13 @@ public class Association extends Utilisateur {
 
     private Double latitude;
     private Double longitude;
+
+    /** Relation ManyToMany avec la table partagée 'domaines' */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "association_domaines",
+        joinColumns = @JoinColumn(name = "association_id"),
+        inverseJoinColumns = @JoinColumn(name = "domaine_id")
+    )
+    private List<Domaine> domaines = new ArrayList<>();
 }
