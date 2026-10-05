@@ -29,6 +29,13 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
 export const apiService = {
   /**
+   * Effectue une requête GET vers l'API Spring Boot.
+   */
+  async get<T>(endpoint: string): Promise<T> {
+    return fetchApi<T>(endpoint);
+  },
+
+  /**
    * Vérifie la santé du backend (GET /api/health)
    */
   async checkHealth(): Promise<{ status: string; message: string }> {

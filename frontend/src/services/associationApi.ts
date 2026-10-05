@@ -14,8 +14,7 @@ export interface AssociationBackend {
 export const associationApi = {
   getFeaturedAssociations: async (): Promise<AssociationBackend[]> => {
     try {
-      const response = await api.get<AssociationBackend[]>("/associations");
-      return response.data;
+      return await api.get<AssociationBackend[]>("/associations");
     } catch {
       return [];
     }
