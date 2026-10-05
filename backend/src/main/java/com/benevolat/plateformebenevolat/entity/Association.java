@@ -7,31 +7,33 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "benevoles")
+@Table(name = "associations")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Benevole {
+public class Association {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String nom;
-    private String prenom;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    private String rnaSiret;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     private String ville;
-    private String telephone;
+    private String domaine;
 
-    public Benevole(String nom, String prenom, String email, String ville, String telephone) {
+    public Association(String nom, String rnaSiret, String description, String ville, String domaine) {
         this.nom = nom;
-        this.prenom = prenom;
-        this.email = email;
+        this.rnaSiret = rnaSiret;
+        this.description = description;
         this.ville = ville;
-        this.telephone = telephone;
+        this.domaine = domaine;
     }
 }

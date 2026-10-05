@@ -14,6 +14,8 @@ import { Route as CertificatRouteImport } from './routes/certificat'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as MissionsRouteImport } from './routes/missions'
+import { Route as MissionsIndexRouteImport } from './routes/missions.index'
+import { Route as MissionsIdRouteImport } from './routes/missions.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,20 +42,33 @@ const MissionsRoute = MissionsRouteImport.update({
   path: '/missions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MissionsIndexRoute = MissionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MissionsRoute,
+} as any)
+const MissionsIdRoute = MissionsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MissionsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/certificat': typeof CertificatRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
-  '/missions': typeof MissionsRoute
+  '/missions': typeof MissionsRouteWithChildren
+  '/missions/$id': typeof MissionsIdRoute
+  '/missions/': typeof MissionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/certificat': typeof CertificatRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
-  '/missions': typeof MissionsRoute
+  '/missions/$id': typeof MissionsIdRoute
+  '/missions': typeof MissionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,13 +76,28 @@ export interface FileRoutesById {
   '/certificat': typeof CertificatRoute
   '/connexion': typeof ConnexionRoute
   '/inscription': typeof InscriptionRoute
-  '/missions': typeof MissionsRoute
+  '/missions': typeof MissionsRouteWithChildren
+  '/missions/$id': typeof MissionsIdRoute
+  '/missions/': typeof MissionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/certificat' | '/connexion' | '/inscription' | '/missions'
+  fullPaths:
+    | '/'
+    | '/certificat'
+    | '/connexion'
+    | '/inscription'
+    | '/missions'
+    | '/missions/$id'
+    | '/missions/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/certificat' | '/connexion' | '/inscription' | '/missions'
+  to:
+    | '/'
+    | '/certificat'
+    | '/connexion'
+    | '/inscription'
+    | '/missions/$id'
+    | '/missions'
   id:
     | '__root__'
     | '/'
@@ -75,6 +105,8 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/inscription'
     | '/missions'
+    | '/missions/$id'
+    | '/missions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -82,7 +114,7 @@ export interface RootRouteChildren {
   CertificatRoute: typeof CertificatRoute
   ConnexionRoute: typeof ConnexionRoute
   InscriptionRoute: typeof InscriptionRoute
-  MissionsRoute: typeof MissionsRoute
+  MissionsRoute: typeof MissionsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -122,15 +154,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/missions/': {
+      id: '/missions/'
+      path: '/'
+      fullPath: '/missions/'
+      preLoaderRoute: typeof MissionsIndexRouteImport
+      parentRoute: typeof MissionsRoute
+    }
+    '/missions/$id': {
+      id: '/missions/$id'
+      path: '/$id'
+      fullPath: '/missions/$id'
+      preLoaderRoute: typeof MissionsIdRouteImport
+      parentRoute: typeof MissionsRoute
+    }
   }
 }
+
+interface MissionsRouteChildren {
+  MissionsIdRoute: typeof MissionsIdRoute
+  MissionsIndexRoute: typeof MissionsIndexRoute
+}
+
+const MissionsRouteChildren: MissionsRouteChildren = {
+  MissionsIdRoute: MissionsIdRoute,
+  MissionsIndexRoute: MissionsIndexRoute,
+}
+
+const MissionsRouteWithChildren = MissionsRoute._addFileChildren(
+  MissionsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CertificatRoute: CertificatRoute,
   ConnexionRoute: ConnexionRoute,
   InscriptionRoute: InscriptionRoute,
-  MissionsRoute: MissionsRoute,
+  MissionsRoute: MissionsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

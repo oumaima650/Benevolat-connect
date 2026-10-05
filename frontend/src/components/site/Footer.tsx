@@ -1,4 +1,4 @@
-import logoImg from "@/assets/logo.png";
+import logoImage from "@/assets/logo.png";
 
 const colonnes = [
   { titre: "Plateforme", liens: ["Missions", "Comment ça marche", "Vérifier un certificat", "Aide"] },
@@ -15,7 +15,7 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.3fr_repeat(3,1fr)]">
           <div className="min-w-0">
             <img
-              src={logoImg}
+              src={logoImage}
               alt="CountMeIn — Connecter, Soutenir, Agir"
               width={348}
               height={96}
@@ -44,7 +44,15 @@ export function Footer() {
                 {colonne.liens.map((lien) => (
                   <li key={lien}>
                     <a
-                      href={lien === "Vérifier un certificat" ? "/certificat" : lien === "Missions" ? "/missions" : lien === "Publier une mission" ? "/inscription?profil=association" : "#"}
+                      href={
+                        lien === "Vérifier un certificat"
+                          ? "/certificat"
+                          : lien === "Missions"
+                          ? "/missions"
+                          : lien === "Publier une mission"
+                          ? "/inscription?profil=association"
+                          : "#"
+                      }
                       className="text-sm text-muted-foreground transition-colors hover:text-pink"
                     >
                       {lien}

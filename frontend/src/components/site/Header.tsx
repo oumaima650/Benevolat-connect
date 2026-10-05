@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
-import logoImg from "@/assets/logo.png";
+import logoImage from "@/assets/logo.png";
 
 const liens = [
   { label: "Accueil", to: "/" as const },
@@ -19,7 +19,7 @@ export function Header() {
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 lg:flex lg:justify-between">
         <Link to="/" className="flex min-w-0 items-center gap-3">
           <img
-            src={logoImg}
+            src={logoImage}
             alt="CountMeIn — Connecter, Soutenir, Agir"
             width={348}
             height={96}
