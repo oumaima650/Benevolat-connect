@@ -7,33 +7,37 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "associations")
+@Table(name = "Association")
+@PrimaryKeyJoinColumn(name = "idAssociation")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Association {
+public class Association extends Utilisateur {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String nom;
-
-    private String rnaSiret;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private String ville;
+    @Column(length = 100)
     private String domaine;
 
-    public Association(String nom, String rnaSiret, String description, String ville, String domaine) {
+    @Column(length = 100)
+    private String ville;
+
+    private String contact;
+
+    @Column(nullable = false)
+    private Boolean estvalidee = false;
+
+    public Association(String email, String motDePasse, String photoProfil, String nom, String description, String domaine, String ville, String contact) {
+        super(email, motDePasse, photoProfil);
         this.nom = nom;
-        this.rnaSiret = rnaSiret;
         this.description = description;
-        this.ville = ville;
         this.domaine = domaine;
+        this.ville = ville;
+        this.contact = contact;
     }
 }

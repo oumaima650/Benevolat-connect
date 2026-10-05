@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -18,16 +20,37 @@ public class MissionDetailDto {
     private String description;
     private String domaine;
     private String ville;
-    private LocalDate dateDebut;
-    private LocalDate dateFin;
-    private Integer nbBenevoles;
+    private String adresse;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
+    private LocalDateTime dateDebut;
+    private LocalDateTime dateFin;
+    private Integer nbPlaces;
     private Integer placesRestantes;
     private Integer listeAttenteCount;
     private StatutMission statut;
-    private String badge;
     private String imageUrl;
+
+    // Association fields
     private Long associationId;
     private String associationNom;
     private String associationDescription;
-    private String associationRnaSiret;
+    private String associationDomaine;
+    private String associationVille;
+    private String associationEmail;
+    private String associationContact;
+    private String associationPhotoProfil;
+
+    // Previous editions: missions with same titre (images from those missions)
+    private List<EditionPrecedenteDto> editionsPrecedentes;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class EditionPrecedenteDto {
+        private Long id;
+        private String imageUrl;
+        private LocalDateTime dateDebut;
+    }
 }

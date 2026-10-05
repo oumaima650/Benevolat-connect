@@ -11,8 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CertificatRouteImport } from './routes/certificat'
-import { Route as ConnexionRouteImport } from './routes/connexion'
-import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as MissionsIndexRouteImport } from './routes/missions.index'
 import { Route as MissionsIdRouteImport } from './routes/missions.$id'
@@ -25,16 +23,6 @@ const IndexRoute = IndexRouteImport.update({
 const CertificatRoute = CertificatRouteImport.update({
   id: '/certificat',
   path: '/certificat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConnexionRoute = ConnexionRouteImport.update({
-  id: '/connexion',
-  path: '/connexion',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InscriptionRoute = InscriptionRouteImport.update({
-  id: '/inscription',
-  path: '/inscription',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MissionsRoute = MissionsRouteImport.update({
@@ -56,8 +44,6 @@ const MissionsIdRoute = MissionsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/certificat': typeof CertificatRoute
-  '/connexion': typeof ConnexionRoute
-  '/inscription': typeof InscriptionRoute
   '/missions': typeof MissionsRouteWithChildren
   '/missions/$id': typeof MissionsIdRoute
   '/missions/': typeof MissionsIndexRoute
@@ -65,8 +51,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/certificat': typeof CertificatRoute
-  '/connexion': typeof ConnexionRoute
-  '/inscription': typeof InscriptionRoute
   '/missions/$id': typeof MissionsIdRoute
   '/missions': typeof MissionsIndexRoute
 }
@@ -74,36 +58,19 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/certificat': typeof CertificatRoute
-  '/connexion': typeof ConnexionRoute
-  '/inscription': typeof InscriptionRoute
   '/missions': typeof MissionsRouteWithChildren
   '/missions/$id': typeof MissionsIdRoute
   '/missions/': typeof MissionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/certificat'
-    | '/connexion'
-    | '/inscription'
-    | '/missions'
-    | '/missions/$id'
-    | '/missions/'
+  fullPaths: '/' | '/certificat' | '/missions' | '/missions/$id' | '/missions/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/certificat'
-    | '/connexion'
-    | '/inscription'
-    | '/missions/$id'
-    | '/missions'
+  to: '/' | '/certificat' | '/missions/$id' | '/missions'
   id:
     | '__root__'
     | '/'
     | '/certificat'
-    | '/connexion'
-    | '/inscription'
     | '/missions'
     | '/missions/$id'
     | '/missions/'
@@ -112,8 +79,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CertificatRoute: typeof CertificatRoute
-  ConnexionRoute: typeof ConnexionRoute
-  InscriptionRoute: typeof InscriptionRoute
   MissionsRoute: typeof MissionsRouteWithChildren
 }
 
@@ -131,20 +96,6 @@ declare module '@tanstack/react-router' {
       path: '/certificat'
       fullPath: '/certificat'
       preLoaderRoute: typeof CertificatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/connexion': {
-      id: '/connexion'
-      path: '/connexion'
-      fullPath: '/connexion'
-      preLoaderRoute: typeof ConnexionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inscription': {
-      id: '/inscription'
-      path: '/inscription'
-      fullPath: '/inscription'
-      preLoaderRoute: typeof InscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/missions': {
@@ -188,8 +139,6 @@ const MissionsRouteWithChildren = MissionsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CertificatRoute: CertificatRoute,
-  ConnexionRoute: ConnexionRoute,
-  InscriptionRoute: InscriptionRoute,
   MissionsRoute: MissionsRouteWithChildren,
 }
 export const routeTree = rootRouteImport

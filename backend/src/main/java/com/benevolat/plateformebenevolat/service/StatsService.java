@@ -2,8 +2,6 @@ package com.benevolat.plateformebenevolat.service;
 
 import com.benevolat.plateformebenevolat.dto.StatistiquesDto;
 import com.benevolat.plateformebenevolat.repository.AssociationRepository;
-import com.benevolat.plateformebenevolat.repository.BenevoleRepository;
-import com.benevolat.plateformebenevolat.repository.CertificatRepository;
 import com.benevolat.plateformebenevolat.repository.MissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,16 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class StatsService {
 
     private final MissionRepository missionRepository;
-    private final BenevoleRepository benevoleRepository;
     private final AssociationRepository associationRepository;
-    private final CertificatRepository certificatRepository;
 
     public StatistiquesDto getStatistiques() {
         long totalMissions = missionRepository.count();
-        long totalBenevoles = benevoleRepository.count();
         long totalAssociations = associationRepository.count();
-        long totalHeures = certificatRepository.sumTotalHeuresValidees();
+        // Dynamically compute total required volunteer places from public missions in DB
+        long totalPlaces = missionRepository.sumTotalNbPlaces();
+        long totalHeures = totalPlaces * 8; // Estimated total volunteer hours (8h per place)
 
-        return new StatistiquesDto(totalMissions, totalBenevoles, totalAssociations, totalHeures);
+        return new StatistiquesDto(totalMissions, totalPlaces, totalAssociations, totalHeures);
     }
 }

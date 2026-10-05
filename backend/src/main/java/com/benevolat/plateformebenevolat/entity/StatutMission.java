@@ -1,8 +1,12 @@
 package com.benevolat.plateformebenevolat.entity;
 
 public enum StatutMission {
-    DISPONIBLE,
-    COMPLET,
     BROUILLON,
+    PUBLIEE,
+    COMPLETE,
+    EN_COURS,
+    RENFORT_URGENT,
+    TERMINEE,
+    CLOTUREE,
     ANNULEE
 }

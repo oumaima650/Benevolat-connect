@@ -35,9 +35,9 @@ export function Impact() {
       .getStatistiques()
       .then((data: StatistiquesData) => {
         setStats([
-          { valeur: String(data.totalMissions || 1248), libelle: "missions publiées" },
-          { valeur: String(data.totalBenevoles || 8630), libelle: "bénévoles inscrits" },
-          { valeur: String(data.totalAssociations || 312), libelle: "associations partenaires" },
+          { valeur: String(data.totalMissions ?? 4), libelle: "missions publiées" },
+          { valeur: String(data.totalBenevoles ?? 44), libelle: "bénévoles recherchés" },
+          { valeur: String(data.totalAssociations ?? 4), libelle: "associations partenaires" },
         ]);
       })
       .catch(() => {});

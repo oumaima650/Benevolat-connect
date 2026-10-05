@@ -8,6 +8,7 @@ export interface MissionCardBackend {
   description: string;
   domaine: string;
   ville: string;
+  adresse?: string;
   dateDebut: string;
   dateFin: string;
   nbBenevoles: number;
@@ -20,10 +21,25 @@ export interface MissionCardBackend {
   associationNom?: string;
 }
 
-export interface MissionDetailBackend extends MissionCardBackend {
-  associationDescription?: string;
-  associationRnaSiret?: string;
+export interface EditionPrecedenteBackend {
+  id: number;
+  imageUrl?: string;
+  dateDebut?: string;
 }
+
+export interface AssociationDetailBackend {
+  associationId?: number;
+  associationNom?: string;
+  associationDescription?: string;
+  associationDomaine?: string;
+  associationVille?: string;
+  associationEmail?: string;
+  associationContact?: string;
+  associationPhotoProfil?: string;
+  editionsPrecedentes?: EditionPrecedenteBackend[];
+}
+
+export type MissionDetailBackend = MissionCardBackend & AssociationDetailBackend;
 
 // Coordonnées approximatives des villes pour l'affichage sur la carte
 const COORDONNEES_VILLES: Record<string, { lat: number; lng: number }> = {
@@ -52,7 +68,7 @@ export function mapBackendToMission(b: MissionCardBackend): Mission {
     ville: b.ville,
     date: b.dateDebut || "2026-10-20",
     dateFin: b.dateFin || "2026-10-25",
-    adresse: `${b.ville}, France/Maroc`,
+    adresse: b.adresse || `${b.ville}, France`,
     placesDemandees: b.nbBenevoles || 10,
     placesRestantes: b.placesRestantes,
     listeAttente: b.listeAttenteCount,
@@ -86,6 +102,12 @@ export const missionApi = {
     if (!res.ok) throw new Error("Mission introuvable.");
     const data: MissionDetailBackend = await res.json();
     return mapBackendToMission(data);
+  },
+
+  async getMissionDetail(id: string | number): Promise<MissionDetailBackend> {
+    const res = await fetch(`${API_BASE_URL}/missions/${id}`);
+    if (!res.ok) throw new Error("Mission introuvable.");
+    return res.json();
   },
 
   async getCities(): Promise<string[]> {

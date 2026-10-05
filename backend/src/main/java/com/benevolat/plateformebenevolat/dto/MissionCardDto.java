@@ -6,7 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -18,13 +19,15 @@ public class MissionCardDto {
     private String description;
     private String domaine;
     private String ville;
-    private LocalDate dateDebut;
-    private LocalDate dateFin;
-    private Integer nbBenevoles;
+    private String adresse;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
+    private LocalDateTime dateDebut;
+    private LocalDateTime dateFin;
+    private Integer nbPlaces;
     private Integer placesRestantes;
     private Integer listeAttenteCount;
     private StatutMission statut;
-    private String badge;
     private String imageUrl;
     private Long associationId;
     private String associationNom;

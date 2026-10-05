@@ -6,10 +6,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "missions")
+@Table(name = "Mission")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,45 +19,78 @@ public class Mission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "idMission")
+    private Long idMission;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String titre;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private String domaine;
-    private String ville;
+    @Column(length = 255)
+    private String adresse;
 
-    private LocalDate dateDebut;
-    private LocalDate dateFin;
+    @Column(precision = 9, scale = 6)
+    private BigDecimal latitude;
 
-    private Integer nbBenevoles;
+    @Column(precision = 9, scale = 6)
+    private BigDecimal longitude;
+
+    @Column(nullable = false)
+    private LocalDateTime dateDebut;
+
+    @Column(nullable = false)
+    private LocalDateTime dateFin;
+
+    @Column(nullable = false)
+    private Integer nbPlaces = 0;
+
+    @Column(nullable = false)
+    private Integer nbPlacesListeAttente = 0;
+
+    @Column(nullable = false)
+    private Integer nbRenfortDemande = 0;
 
     @Enumerated(EnumType.STRING)
-    private StatutMission statut = StatutMission.DISPONIBLE;
+    @Column(nullable = false)
+    private StatutMission statut = StatutMission.BROUILLON;
 
-    private String badge;
-    private String imageUrl;
+    @Column(nullable = false)
+    private Boolean estSignalee = false;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "association_id")
+    @JoinColumn(name = "idAssociation", nullable = false)
     private Association association;
 
-    public Mission(String titre, String description, String domaine, String ville,
-                   LocalDate dateDebut, LocalDate dateFin, Integer nbBenevoles,
-                   StatutMission statut, String badge, String imageUrl, Association association) {
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "idDomaine", nullable = false)
+    private Domaine domaine;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "idImage", nullable = false)
+    private ImageEvenement imageEvenement;
+
+    public Mission(String titre, String description, String adresse, BigDecimal latitude, BigDecimal longitude,
+                   LocalDateTime dateDebut, LocalDateTime dateFin, Integer nbPlaces, StatutMission statut,
+                   Association association, Domaine domaine, ImageEvenement imageEvenement) {
         this.titre = titre;
         this.description = description;
-        this.domaine = domaine;
-        this.ville = ville;
+        this.adresse = adresse;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.dateDebut = dateDebut;
         this.dateFin = dateFin;
-        this.nbBenevoles = nbBenevoles;
+        this.nbPlaces = nbPlaces;
         this.statut = statut;
-        this.badge = badge;
-        this.imageUrl = imageUrl;
         this.association = association;
+        this.domaine = domaine;
+        this.imageEvenement = imageEvenement;
     }
 }

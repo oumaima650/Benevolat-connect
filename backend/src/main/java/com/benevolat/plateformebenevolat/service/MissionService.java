@@ -3,10 +3,9 @@ package com.benevolat.plateformebenevolat.service;
 import com.benevolat.plateformebenevolat.dto.MissionCardDto;
 import com.benevolat.plateformebenevolat.dto.MissionDetailDto;
 import com.benevolat.plateformebenevolat.dto.MissionSearchCriteria;
+import com.benevolat.plateformebenevolat.entity.Association;
 import com.benevolat.plateformebenevolat.entity.Mission;
-import com.benevolat.plateformebenevolat.entity.StatutInscription;
 import com.benevolat.plateformebenevolat.entity.StatutMission;
-import com.benevolat.plateformebenevolat.repository.InscriptionRepository;
 import com.benevolat.plateformebenevolat.repository.MissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,7 +22,6 @@ import java.util.stream.Collectors;
 public class MissionService {
 
     private final MissionRepository missionRepository;
-    private final InscriptionRepository inscriptionRepository;
 
     public List<MissionCardDto> searchMissions(MissionSearchCriteria criteria) {
         String q = (criteria != null && criteria.getQ() != null) ? criteria.getQ().trim() : null;
@@ -36,7 +34,7 @@ public class MissionService {
 
     public List<MissionCardDto> getFeaturedMissions() {
         List<StatutMission> excluded = Arrays.asList(StatutMission.BROUILLON, StatutMission.ANNULEE);
-        List<Mission> missions = missionRepository.findTop4ByStatutNotInOrderByIdDesc(excluded);
+        List<Mission> missions = missionRepository.findTop4ByStatutNotInOrderByIdMissionDesc(excluded);
         return missions.stream().map(this::toCardDto).collect(Collectors.toList());
     }
 
@@ -53,55 +51,77 @@ public class MissionService {
     }
 
     public MissionCardDto toCardDto(Mission mission) {
-        int bienInscrits = inscriptionRepository.countByMissionIdAndStatut(mission.getId(), StatutInscription.CONFIRMEE);
-        int listeAttenteCount = inscriptionRepository.countByMissionIdAndStatut(mission.getId(), StatutInscription.EN_LISTE_ATTENTE);
-        int max = (mission.getNbBenevoles() != null) ? mission.getNbBenevoles() : 0;
-        int placesRestantes = Math.max(0, max - bienInscrits);
+        int bienInscrits = 0; // Handled by Personne A / Inscription table if needed
+        int placesRestantes = Math.max(0, (mission.getNbPlaces() != null ? mission.getNbPlaces() : 0) - bienInscrits);
 
         StatutMission effectiveStatut = mission.getStatut();
-        if (effectiveStatut == StatutMission.DISPONIBLE && placesRestantes == 0) {
-            effectiveStatut = StatutMission.COMPLET;
+        if (effectiveStatut == StatutMission.PUBLIEE && placesRestantes == 0) {
+            effectiveStatut = StatutMission.COMPLETE;
         }
 
+        String img = mission.getImageEvenement() != null ? mission.getImageEvenement().getUrl() : null;
+
         return new MissionCardDto(
-                mission.getId(),
+                mission.getIdMission(),
                 mission.getTitre(),
                 mission.getDescription(),
-                mission.getDomaine(),
-                mission.getVille(),
+                mission.getDomaine() != null ? mission.getDomaine().getNom() : null,
+                mission.getAssociation() != null ? mission.getAssociation().getVille() : null,
+                mission.getAdresse(),
+                mission.getLatitude(),
+                mission.getLongitude(),
                 mission.getDateDebut(),
                 mission.getDateFin(),
-                mission.getNbBenevoles(),
+                mission.getNbPlaces(),
                 placesRestantes,
-                listeAttenteCount,
+                mission.getNbPlacesListeAttente(),
                 effectiveStatut,
-                mission.getBadge(),
-                mission.getImageUrl(),
-                mission.getAssociation() != null ? mission.getAssociation().getId() : null,
+                img,
+                mission.getAssociation() != null ? mission.getAssociation().getIdUtilisateur() : null,
                 mission.getAssociation() != null ? mission.getAssociation().getNom() : "Association Partenaire"
         );
     }
 
     public MissionDetailDto toDetailDto(Mission mission) {
         MissionCardDto card = toCardDto(mission);
+        Association asso = mission.getAssociation();
+
+        // Previous editions: missions with same titre, different id
+        List<MissionDetailDto.EditionPrecedenteDto> editions = missionRepository
+                .findEditionsPrecedentes(mission.getTitre(), mission.getIdMission())
+                .stream()
+                .map(m -> new MissionDetailDto.EditionPrecedenteDto(
+                        m.getIdMission(),
+                        m.getImageEvenement() != null ? m.getImageEvenement().getUrl() : null,
+                        m.getDateDebut()
+                ))
+                .collect(Collectors.toList());
+
         return new MissionDetailDto(
                 card.getId(),
                 card.getTitre(),
                 card.getDescription(),
                 card.getDomaine(),
                 card.getVille(),
+                card.getAdresse(),
+                card.getLatitude(),
+                card.getLongitude(),
                 card.getDateDebut(),
                 card.getDateFin(),
-                card.getNbBenevoles(),
+                card.getNbPlaces(),
                 card.getPlacesRestantes(),
                 card.getListeAttenteCount(),
                 card.getStatut(),
-                card.getBadge(),
                 card.getImageUrl(),
-                card.getAssociationId(),
-                card.getAssociationNom(),
-                mission.getAssociation() != null ? mission.getAssociation().getDescription() : null,
-                mission.getAssociation() != null ? mission.getAssociation().getRnaSiret() : null
+                asso != null ? asso.getIdUtilisateur() : null,
+                asso != null ? asso.getNom() : null,
+                asso != null ? asso.getDescription() : null,
+                asso != null ? asso.getDomaine() : null,
+                asso != null ? asso.getVille() : null,
+                asso != null ? asso.getEmail() : null,
+                asso != null ? asso.getContact() : null,
+                asso != null ? asso.getPhotoProfil() : null,
+                editions
         );
     }
 }

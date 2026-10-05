@@ -14,7 +14,7 @@ export function Hero() {
           <p className="mt-5 max-w-lg text-base leading-relaxed text-paper">Une heure de ton temps peut changer leur journée. Trouve une mission près de chez toi et donne vie aux projets des associations.</p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Button asChild className="press h-auto rounded-lg border-2 border-ink bg-mustard px-5 py-3.5 font-bold text-ink hover:bg-mustard"><Link to="/missions">Je passe à l’action <ArrowUpRight /></Link></Button>
-            <Button asChild variant="outline" className="press h-auto rounded-lg border-2 border-paper bg-transparent px-5 py-3.5 font-bold text-paper hover:bg-paper hover:text-ink"><Link to="/inscription" search={{ profil: "association" }}>Mobiliser des bénévoles <ArrowUpRight /></Link></Button>
+            <Button asChild variant="outline" className="press h-auto rounded-lg border-2 border-paper bg-transparent px-5 py-3.5 font-bold text-paper hover:bg-paper hover:text-ink"><a href="/login?role=association">Mobiliser des bénévoles <ArrowUpRight /></a></Button>
           </div>
         </div>
       </div>
