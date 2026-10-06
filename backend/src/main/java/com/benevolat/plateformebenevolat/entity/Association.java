@@ -9,8 +9,11 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Entité Association mappée sur la table 'Association' de la base de données.
+ */
 @Entity
-@Table(name = "associations")
+@Table(name = "Association")
 @PrimaryKeyJoinColumn(name = "idAssociation")
 @Getter
 @Setter
@@ -18,31 +21,47 @@ import java.util.List;
 @AllArgsConstructor
 public class Association extends Utilisateur {
 
-    @Column(nullable = false, length = 150)
+    @Column(name = "nom", nullable = false, length = 150)
     private String nom;
 
-    private String nomAssociation;
+    public String getNomAssociation() {
+        return nom;
+    }
 
-    @Column(columnDefinition = "TEXT", length = 1500)
+    public void setNomAssociation(String nomAssociation) {
+        this.nom = nomAssociation;
+    }
+
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(length = 100)
+    @Column(name = "domaine", length = 100)
     private String domaine;
 
-    @Column(length = 100)
+    @Column(name = "ville", length = 100)
     private String ville;
 
+    @Column(name = "contact", length = 255)
     private String contact;
 
+    @Column(name = "logoUrl")
     private String logoUrl;
 
-    @Column(nullable = false)
+    @Column(name = "estvalidee", nullable = false)
     private Boolean estvalidee = false;
 
-    private boolean valideeParAdmin = false;
+    public boolean isValideeParAdmin() {
+        return Boolean.TRUE.equals(estvalidee);
+    }
 
+    public void setValideeParAdmin(boolean validee) {
+        this.estvalidee = validee;
+    }
+
+    @Transient
     private Double latitude;
 
+    @Transient
     private Double longitude;
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -56,29 +75,9 @@ public class Association extends Utilisateur {
     public Association(String email, String motDePasse, String photoProfil, String nom, String description, String domaine, String ville, String contact) {
         super(email, motDePasse, photoProfil);
         this.nom = nom;
-        this.nomAssociation = nom;
         this.description = description;
         this.domaine = domaine;
         this.ville = ville;
         this.contact = contact;
     }
-
-    public String getNom() {
-        return nom != null ? nom : nomAssociation;
-    }
-
-    public void setNom(String nom) {
-        this.nom = nom;
-        this.nomAssociation = nom;
-    }
-
-    public String getNomAssociation() {
-        return nomAssociation != null ? nomAssociation : nom;
-    }
-
-    public void setNomAssociation(String nomAssociation) {
-        this.nomAssociation = nomAssociation;
-        this.nom = nomAssociation;
-    }
 }
-

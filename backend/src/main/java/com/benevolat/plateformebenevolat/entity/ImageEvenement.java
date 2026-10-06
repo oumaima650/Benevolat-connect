@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Entité ImageEvenement mappée sur la table 'ImageEvenement' de la base de données.
+ */
 @Entity
 @Table(name = "ImageEvenement")
 @Getter
@@ -19,13 +22,13 @@ public class ImageEvenement {
     @Column(name = "idImage")
     private Long idImage;
 
-    @Column(nullable = false, length = 500, name = "URL")
+    @Column(name = "URL", nullable = false, length = 500)
     private String url;
 
-    @Column(length = 150)
+    @Column(name = "titre", length = 150)
     private String titre;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     public ImageEvenement(String url, String titre, String description) {

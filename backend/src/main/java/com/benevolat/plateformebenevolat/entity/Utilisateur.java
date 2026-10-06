@@ -8,8 +8,11 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Entité Utilisateur mappée sur la table 'Utilisateur' de la base de données.
+ */
 @Entity
-@Table(name = "utilisateurs")
+@Table(name = "Utilisateur")
 @Inheritance(strategy = InheritanceType.JOINED)
 @Getter
 @Setter
@@ -30,35 +33,50 @@ public class Utilisateur {
         this.idUtilisateur = id;
     }
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "motDePasse", nullable = false, length = 255)
     private String motDePasse;
 
-    private String motDePasseHash;
+    public String getMotDePasseHash() {
+        return motDePasse;
+    }
 
-    private String token;
+    public void setMotDePasseHash(String hash) {
+        this.motDePasse = hash;
+    }
 
-    @Column(length = 500)
+    @Column(name = "photoProfil", length = 500)
     private String photoProfil;
 
-    @Column(nullable = false)
+    @Column(name = "Active", nullable = false)
     private String Active = "actif";
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "statut")
+    @Transient
     private StatutUtilisateur statut = StatutUtilisateur.ACTIF;
 
-    @Column(nullable = false)
+    public StatutUtilisateur getStatut() {
+        if ("desactif".equalsIgnoreCase(Active)) return StatutUtilisateur.DESACTIVE;
+        if ("suspendu".equalsIgnoreCase(Active)) return StatutUtilisateur.SUSPENDUE;
+        return StatutUtilisateur.ACTIF;
+    }
+
+    public void setStatut(StatutUtilisateur s) {
+        this.statut = s;
+        if (s == StatutUtilisateur.DESACTIVE) this.Active = "desactif";
+        else if (s == StatutUtilisateur.SUSPENDUE) this.Active = "suspendu";
+        else this.Active = "actif";
+    }
+
+    @Column(name = "notifEstActive", nullable = false)
     private Boolean notifEstActive = true;
 
-    private boolean notifActivite = true;
-
-    @Column(nullable = false, updatable = false)
+    @Column(name = "createdAt", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(nullable = false)
+    @Column(name = "updatedAt", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @PrePersist
@@ -80,4 +98,3 @@ public class Utilisateur {
         this.photoProfil = photoProfil;
     }
 }
-
