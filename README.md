@@ -1,62 +1,106 @@
 # CountMeIn — Plateforme de Bénévolat
 
-Application web pour la mise en relation de bénévoles et d'associations.
+**CountMeIn** est une plateforme web moderne permettant la mise en relation fluide et sécurisée entre **Bénévoles** et **Associations**.
 
 ---
 
-## Périmètre Module Personne B (Landing Page, Missions & Certificats)
+## 🛠️ Architecture & Technologies
 
-Ce module gère le catalogue public de missions, la recherche multi-critères, le détail des missions avec calcul des places restantes / liste d'attente, les statistiques d'impact ainsi que la vérification publique d'authenticité des certificats de bénévolat.
+### **Backend (API REST)**
 
-> **Note :** Le module d'authentification (Spring Security, JWT, endpoints `/api/auth/*`, formulaires de login/register) est géré séparément par la Personne A. Les boutons d'orientation redirigent vers `/login?role=...` ou `/register?role=...`.
+- **Framework :** Java 21, Spring Boot 3.x (Spring Security, Spring Data JPA, JavaMailSender)
+- **Authentification :** Stateless JWT (JSON Web Token), OTP en mémoire (One-Time Password) & reCAPTCHA v2 Google
+- **Base de données :** MySQL 8.x (Héritage JPA `JOINED` pour `Utilisateur`, relations `ManyToMany` pour `Domaine`)
+- **Configuration :** Variables d'environnement dynamiques via `.env` (`spring-dotenv`)
+
+### **Frontend (Application Web)**
+
+- **Framework :** React 19, TypeScript, Vite
+- **Routage & State :** `@tanstack/react-router`
+- **UI & Style :** Tailwind CSS v4, Lucide Icons, Shadcn UI
+- **Formulaires & Validation :** Zod, ReCAPTCHA React Component
 
 ---
 
-## 🚀 Lancement Rapide
+## Lancement Rapide
 
 ### 1. Démarrer le Backend (Spring Boot)
 
-```bash
-cd backend
-./mvnw spring-boot:run
-```
-L'API Spring Boot s'exécute sur `http://localhost:8080`.
-Des données de démonstration sont injectées automatiquement au premier démarrage (`DataSeeder`) : 4 associations, 6 bénévoles, 10 missions (dont certaines complètes) et 4 certificats.
+1. Naviguez dans le dossier `backend` :
+
+   ```bash
+   cd backend
+   ```
+2. Créez votre fichier local `.env` à partir du modèle fourni :
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   *(Configurez vos identifiants MySQL `DB_USERNAME`, `DB_PASSWORD`, et optionnellement votre serveur SMTP Gmail).*
+3. Démarrez le serveur Spring Boot :
+
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+   *L'API REST est accessible sur `http://localhost:8080`.*
+   *(Au premier démarrage, `DataInitializer` pré-remplit le catalogue des compétences et domaines partagés).*
+
+---
 
 ### 2. Démarrer le Frontend (React + Vite)
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Le serveur frontend s'exécute sur `http://localhost:5173`.
+1. Naviguez dans le dossier `frontend` :
+
+   ```bash
+   cd frontend
+   ```
+2. Installez les dépendances et démarrez le serveur de développement :
+
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+   *L'application web est disponible sur `http://localhost:5173`.*
 
 ---
 
-## 📡 Endpoints de l'API (Publics)
+## Endpoints de l'API REST
 
-### Missions
+### Authentification & Gestion des Comptes (`/api/auth`)
+
+- `POST /api/auth/register` : Inscription d'un nouveau Bénévole ou d'une Association (renvoie un token JWT)
+- `POST /api/auth/login` : Connexion utilisateur (renvoie un token JWT)
+- `POST /api/auth/send-otp` : Génération et envoi d'un code OTP de vérification par email
+- `POST /api/auth/verify-otp` : Validation du code OTP soumis par l'utilisateur
+- `POST /api/auth/forgot-password` : Demande de réinitialisation de mot de passe par email
+- `POST /api/auth/reset-password` : Validation du nouveau mot de passe via token
+- `POST /api/auth/verify-recaptcha` : Vérification du jeton reCAPTCHA v2
+
+### Catalogues publics (`/api`)
+
+- `GET /api/competences` : Liste des compétences pré-enregistrées
+- `GET /api/domaines` : Liste des domaines d'activité partagés (bénévoles & associations)Missions (`/api/missions`)
 - `GET /api/missions/search?q={keyword}&ville={ville}&domaine={domaine}` : Recherche multi-critères
-- `GET /api/missions/featured` : 4 missions à la une
+- `GET /api/missions/featured` : Missions à la une
 - `GET /api/missions/{id}` : Détails d'une mission
-- `GET /api/missions/cities` : Liste des villes ayant des missions actives
-- `GET /api/missions/domaines` : Liste des domaines d'activité
+- `GET /api/missions/cities` : Villes proposant des missions actives
+- `GET /api/missions/domaines` : Domaines d'activité disponibles
 
-### Certificats
-- `GET /api/certificates/verify/{code}` : Vérification d'un certificat par son code unique
+### Certificats de Bénévolat (`/api/certificates`)
 
-### Statistiques
-- `GET /api/stats` : Statistiques globales (missions, bénévoles, associations, heures)
+- `GET /api/certificates/verify/{code}` : Vérification publique d'authenticité d'un certificat
+
+### Statistiques (`/api/stats`)
+
+- `GET /api/stats` : Statistiques globales d'impact (heures, missions, bénévoles et associations)
 
 ---
 
-## 🧪 Codes de démonstration pour la vérification de certificats
+## Sécurité & Bonnes Pratiques
 
-- **Valides :**
-  - `CERT-2026-8821` (Thomas Dubois - Maraude nocturne - 18h)
-  - `CERT-2026-9932` (Sarah Martin - Collecte alimentaire - 24h)
-  - `CERT-2026-1104` (Lucas Bernard - Nettoyage plage - 12h)
-  - `CERT-2026-7745` (Emma Petit - Soutien scolaire - 30h)
-- **Invalide :**
-  - N'importe quel code inexistant (ex : `CERT-INVALID-0000`)
+- Aucun secret ou mot de passe n'est stocké en clair dans le code. Les clés sensibles résident uniquement dans le fichier local `backend/.env` (ignoré par Git).
+- Les mots de passe sont hachés avec la norme **BCrypt**.
+- Les jetons d'accès **JWT** sont gérés en mode sans état (*Stateless*) et transmis via l'en-tête HTTP `Authorization: Bearer <token>`.
