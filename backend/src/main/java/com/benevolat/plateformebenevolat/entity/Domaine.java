@@ -6,8 +6,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Entité Domaine mappée sur la table 'Domaine' de la base de données.
+ */
 @Entity
-@Table(name = "domaines")
+@Table(name = "Domaine")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,11 +22,13 @@ public class Domaine {
     @Column(name = "idDomaine")
     private Long idDomaine;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "nom", nullable = false, length = 100)
     private String nom;
 
+    @Transient
     private String categorie;
 
+    @Transient
     private String description;
 
     public Domaine(String nom) {
@@ -44,4 +49,3 @@ public class Domaine {
         this.idDomaine = id;
     }
 }
-

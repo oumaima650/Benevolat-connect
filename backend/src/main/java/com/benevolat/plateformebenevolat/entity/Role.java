@@ -1,7 +1,7 @@
 package com.benevolat.plateformebenevolat.entity;
 
 /**
- * Rôles disponibles dans la plateforme Bénévolat-connect.
+ * Énumération des rôles de la plateforme.
  */
 public enum Role {
     BENEVOLE,

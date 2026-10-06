@@ -9,6 +9,9 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Entité Mission mappée sur la table 'Mission' de la base de données.
+ */
 @Entity
 @Table(name = "Mission")
 @Getter
@@ -22,47 +25,47 @@ public class Mission {
     @Column(name = "idMission")
     private Long idMission;
 
-    @Column(nullable = false, length = 150)
+    @Column(name = "titre", nullable = false, length = 150)
     private String titre;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(length = 255)
+    @Column(name = "adresse", length = 255)
     private String adresse;
 
-    @Column(precision = 9, scale = 6)
+    @Column(name = "latitude", precision = 9, scale = 6)
     private BigDecimal latitude;
 
-    @Column(precision = 9, scale = 6)
+    @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
 
-    @Column(nullable = false)
+    @Column(name = "dateDebut", nullable = false)
     private LocalDateTime dateDebut;
 
-    @Column(nullable = false)
+    @Column(name = "dateFin", nullable = false)
     private LocalDateTime dateFin;
 
-    @Column(nullable = false)
+    @Column(name = "nbPlaces", nullable = false)
     private Integer nbPlaces = 0;
 
-    @Column(nullable = false)
+    @Column(name = "nbPlacesListeAttente", nullable = false)
     private Integer nbPlacesListeAttente = 0;
 
-    @Column(nullable = false)
+    @Column(name = "nbRenfortDemande", nullable = false)
     private Integer nbRenfortDemande = 0;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "statut", nullable = false)
     private StatutMission statut = StatutMission.BROUILLON;
 
-    @Column(nullable = false)
+    @Column(name = "estSignalee", nullable = false)
     private Boolean estSignalee = false;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "createdAt", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(nullable = false)
+    @Column(name = "updatedAt", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.EAGER)
