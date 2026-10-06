@@ -52,13 +52,11 @@ function CarteAssociation({ association }: { association: any }) {
 }
 
 export function FeaturedAssociations() {
-  const [assosList, setAssosList] = useState<any[]>(fallbackAssociations);
+  const [assosList, setAssosList] = useState<any[]>([]);
 
   useEffect(() => {
     associationApi.getFeaturedAssociations().then((data: AssociationBackend[]) => {
-      if (data && data.length > 0) {
-        setAssosList(data);
-      }
+      setAssosList(data);
     }).catch(() => {});
   }, []);
 

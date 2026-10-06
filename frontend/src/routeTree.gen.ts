@@ -11,7 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CertificatRouteImport } from './routes/certificat'
+import { Route as InscriptionRouteImport } from './routes/inscription'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as MissionsRouteImport } from './routes/missions'
+import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as MissionsIndexRouteImport } from './routes/missions.index'
 import { Route as MissionsIdRouteImport } from './routes/missions.$id'
 
@@ -25,9 +29,29 @@ const CertificatRoute = CertificatRouteImport.update({
   path: '/certificat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InscriptionRoute = InscriptionRouteImport.update({
+  id: '/inscription',
+  path: '/inscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MissionsRoute = MissionsRouteImport.update({
   id: '/missions',
   path: '/missions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
+  id: '/mot-de-passe-oublie',
+  path: '/mot-de-passe-oublie',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MissionsIndexRoute = MissionsIndexRouteImport.update({
@@ -44,13 +68,21 @@ const MissionsIdRoute = MissionsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/certificat': typeof CertificatRoute
+  '/inscription': typeof InscriptionRoute
+  '/login': typeof LoginRoute
   '/missions': typeof MissionsRouteWithChildren
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/missions/$id': typeof MissionsIdRoute
   '/missions/': typeof MissionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/certificat': typeof CertificatRoute
+  '/inscription': typeof InscriptionRoute
+  '/login': typeof LoginRoute
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/missions/$id': typeof MissionsIdRoute
   '/missions': typeof MissionsIndexRoute
 }
@@ -58,20 +90,45 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/certificat': typeof CertificatRoute
+  '/inscription': typeof InscriptionRoute
+  '/login': typeof LoginRoute
   '/missions': typeof MissionsRouteWithChildren
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/missions/$id': typeof MissionsIdRoute
   '/missions/': typeof MissionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/certificat' | '/missions' | '/missions/$id' | '/missions/'
+  fullPaths:
+    | '/'
+    | '/certificat'
+    | '/inscription'
+    | '/login'
+    | '/missions'
+    | '/mot-de-passe-oublie'
+    | '/reset-password'
+    | '/missions/$id'
+    | '/missions/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/certificat' | '/missions/$id' | '/missions'
+  to:
+    | '/'
+    | '/certificat'
+    | '/inscription'
+    | '/login'
+    | '/mot-de-passe-oublie'
+    | '/reset-password'
+    | '/missions/$id'
+    | '/missions'
   id:
     | '__root__'
     | '/'
     | '/certificat'
+    | '/inscription'
+    | '/login'
     | '/missions'
+    | '/mot-de-passe-oublie'
+    | '/reset-password'
     | '/missions/$id'
     | '/missions/'
   fileRoutesById: FileRoutesById
@@ -79,7 +136,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CertificatRoute: typeof CertificatRoute
+  InscriptionRoute: typeof InscriptionRoute
+  LoginRoute: typeof LoginRoute
   MissionsRoute: typeof MissionsRouteWithChildren
+  MotDePasseOublieRoute: typeof MotDePasseOublieRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -98,11 +159,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CertificatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inscription': {
+      id: '/inscription'
+      path: '/inscription'
+      fullPath: '/inscription'
+      preLoaderRoute: typeof InscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/missions': {
       id: '/missions'
       path: '/missions'
       fullPath: '/missions'
       preLoaderRoute: typeof MissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mot-de-passe-oublie': {
+      id: '/mot-de-passe-oublie'
+      path: '/mot-de-passe-oublie'
+      fullPath: '/mot-de-passe-oublie'
+      preLoaderRoute: typeof MotDePasseOublieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/missions/': {
@@ -139,18 +228,12 @@ const MissionsRouteWithChildren = MissionsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CertificatRoute: CertificatRoute,
+  InscriptionRoute: InscriptionRoute,
+  LoginRoute: LoginRoute,
   MissionsRoute: MissionsRouteWithChildren,
+  MotDePasseOublieRoute: MotDePasseOublieRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -1,8 +1,10 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight, CalendarDays, Clock3, Mail, MapPin, Phone, Users, Building2 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/site/Footer";
 import { Header } from "@/components/site/Header";
+import { useAuth } from "@/context/AuthContext";
 import { MissionMap } from "@/components/site/MissionMap";
 import { formaterDate, trouverAssociation, trouverMission } from "@/components/site/data";
 import { missionPresentation } from "@/components/site/mission-presentation";
@@ -52,6 +54,19 @@ function MissionIntrouvable() {
 function MissionDetail() {
   const loaderData = Route.useLoaderData();
   const detail = loaderData.detail;
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [engaged, setEngaged] = useState(false);
+
+  const missionId = detail?.id ?? (loaderData as any).mission?.id ?? "";
+
+  const handleEngagement = () => {
+    if (!user) {
+      navigate({ to: "/login", search: { redirect: `/missions/${missionId}` } });
+      return;
+    }
+    setEngaged(true);
+  };
 
   // Use backend detail if available, otherwise fall back to static data
   const titre = detail?.titre ?? (loaderData as any).mission?.titre ?? "";
@@ -61,10 +76,9 @@ function MissionDetail() {
   const adresse = detail?.adresse ?? (loaderData as any).mission?.adresse ?? ville;
   const dateDebut = detail?.dateDebut ?? (loaderData as any).mission?.date ?? "";
   const dateFin = detail?.dateFin ?? (loaderData as any).mission?.dateFin ?? "";
-  const nbPlaces = detail?.nbBenevoles ?? (loaderData as any).mission?.placesDemandees ?? 0;
+  const nbPlaces = detail?.nbPlaces ?? detail?.nbBenevoles ?? (loaderData as any).mission?.placesDemandees ?? 0;
   const placesRestantes = detail?.placesRestantes ?? (loaderData as any).mission?.placesRestantes ?? 0;
   const listeAttente = detail?.listeAttenteCount ?? (loaderData as any).mission?.listeAttente ?? 0;
-  const missionId = String(detail?.id ?? (loaderData as any).mission?.id ?? "");
 
   // Coordinates for map
   const lat = (loaderData as any).mission?.lat ?? 48.8566;
@@ -72,7 +86,7 @@ function MissionDetail() {
 
   const complet = placesRestantes === 0;
   const { Icon, background, color } = missionPresentation(domaine);
-  const pris = nbPlaces - placesRestantes;
+  const pris = Math.max(0, nbPlaces - placesRestantes);
   const pct = nbPlaces > 0 ? Math.round((pris / nbPlaces) * 100) : 0;
 
   // Association
@@ -128,7 +142,7 @@ function MissionDetail() {
               <section>
                 <h2 className="text-2xl">Les éditions précédentes</h2>
                 <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                  {editions.map((ed, i) => (
+                  {editions.map((ed: any, i: number) => (
                     <figure key={ed.id} className={`overflow-hidden rounded-lg border-2 border-ink ${i === 0 ? "sm:col-span-2 sm:row-span-2" : ""}`}>
                       <img
                         src={ed.imageUrl || "/assets/hero-benevoles.jpg"}
@@ -150,9 +164,18 @@ function MissionDetail() {
               <div className="flex items-baseline justify-between text-sm font-bold"><span>{pris} / {nbPlaces} inscrits</span><span>{pct}%</span></div>
               <div className="mt-2 h-3 overflow-hidden rounded-full border-2 border-ink bg-muted"><div className={`h-full ${complet ? "bg-pink" : "bg-emerald"}`} style={{ width: `${pct}%` }} /></div>
               <p className="mt-3 text-xs text-muted-foreground">{complet ? "Rejoins la liste d'attente : tu seras prévenu dès qu'une place se libère." : "Premier arrivé, premier servi."}</p>
-              <Button asChild className={`mt-5 h-auto w-full whitespace-normal rounded-lg border-2 border-ink px-4 py-3.5 font-bold ${complet ? "bg-pink text-ink hover:bg-pink" : "bg-emerald text-paper hover:bg-emerald"}`}>
-                <a href="/register?role=benevole">{complet ? "Rejoindre la liste d'attente" : "Je m'engage"} <ArrowUpRight /></a>
-              </Button>
+              {engaged ? (
+                <div className="mt-5 rounded-lg border-2 border-ink bg-emerald/20 p-4 text-center font-bold text-ink">
+                  🎉 Inscription confirmée ! Merci pour ton engagement.
+                </div>
+              ) : (
+                <Button
+                  onClick={handleEngagement}
+                  className={`mt-5 h-auto w-full whitespace-normal rounded-lg border-2 border-ink px-4 py-3.5 font-bold ${complet ? "bg-pink text-ink hover:bg-pink" : "bg-emerald text-paper hover:bg-emerald"}`}
+                >
+                  {complet ? "Rejoindre la liste d'attente" : "Je m'engage"} <ArrowUpRight className="ml-1 inline h-4 w-4" />
+                </Button>
+              )}
             </div>
 
             {hasAsso && (

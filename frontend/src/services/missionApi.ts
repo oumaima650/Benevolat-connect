@@ -11,7 +11,8 @@ export interface MissionCardBackend {
   adresse?: string;
   dateDebut: string;
   dateFin: string;
-  nbBenevoles: number;
+  nbPlaces: number;
+  nbBenevoles?: number;
   placesRestantes: number;
   listeAttenteCount: number;
   statut: "DISPONIBLE" | "COMPLET" | "BROUILLON" | "ANNULEE";
@@ -58,6 +59,9 @@ const COORDONNEES_VILLES: Record<string, { lat: number; lng: number }> = {
 export function mapBackendToMission(b: MissionCardBackend): Mission {
   const coords = COORDONNEES_VILLES[b.ville] || { lat: 33.5928, lng: -7.6134 };
 
+  const totalPlaces = b.nbPlaces ?? b.nbBenevoles ?? 10;
+  const restantes = b.placesRestantes ?? totalPlaces;
+
   return {
     id: String(b.id),
     titre: b.titre,
@@ -68,10 +72,10 @@ export function mapBackendToMission(b: MissionCardBackend): Mission {
     ville: b.ville,
     date: b.dateDebut || "2026-10-20",
     dateFin: b.dateFin || "2026-10-25",
-    adresse: b.adresse || `${b.ville}, France`,
-    placesDemandees: b.nbBenevoles || 10,
-    placesRestantes: b.placesRestantes,
-    listeAttente: b.listeAttenteCount,
+    adresse: b.adresse || `${b.ville}, Maroc`,
+    placesDemandees: totalPlaces,
+    placesRestantes: restantes,
+    listeAttente: b.listeAttenteCount ?? 0,
     lat: coords.lat,
     lng: coords.lng,
   };

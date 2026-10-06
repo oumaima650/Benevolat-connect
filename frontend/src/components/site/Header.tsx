@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, User } from "lucide-react";
 import logoImage from "@/assets/logo.png";
+import { useAuth, getInitial } from "@/context/AuthContext";
 
 const liens = [
   { label: "Accueil", to: "/" as const },
@@ -12,6 +13,8 @@ const liens = [
 
 export function Header() {
   const [ouvert, setOuvert] = useState(false);
+  const { user, logout } = useAuth();
+  const initial = getInitial(user);
 
   return (
     <header className="sticky top-0 z-40 border-b-4 border-ink bg-paper w-full">
@@ -40,18 +43,48 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <a
-            href="/login?role=association"
-            className="press hidden items-center rounded-xl border-2 border-ink bg-paper px-5 py-2.5 text-sm font-semibold shadow-[4px_4px_0_var(--color-emerald)] sm:inline-flex"
-          >
-            Je suis une association
-          </a>
-          <a
-            href="/register?role=benevole"
-            className="press hidden shrink-0 items-center rounded-xl border-2 border-ink bg-pink px-5 py-2.5 text-sm font-semibold text-pink-foreground shadow-[4px_4px_0_var(--color-ink)] sm:inline-flex"
-          >
-            Devenir bénévole
-          </a>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <div
+                title={user.email}
+                className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-mustard text-lg font-extrabold text-ink shadow-[3px_3px_0_var(--color-ink)]"
+              >
+                {initial}
+              </div>
+              <button
+                onClick={logout}
+                title="Se déconnecter"
+                className="press hidden sm:inline-flex items-center gap-1.5 rounded-xl border-2 border-ink bg-paper px-4 py-2.5 text-sm font-semibold hover:bg-pink hover:text-pink-foreground"
+              >
+                <LogOut className="h-4 w-4" />
+                Déconnexion
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="press hidden items-center rounded-xl border-2 border-ink bg-paper px-4 py-2.5 text-sm font-semibold shadow-[3px_3px_0_var(--color-ink)] hover:bg-muted sm:inline-flex"
+              >
+                Connexion
+              </Link>
+              <Link
+                to="/inscription"
+                search={{ role: "ASSOCIATION" }}
+                className="press hidden items-center rounded-xl border-2 border-ink bg-paper px-5 py-2.5 text-sm font-semibold shadow-[4px_4px_0_var(--color-emerald)] sm:inline-flex"
+              >
+                Je suis une association
+              </Link>
+              <Link
+                to="/inscription"
+                search={{ role: "BENEVOLE" }}
+                className="press hidden shrink-0 items-center rounded-xl border-2 border-ink bg-pink px-5 py-2.5 text-sm font-semibold text-pink-foreground shadow-[4px_4px_0_var(--color-ink)] sm:inline-flex"
+              >
+                Devenir bénévole
+              </Link>
+            </>
+          )}
+
           <button
             type="button"
             aria-label={ouvert ? "Fermer le menu" : "Ouvrir le menu"}
@@ -78,21 +111,53 @@ export function Header() {
                 {lien.label}
               </Link>
             ))}
+
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <a
-                href="/register?role=benevole"
-                onClick={() => setOuvert(false)}
-                className="rounded-xl border-2 border-ink bg-pink px-4 py-3 text-center text-sm font-semibold text-pink-foreground shadow-[4px_4px_0_var(--color-ink)]"
-              >
-                Devenir bénévole
-              </a>
-              <a
-                href="/login?role=association"
-                onClick={() => setOuvert(false)}
-                className="rounded-xl border-2 border-ink bg-paper px-4 py-3 text-center text-sm font-semibold shadow-[4px_4px_0_var(--color-emerald)]"
-              >
-                Je suis une association
-              </a>
+              {user ? (
+                <div className="flex items-center justify-between p-2 rounded-xl border-2 border-ink bg-mustard">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink bg-paper font-bold">
+                      {initial}
+                    </div>
+                    <span className="text-xs font-bold truncate max-w-[150px]">{user.email}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setOuvert(false);
+                    }}
+                    className="p-2 rounded-lg bg-pink text-pink-foreground border border-ink"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setOuvert(false)}
+                    className="rounded-xl border-2 border-ink bg-paper px-4 py-3 text-center text-sm font-semibold shadow-[3px_3px_0_var(--color-ink)]"
+                  >
+                    Connexion
+                  </Link>
+                  <Link
+                    to="/inscription"
+                    search={{ role: "BENEVOLE" }}
+                    onClick={() => setOuvert(false)}
+                    className="rounded-xl border-2 border-ink bg-pink px-4 py-3 text-center text-sm font-semibold text-pink-foreground shadow-[4px_4px_0_var(--color-ink)]"
+                  >
+                    Devenir bénévole
+                  </Link>
+                  <Link
+                    to="/inscription"
+                    search={{ role: "ASSOCIATION" }}
+                    onClick={() => setOuvert(false)}
+                    className="rounded-xl border-2 border-ink bg-paper px-4 py-3 text-center text-sm font-semibold shadow-[4px_4px_0_var(--color-emerald)]"
+                  >
+                    Je suis une association
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         </div>
