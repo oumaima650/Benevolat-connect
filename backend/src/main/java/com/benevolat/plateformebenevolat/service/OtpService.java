@@ -1,57 +1,52 @@
 package com.benevolat.plateformebenevolat.service;
 
-import com.benevolat.plateformebenevolat.entity.OtpCode;
-import com.benevolat.plateformebenevolat.repository.OtpCodeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Service OTP (One-Time Password) pour la vérification de l'email lors de l'inscription.
- * Génère un code à 6 chiffres valable 10 minutes et l'envoie par email.
+ * Service OTP (One-Time Password) stocké en mémoire RAM (ConcurrentHashMap).
+ * Ne persiste aucun code dans la base de données MySQL.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class OtpService {
 
-    private final OtpCodeRepository otpRepository;
     private final JavaMailSender mailSender;
 
-    @Value("${otp.expiration.minutes:10}")
+    private final Map<String, OtpEntry> otpCache = new ConcurrentHashMap<>();
+
+    @Value("${otp.expiration.minutes:1}")
     private int expirationMinutes;
 
     @Value("${spring.mail.username:}")
     private String mailFrom;
 
+    private record OtpEntry(String code, LocalDateTime expiryDate) {
+        public boolean isExpired() {
+            return LocalDateTime.now().isAfter(expiryDate);
+        }
+    }
+
     /**
-     * Génère et envoie un OTP par email.
-     * Si un OTP précédent existe pour cet email, il est supprimé.
+     * Génère et envoie un OTP par email en le conservant uniquement en mémoire.
      */
-    @Transactional
     public void generateAndSendOtp(String email) {
-        // Supprimer les anciens OTPs pour cet email
-        otpRepository.deleteByEmail(email);
-
-        // Générer code 6 chiffres
         String code = String.format("%06d", new Random().nextInt(1_000_000));
+        LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(expirationMinutes);
 
-        OtpCode otp = new OtpCode();
-        otp.setEmail(email);
-        otp.setCode(code);
-        otp.setExpiryDate(LocalDateTime.now().plusMinutes(expirationMinutes));
-        otp.setUsed(false);
-        otpRepository.save(otp);
+        // Stockage en mémoire RAM
+        otpCache.put(email, new OtpEntry(code, expiryDate));
 
-        // Envoi email si MAIL_USERNAME est configuré
         if (mailFrom != null && !mailFrom.isBlank()) {
             try {
                 SimpleMailMessage message = new SimpleMailMessage();
@@ -59,55 +54,44 @@ public class OtpService {
                 message.setTo(email);
                 message.setSubject("CountMeIn — Votre code de vérification");
                 message.setText("Bonjour,\n\nVotre code de vérification CountMeIn est : " + code
-                        + "\n\nCe code est valable " + expirationMinutes + " minutes."
+                        + "\n\nCe code est valable " + expirationMinutes + " minute(s)."
                         + "\n\nSi vous n'avez pas demandé ce code, ignorez cet email."
                         + "\n\n— L'équipe CountMeIn");
                 mailSender.send(message);
-                log.info("OTP envoyé à : {}", email);
+                log.info("OTP (en mémoire) envoyé à : {}", email);
             } catch (Exception e) {
                 log.error("Erreur envoi email OTP à {} : {}", email, e.getMessage());
             }
         } else {
-            // Mode développement : affichage console
-            log.info("==== OTP DEV MODE ==== Code pour {} : {}", email, code);
+            log.info("==== OTP DEV MODE (En mémoire) ==== Code pour {} : {}", email, code);
         }
     }
 
     /**
-     * Vérifie un OTP soumis par l'utilisateur.
-     * Marque l'OTP comme utilisé si valide.
-     *
-     * @return true si l'OTP est valide et non expiré, false sinon.
+     * Vérifie un OTP depuis le cache en mémoire RAM.
      */
-    @Transactional
     public boolean verifyOtp(String email, String code) {
-        Optional<OtpCode> otpOpt = otpRepository.findTopByEmailOrderByExpiryDateDesc(email);
+        OtpEntry entry = otpCache.get(email);
 
-        if (otpOpt.isEmpty()) {
-            log.warn("Aucun OTP trouvé pour l'email : {}", email);
+        if (entry == null) {
+            log.warn("Aucun OTP en mémoire pour l'email : {}", email);
             return false;
         }
 
-        OtpCode otp = otpOpt.get();
-
-        if (otp.isUsed()) {
-            log.warn("OTP déjà utilisé pour : {}", email);
-            return false;
-        }
-
-        if (otp.isExpired()) {
+        if (entry.isExpired()) {
+            otpCache.remove(email);
             log.warn("OTP expiré pour : {}", email);
             return false;
         }
 
-        if (!otp.getCode().equals(code)) {
+        if (!entry.code().equals(code)) {
             log.warn("Code OTP incorrect pour : {}", email);
             return false;
         }
 
-        otp.setUsed(true);
-        otpRepository.save(otp);
-        log.info("OTP validé avec succès pour : {}", email);
+        // OTP valide : on le supprime de la mémoire (consommé)
+        otpCache.remove(email);
+        log.info("OTP (en mémoire) validé avec succès pour : {}", email);
         return true;
     }
 }
