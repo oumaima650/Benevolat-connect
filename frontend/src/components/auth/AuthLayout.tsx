@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Logo } from "@/components/site/Logo";
+import logoImage from "@/assets/logo.png";
 
 export const authInput =
   "border-2 border-ink rounded-xl bg-paper px-4 py-3 shadow-neo transition-all focus:shadow-neo-lg focus:translate-x-[-1px] focus:translate-y-[-1px] focus:outline-none font-medium text-ink placeholder:text-muted-foreground w-full";
@@ -21,7 +21,7 @@ export function AuthLayout({
     <div className="min-h-screen bg-paper flex flex-col justify-between p-4 sm:p-6 md:p-8">
       <header className="flex justify-between items-center max-w-5xl mx-auto w-full">
         <Link to="/" className="inline-block">
-          <Logo />
+          <img src={logoImage} alt="CountMeIn" className="h-10 w-auto" />
         </Link>
         <Link
           to="/"

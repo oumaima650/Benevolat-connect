@@ -10,14 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CertificatRouteImport } from './routes/certificat'
 import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as MissionsIndexRouteImport } from './routes/missions.index'
+import { Route as MissionsIdRouteImport } from './routes/missions.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CertificatRoute = CertificatRouteImport.update({
+  id: '/certificat',
+  path: '/certificat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InscriptionRoute = InscriptionRouteImport.update({
@@ -30,6 +39,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MissionsRoute = MissionsRouteImport.update({
+  id: '/missions',
+  path: '/missions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
   id: '/mot-de-passe-oublie',
   path: '/mot-de-passe-oublie',
@@ -40,49 +54,91 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MissionsIndexRoute = MissionsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MissionsRoute,
+} as any)
+const MissionsIdRoute = MissionsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MissionsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/certificat': typeof CertificatRoute
   '/inscription': typeof InscriptionRoute
   '/login': typeof LoginRoute
+  '/missions': typeof MissionsRouteWithChildren
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/missions/$id': typeof MissionsIdRoute
+  '/missions/': typeof MissionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/certificat': typeof CertificatRoute
   '/inscription': typeof InscriptionRoute
   '/login': typeof LoginRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/missions/$id': typeof MissionsIdRoute
+  '/missions': typeof MissionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/certificat': typeof CertificatRoute
   '/inscription': typeof InscriptionRoute
   '/login': typeof LoginRoute
+  '/missions': typeof MissionsRouteWithChildren
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/missions/$id': typeof MissionsIdRoute
+  '/missions/': typeof MissionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/inscription' | '/login' | '/mot-de-passe-oublie' | '/reset-password'
+    | '/'
+    | '/certificat'
+    | '/inscription'
+    | '/login'
+    | '/missions'
+    | '/mot-de-passe-oublie'
+    | '/reset-password'
+    | '/missions/$id'
+    | '/missions/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/inscription' | '/login' | '/mot-de-passe-oublie' | '/reset-password'
-  id:
-    | '__root__'
     | '/'
+    | '/certificat'
     | '/inscription'
     | '/login'
     | '/mot-de-passe-oublie'
     | '/reset-password'
+    | '/missions/$id'
+    | '/missions'
+  id:
+    | '__root__'
+    | '/'
+    | '/certificat'
+    | '/inscription'
+    | '/login'
+    | '/missions'
+    | '/mot-de-passe-oublie'
+    | '/reset-password'
+    | '/missions/$id'
+    | '/missions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CertificatRoute: typeof CertificatRoute
   InscriptionRoute: typeof InscriptionRoute
   LoginRoute: typeof LoginRoute
+  MissionsRoute: typeof MissionsRouteWithChildren
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
 }
@@ -94,6 +150,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/certificat': {
+      id: '/certificat'
+      path: '/certificat'
+      fullPath: '/certificat'
+      preLoaderRoute: typeof CertificatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inscription': {
@@ -110,6 +173,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/missions': {
+      id: '/missions'
+      path: '/missions'
+      fullPath: '/missions'
+      preLoaderRoute: typeof MissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mot-de-passe-oublie': {
       id: '/mot-de-passe-oublie'
       path: '/mot-de-passe-oublie'
@@ -124,13 +194,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/missions/': {
+      id: '/missions/'
+      path: '/'
+      fullPath: '/missions/'
+      preLoaderRoute: typeof MissionsIndexRouteImport
+      parentRoute: typeof MissionsRoute
+    }
+    '/missions/$id': {
+      id: '/missions/$id'
+      path: '/$id'
+      fullPath: '/missions/$id'
+      preLoaderRoute: typeof MissionsIdRouteImport
+      parentRoute: typeof MissionsRoute
+    }
   }
 }
 
+interface MissionsRouteChildren {
+  MissionsIdRoute: typeof MissionsIdRoute
+  MissionsIndexRoute: typeof MissionsIndexRoute
+}
+
+const MissionsRouteChildren: MissionsRouteChildren = {
+  MissionsIdRoute: MissionsIdRoute,
+  MissionsIndexRoute: MissionsIndexRoute,
+}
+
+const MissionsRouteWithChildren = MissionsRoute._addFileChildren(
+  MissionsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CertificatRoute: CertificatRoute,
   InscriptionRoute: InscriptionRoute,
   LoginRoute: LoginRoute,
+  MissionsRoute: MissionsRouteWithChildren,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   ResetPasswordRoute: ResetPasswordRoute,
 }

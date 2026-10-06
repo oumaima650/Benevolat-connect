@@ -23,6 +23,9 @@ import {
 } from "@/services/authApi";
 
 export const Route = createFileRoute("/inscription")({
+  validateSearch: z.object({
+    role: z.enum(["BENEVOLE", "ASSOCIATION"]).optional(),
+  }),
   head: () => ({
     meta: [
       { title: "Inscription — CountMeIn" },
@@ -63,8 +66,9 @@ const assoSchema = z.object({
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const siteKey = import.meta.env["VITE_RECAPTCHA_SITE_KEY"] as string | undefined;
-  const [role, setRole] = useState<Role>("BENEVOLE");
+  const [role, setRole] = useState<Role>(search.role ?? "BENEVOLE");
 
   // Catalogue chargé depuis le backend
   const [catalogCompetences, setCatalogCompetences] = useState<CompetenceItem[]>([]);

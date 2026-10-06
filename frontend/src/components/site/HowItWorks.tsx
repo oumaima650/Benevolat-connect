@@ -18,7 +18,9 @@ export function HowItWorks() {
 
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           {etapes.map((etape, index) => {
-            const { Icon, couleur, fond } = motifs[index % motifs.length]!;
+            const motif = motifs[index % motifs.length];
+            if (!motif) return null;
+            const { Icon, couleur, fond } = motif;
             return (
               <article
                 key={etape.numero}

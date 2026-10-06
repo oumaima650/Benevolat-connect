@@ -54,11 +54,14 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Endpoints publics (authentification, OTP, catalogue des compétences & centres d'intérêt)
+                // Endpoints publics (authentification, statistiques, missions, associations, catalogue)
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/competences/**",
-                    "/api/domaines/**"
+                    "/api/domaines/**",
+                    "/api/stats/**",
+                    "/api/missions/**",
+                    "/api/associations/**"
                 ).permitAll()
                 // Toutes les autres requêtes API nécessitent un JWT valide
                 .requestMatchers("/api/**").authenticated()

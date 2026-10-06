@@ -14,5 +14,17 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
+    host: true,
+    strictPort: false,
+    watch: {
+      usePolling: true,
+      interval: 200,
+      binaryInterval: 400,
+    },
+  },
+  preview: {
+    port: 4173,
+    host: true,
   },
 });
+

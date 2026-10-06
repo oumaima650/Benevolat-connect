@@ -1,46 +1,71 @@
 package com.benevolat.plateformebenevolat.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * Classe abstraite de base représentant un Utilisateur système
- * selon le Diagramme de Classe et le MCD (Inheritance JOINED).
- */
 @Entity
 @Table(name = "utilisateurs")
 @Inheritance(strategy = InheritanceType.JOINED)
 @Getter
 @Setter
 @NoArgsConstructor
-public abstract class Utilisateur {
+@AllArgsConstructor
+public class Utilisateur {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "idUtilisateur")
+    private Long idUtilisateur;
+
+    public Long getId() {
+        return idUtilisateur;
+    }
+
+    public void setId(Long id) {
+        this.idUtilisateur = id;
+    }
 
     @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
+    private String motDePasse;
+
     private String motDePasseHash;
 
-    @Enumerated(EnumType.STRING)
+    private String token;
+
+    @Column(length = 500)
+    private String photoProfil;
+
     @Column(nullable = false)
+    private String Active = "actif";
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "statut")
     private StatutUtilisateur statut = StatutUtilisateur.ACTIF;
+
+    @Column(nullable = false)
+    private Boolean notifEstActive = true;
 
     private boolean notifActivite = true;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -48,4 +73,11 @@ public abstract class Utilisateur {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    public Utilisateur(String email, String motDePasse, String photoProfil) {
+        this.email = email;
+        this.motDePasse = motDePasse;
+        this.photoProfil = photoProfil;
+    }
 }
+

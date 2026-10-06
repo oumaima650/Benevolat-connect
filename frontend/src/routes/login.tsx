@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 
 import { AuthLayout, FormError, FormSuccess, authButton, authInput } from "@/components/auth/AuthLayout";
@@ -7,9 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login } from "@/services/authApi";
+import { useAuth } from "@/context/AuthContext";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: z.object({ reset: z.string().optional(), registered: z.string().optional() }),
+  validateSearch: z.object({
+    reset: z.string().optional(),
+    registered: z.string().optional(),
+    redirect: z.string().optional(),
+  }),
   head: () => ({
     meta: [
       { title: "Connexion — CountMeIn" },
@@ -20,7 +25,10 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { reset, registered } = Route.useSearch();
+  const { reset, registered, redirect } = Route.useSearch();
+  const navigate = useNavigate();
+  const { loginUser } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +43,17 @@ function LoginPage() {
       const res = await login(email.trim(), password);
       if (res.success) {
         setSuccess("Connexion réussie !");
+        const token = res.token || "demo_token_" + Date.now();
+        const userData = res.user || { email: email.trim(), role: "BENEVOLE" };
+        loginUser(userData, token);
+
+        setTimeout(() => {
+          if (redirect) {
+            navigate({ to: redirect as any });
+          } else {
+            navigate({ to: "/" });
+          }
+        }, 800);
       } else {
         setError(res.message || "Identifiants invalides.");
       }
