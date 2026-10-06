@@ -1,9 +1,9 @@
 # CountMeIn — Plateforme de Bénévolat Intelligente
 
-**Mise en relation, liste d'attente automatique, matching par IA et certification de l'engagement.**  
-*Projet WEB (2026–2027) — ENSA Tétouan (Filière Génie Informatique)*  
-**Réalisé par :** Ameziane Oumaima & Mohito Raihana  
-**Encadré par :** Pr. EL HAJJAMY OUSSAMA  
+**Mise en relation, liste d'attente automatique, matching par IA et certification de l'engagement.**
+*Projet WEB (2026–2027) — ENSA Tétouan (Filière Génie Informatique)*
+**Réalisé par :** Ameziane Oumaima & Mohito Raihana
+**Encadré par :** Pr. EL HAJJAMY OUSSAMA
 
 ---
 
@@ -12,6 +12,7 @@
 Le bénévolat joue un rôle essentiel dans la vie sociale et solidaire. Cependant, la mise en relation entre les associations et les bénévoles reste souvent artisanale (annonces éparpillées, manque de transparence sur l'attribution des places, désistements non gérés, absence de vérification simple des attestations).
 
 **CountMeIn** apporte une solution web complète et automatisée qui va au-delà d'un simple CRUD :
+
 - **Matching Intelligent par IA :** Recommandation personnalisée de missions avec score (0-100) et explications en langage naturel (avec formule de secours : 45% Proximité, 35% Affinité, 20% Besoin).
 - **Inscription Équitable & Liste d'Attente Automatique :** Règle du « premier arrivé, premier servi » avec basculement automatique des bénévoles de la liste d'attente vers une place confirmée lors d'un désistement.
 - **Renfort Urgent en cours de mission :** Gestion des besoins de dernière minute lorsque la mission est en cours (`RENFORT_URGENT`).
@@ -24,16 +25,16 @@ Le bénévolat joue un rôle essentiel dans la vie sociale et solidaire. Cependa
 
 ## Stack Technique
 
-| Couche | Technologie |
-|---|---|
-| **Langage & Backend** | Java 21, Spring Boot 3.x (Spring Security, Spring Data JPA, JavaMailSender) |
-| **Sécurité & Auth** | Stateless JWT (JSON Web Token), OTP en mémoire (RAM), reCAPTCHA v2 Google |
-| **Base de Données** | MySQL 8.x (Héritage JPA `JOINED` pour `Utilisateur`, `@ManyToMany` pour `Domaine`) |
-| **Frontend** | React 19, TypeScript, Vite, `@tanstack/react-router` |
-| **Style & UI** | Tailwind CSS v4, Lucide Icons, Shadcn UI |
-| **Intelligence Artificielle** | API Modèle de langage (LLM) pour scoring et génération de messages |
-| **Automatisation** | n8n (workflows Docker, webhooks backend, SMTP) |
-| **Cartographie & PDF** | Leaflet, OpenStreetMap, OpenPDF / iText |
+| Couche                              | Technologie                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Langage & Backend**         | Java 21, Spring Boot 3.x (Spring Security, Spring Data JPA, JavaMailSender)                |
+| **Sécurité & Auth**         | Stateless JWT (JSON Web Token), OTP en mémoire (RAM), reCAPTCHA v2 Google                 |
+| **Base de Données**          | MySQL 8.x (Héritage JPA`JOINED` pour `Utilisateur`, `@ManyToMany` pour `Domaine`) |
+| **Frontend**                  | React 19, TypeScript, Vite,`@tanstack/react-router`                                      |
+| **Style & UI**                | Tailwind CSS v4, Lucide Icons, Shadcn UI                                                   |
+| **Intelligence Artificielle** | API Modèle de langage (LLM) pour scoring et génération de messages                      |
+| **Automatisation**            | n8n (workflows Docker, webhooks backend, SMTP)                                             |
+| **Cartographie & PDF**        | Leaflet, OpenStreetMap, OpenPDF / iText                                                    |
 
 ---
 
@@ -63,6 +64,7 @@ Le bénévolat joue un rôle essentiel dans la vie sociale et solidaire. Cependa
 ## Cycle de Vie d'une Mission
 
 Une mission suit un cycle d'états automatisé encadré par les règles métier :
+
 1. `BROUILLON` : Rédaction par l'association.
 2. `PUBLIEE` : Mission publique ouverte aux inscriptions.
 3. `COMPLETE` : Nombre maximum de places atteint (inscriptions redirigées vers la liste d'attente).
@@ -77,6 +79,7 @@ Une mission suit un cycle d'états automatisé encadré par les règles métier 
 ## Lancement Rapide
 
 ### 1. Prérequis
+
 - **Java 21** ou supérieur
 - **Node.js 18+** & `npm`
 - **MySQL 8.x**
@@ -86,20 +89,24 @@ Une mission suit un cycle d'états automatisé encadré par les règles métier 
 ### 2. Configuration & Démarrage du Backend
 
 1. Rendez-vous dans le dossier `backend` :
+
    ```bash
    cd backend
    ```
 2. Créez votre fichier local `.env` depuis le modèle :
+
    ```bash
    cp .env.example .env
    ```
-   *(Ajustez vos identifiants MySQL `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET` et `MAIL_PASSWORD` dans `.env`).*
 
+   *(Ajustez vos identifiants MySQL `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET` et `MAIL_PASSWORD` dans `.env`).*
 3. Démarrez le serveur Spring Boot :
+
    ```bash
    ./mvnw spring-boot:run
    ```
-   *L'API REST s'exécute sur `http://localhost:8080`.*  
+
+   *L'API REST s'exécute sur `http://localhost:8080`.*
    *(Au démarrage, `DataInitializer` injecte automatiquement les 12 domaines d'activité et compétences).*
 
 ---
@@ -107,14 +114,17 @@ Une mission suit un cycle d'états automatisé encadré par les règles métier 
 ### 3. Démarrage du Frontend
 
 1. Rendez-vous dans le dossier `frontend` :
+
    ```bash
    cd frontend
    ```
 2. Installez les dépendances et lancez le serveur Vite :
+
    ```bash
    npm install
    npm run dev
    ```
+
    *L'application React est accessible sur `http://localhost:5173`.*
 
 ---
@@ -122,6 +132,7 @@ Une mission suit un cycle d'états automatisé encadré par les règles métier 
 ## Endpoints Principaux de l'API REST
 
 ### Authentification (`/api/auth`)
+
 - `POST /api/auth/register` : Inscription Bénévole ou Association (renvoie un token JWT)
 - `POST /api/auth/login` : Connexion utilisateur (renvoie un token JWT)
 - `POST /api/auth/send-otp` : Génération et envoi d'un OTP par email (stockage en mémoire RAM)
@@ -130,10 +141,12 @@ Une mission suit un cycle d'états automatisé encadré par les règles métier 
 - `POST /api/auth/verify-recaptcha` : Vérification du captcha Google v2
 
 ### Catalogues & Données Partagées (`/api`)
+
 - `GET /api/domaines` : Liste des 12 domaines d'activité partagés (badges UI)
 - `GET /api/competences` : Liste des compétences bénévoles
 
 ### Missions (`/api/missions`)
+
 - `GET /api/missions/search?q={keyword}&ville={ville}&domaine={domaine}` : Recherche multi-critères
 - `GET /api/missions/featured` : Missions à la une
 - `GET /api/missions/{id}` : Détails d'une mission
@@ -141,24 +154,16 @@ Une mission suit un cycle d'états automatisé encadré par les règles métier 
 - `POST /api/missions/{id}/cancel` : Annulation d'inscription par le bénévole
 
 ### Certificats (`/api/certificates`)
+
 - `POST /api/certificates/generate` : Délivrance d'un certificat PDF par l'association
 - `GET /api/certificates/verify/{code}` : Vérification publique d'authenticité par code unique
 
 ### Statistiques & Impact (`/api/stats`)
+
 - `GET /api/stats` : Statistiques d'impact (missions, heures, bénévoles, associations)
 
 ---
 
-## Codes de Démonstration pour la Vérification de Certificats
-
-- **Valides :**
-  - `CERT-2026-8821` (Thomas Dubois — Maraude nocturne — 18h)
-  - `CERT-2026-9932` (Sarah Martin — Collecte alimentaire — 24h)
-  - `CERT-2026-1104` (Lucas Bernard — Nettoyage plage — 12h)
-  - `CERT-2026-7745` (Emma Petit — Soutien scolaire — 30h)
-- **Invalide :** `CERT-INVALID-0000`
-
----
 
 ## Sécurité & Conformité
 
