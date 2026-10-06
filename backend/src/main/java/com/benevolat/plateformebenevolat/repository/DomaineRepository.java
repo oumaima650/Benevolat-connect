@@ -9,4 +9,7 @@ import java.util.Optional;
 @Repository
 public interface DomaineRepository extends JpaRepository<Domaine, Long> {
     Optional<Domaine> findByNom(String nom);
+    Optional<Domaine> findByNomIgnoreCase(String nom);
+    boolean existsByNomIgnoreCase(String nom);
 }
+

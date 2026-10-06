@@ -35,13 +35,13 @@ export function MissionSearch({ limite, titre = "Rechercher une mission" }: { li
         domaine: filtres.domaine,
       })
       .then((data) => {
-        if (data.length > 0) setBackendMissions(data);
+        setBackendMissions(data);
       })
       .catch(() => {});
   }, [filtres]);
 
   const resultats = useMemo(() => {
-    const source = backendMissions && backendMissions.length > 0 ? backendMissions : fallbackRechercher(filtres);
+    const source = backendMissions !== null ? backendMissions : fallbackRechercher(filtres);
     let r = source.map((m) => ({ m, d: position ? distanceKm(position, m) : undefined }));
     if (position) {
       if (rayon) r = r.filter((x) => (x.d ?? 0) <= rayon);
