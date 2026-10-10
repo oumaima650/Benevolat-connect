@@ -15,7 +15,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, getInitial } from '@/context/AuthContext';
 import logoImage from '@/assets/logo.png';
 import {
   DropdownMenu,
@@ -96,8 +96,16 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         </ul>
       </nav>
 
-      {/* Logout */}
-      <div className="border-t-2 border-ink p-4">
+      {/* Logout + Retour accueil */}
+      <div className="border-t-2 border-ink p-4 space-y-2">
+        <Link
+          to="/"
+          onClick={onClose}
+          className="flex w-full items-center gap-3 rounded-xl border-2 border-ink bg-emerald px-3 py-2.5 text-sm font-semibold text-emerald-foreground shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90"
+        >
+          <span aria-hidden="true">←</span>
+          Retour à l'accueil
+        </Link>
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-xl border-2 border-ink bg-paper px-3 py-2.5 text-sm font-semibold text-ink shadow-[3px_3px_0_var(--color-ink)] hover:bg-muted"
@@ -114,6 +122,7 @@ function AssociationLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const userInitial = getInitial(user);
 
   // Protection d'accès : redirige si non connecté ou mauvais rôle
   if (!user) {
@@ -133,9 +142,9 @@ function AssociationLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-paper">
-      {/* Desktop Sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r-2 border-ink bg-paper lg:flex lg:flex-col">
+    <div className="flex h-screen overflow-hidden bg-paper">
+      {/* Desktop Sidebar — fixe, ne scroll pas */}
+      <aside className="hidden w-64 shrink-0 border-r-2 border-ink bg-paper lg:flex lg:flex-col h-screen sticky top-0">
         <SidebarContent />
       </aside>
 
@@ -147,7 +156,7 @@ function AssociationLayout() {
       </Sheet>
 
       {/* Main */}
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {/* Pending validation banner */}
         {isPending && (
           <div className="flex items-center gap-2 border-b-2 border-yellow-400 bg-yellow-50 px-4 py-2.5 text-sm font-semibold text-yellow-800">
@@ -188,10 +197,10 @@ function AssociationLayout() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex items-center gap-2 rounded-xl border-2 border-ink bg-emerald px-3 py-1.5 text-sm font-bold text-emerald-foreground shadow-[2px_2px_0_var(--color-ink)] hover:opacity-90"
+                  className="flex items-center gap-2 rounded-xl border-2 border-ink bg-emerald px-3 py-1.5 text-sm font-bold text-emerald-foreground shadow-[2px_2px_0_var(--color-ink)] hover:opacity-90 uppercase"
                   aria-label="Menu association"
                 >
-                  <span>AN</span>
+                  <span>{userInitial}</span>
                   <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>

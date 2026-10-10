@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu, X, LogOut, LayoutDashboard } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { useAuth, getInitial } from "@/context/AuthContext";
 
@@ -55,20 +55,13 @@ export function Header() {
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
+              {/* Avatar cliquable — initiales correctes, redirige vers le bon dashboard */}
               <button
                 onClick={goToDashboard}
                 title={user.role === "ASSOCIATION" ? "Espace Association" : "Espace Bénévole"}
-                className="press flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-mustard text-lg font-extrabold text-ink shadow-[3px_3px_0_var(--color-ink)] hover:bg-pink hover:text-pink-foreground transition-colors"
+                className="press flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-mustard text-sm font-extrabold text-ink shadow-[3px_3px_0_var(--color-ink)] hover:bg-pink hover:text-pink-foreground transition-colors uppercase"
               >
                 {initial}
-              </button>
-              <button
-                onClick={goToDashboard}
-                title="Mon espace"
-                className="press hidden sm:inline-flex items-center gap-1.5 rounded-xl border-2 border-ink bg-mustard px-4 py-2.5 text-sm font-semibold shadow-[3px_3px_0_var(--color-ink)] hover:bg-pink hover:text-pink-foreground"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Mon espace
               </button>
               <button
                 onClick={logout}
@@ -135,30 +128,21 @@ export function Header() {
               {user ? (
                 <div className="flex items-center justify-between p-2 rounded-xl border-2 border-ink bg-mustard">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink bg-paper font-bold">
-                      {initial}
-                    </div>
-                    <span className="text-xs font-bold truncate max-w-[120px]">{user.email}</span>
-                  </div>
-                  <div className="flex gap-1">
                     <button
                       onClick={() => { goToDashboard(); setOuvert(false); }}
-                      className="p-2 rounded-lg bg-paper text-ink border border-ink"
-                      title="Mon espace"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink bg-paper text-sm font-extrabold text-ink uppercase"
                     >
-                      <LayoutDashboard className="h-4 w-4" />
+                      {initial}
                     </button>
-                    <button
-                      onClick={() => {
-                        logout();
-                        setOuvert(false);
-                      }}
-                      className="p-2 rounded-lg bg-pink text-pink-foreground border border-ink"
-                      title="Déconnexion"
-                    >
-                      <LogOut className="h-4 w-4" />
-                    </button>
+                    <span className="text-xs font-bold truncate max-w-[120px]">{user.email}</span>
                   </div>
+                  <button
+                    onClick={() => { logout(); setOuvert(false); }}
+                    className="p-2 rounded-lg bg-pink text-pink-foreground border border-ink"
+                    title="Déconnexion"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
                 </div>
               ) : (
                 <>

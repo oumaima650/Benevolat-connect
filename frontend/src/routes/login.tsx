@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { Eye, EyeOff } from "lucide-react";
 
 import { AuthLayout, FormError, FormSuccess, authButton, authInput } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login } from "@/services/authApi";
 import { useAuth } from "@/context/AuthContext";
@@ -31,6 +31,7 @@ function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,21 +47,8 @@ function LoginPage() {
         const token = res.token || "demo_token_" + Date.now();
         const userData = res.user || { email: email.trim(), role: "BENEVOLE" };
         loginUser(userData, token);
-
         setTimeout(() => {
-          if (redirect) {
-            navigate({ to: redirect as any });
-          } else {
-            // Redirection selon le rôle
-            const role = userData.role ?? "BENEVOLE";
-            if (role === "ASSOCIATION") {
-              navigate({ to: "/association" });
-            } else if (role === "ADMIN") {
-              navigate({ to: "/" });
-            } else {
-              navigate({ to: "/benevole" });
-            }
-          }
+          navigate({ to: redirect ? (redirect as any) : "/" });
         }, 800);
       } else {
         setError(res.message || "Identifiants invalides.");
@@ -73,30 +61,96 @@ function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Connexion" subtitle="Content de te revoir !">
-      <form onSubmit={onSubmit} className="space-y-4">
-        {registered && <FormSuccess message="Compte créé avec succès ! Tu peux maintenant te connecter." />}
-        {reset && <FormSuccess message="Mot de passe modifié. Tu peux te connecter." />}
+    <AuthLayout title="Connexion" subtitle="Content de te revoir sur CountMeIn !">
+      <form onSubmit={onSubmit} className="space-y-5">
+        {registered && (
+          <FormSuccess message="Compte créé avec succès ! Tu peux maintenant te connecter." />
+        )}
+        {reset && (
+          <FormSuccess message="Mot de passe modifié. Tu peux te connecter." />
+        )}
         <FormSuccess message={success} />
         <FormError message={error} />
-        <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
-          <Input id="email" type="email" required autoComplete="email" className={authInput} value={email} onChange={(e) => setEmail(e.target.value)} />
+
+        {/* Email */}
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-sm font-bold text-ink">
+            Adresse e-mail
+          </Label>
+          <input
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="toi@example.ma"
+            className={authInput}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Mot de passe</Label>
-          <Input id="password" type="password" required autoComplete="current-password" className={authInput} value={password} onChange={(e) => setPassword(e.target.value)} />
+
+        {/* Mot de passe */}
+        <div className="space-y-1.5">
+          <Label htmlFor="password" className="text-sm font-bold text-ink">
+            Mot de passe
+          </Label>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPwd ? "text" : "password"}
+              required
+              autoComplete="current-password"
+              placeholder="••••••••"
+              className={authInput + " pr-11"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPwd((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-ink"
+              aria-label={showPwd ? "Masquer" : "Afficher"}
+            >
+              {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          <Link
+            to="/mot-de-passe-oublie"
+            className="inline-block text-xs font-bold text-ink underline underline-offset-2 hover:text-pink"
+          >
+            Mot de passe oublié ?
+          </Link>
         </div>
-        <Link to="/mot-de-passe-oublie" className="block text-sm font-bold text-ink underline hover:text-pink">
-          Mot de passe oublié ?
-        </Link>
+
+        {/* Submit */}
         <Button type="submit" disabled={loading} className={authButton}>
-          {loading ? "Connexion…" : "Se connecter"}
+          {loading ? "Connexion en cours…" : "Se connecter →"}
         </Button>
-        <p className="text-center text-sm font-medium">
-          Pas encore de compte ?{" "}
-          <Link to="/inscription" className="font-bold underline hover:text-pink">Inscris-toi</Link>
-        </p>
+
+        {/* Séparateur */}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex-1 h-px bg-border" />
+          ou
+          <span className="flex-1 h-px bg-border" />
+        </div>
+
+        {/* Liens inscription */}
+        <div className="grid grid-cols-2 gap-3">
+          <Link
+            to="/inscription"
+            search={{ role: "BENEVOLE" }}
+            className="press flex items-center justify-center rounded-xl border-2 border-ink bg-mustard px-3 py-2.5 text-xs font-bold text-ink shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90 text-center"
+          >
+            Devenir bénévole
+          </Link>
+          <Link
+            to="/inscription"
+            search={{ role: "ASSOCIATION" }}
+            className="press flex items-center justify-center rounded-xl border-2 border-ink bg-emerald px-3 py-2.5 text-xs font-bold text-emerald-foreground shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90 text-center"
+          >
+            Inscrire mon association
+          </Link>
+        </div>
       </form>
     </AuthLayout>
   );

@@ -241,13 +241,9 @@ function RegisterPage() {
           logoUrl: role === "ASSOCIATION" ? payload.logoUrl : undefined,
         };
         loginUser(userData, token);
-        setSuccess("Compte créé avec succès ! Redirection vers votre espace…");
+        setSuccess("Compte créé avec succès ! Redirection vers l'accueil…");
         setTimeout(() => {
-          if (role === "ASSOCIATION") {
-            navigate({ to: "/association" });
-          } else {
-            navigate({ to: "/benevole" });
-          }
+          navigate({ to: "/" });
         }, 1200);
       } else {
         setError(res.message || "Échec de la création du compte.");
@@ -416,9 +412,9 @@ function RegisterPage() {
             {/* Sélection des Domaines (partagé) */}
             <DomaineSelector />
 
-            <div className="space-y-2">
-              <Label htmlFor="biographie">Biographie / Présentation</Label>
-              <Textarea id="biographie" className={authInput} value={form.biographie} onChange={set("biographie")} placeholder="Présentez-vous en quelques mots..." />
+            <div className="space-y-1.5">
+              <Label htmlFor="biographie" className="text-sm font-bold text-ink">Biographie / Présentation</Label>
+              <Textarea id="biographie" className={authInput} value={form.biographie} onChange={set("biographie")} placeholder="Présentez-vous en quelques mots…" />
             </div>
           </>
         )}
@@ -440,9 +436,9 @@ function RegisterPage() {
             {/* Sélection des Domaines (partagé) */}
             <DomaineSelector />
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description de l'association</Label>
-              <Textarea id="description" className={authInput} value={form.description} onChange={set("description")} placeholder="Objectifs de votre association..." />
+            <div className="space-y-1.5">
+              <Label htmlFor="description" className="text-sm font-bold text-ink">Description de l'association</Label>
+              <Textarea id="description" className={authInput} value={form.description} onChange={set("description")} placeholder="Objectifs de votre association…" />
             </div>
           </>
         )}
@@ -456,20 +452,20 @@ function RegisterPage() {
         <Button type="submit" disabled={loading} className={authButton}>
           {loading ? "Création en cours…" : "Créer mon compte"}
         </Button>
-        <p className="text-center text-sm font-medium">
+        <p className="text-center text-sm font-medium text-muted-foreground">
           Déjà inscrit(e) ?{" "}
-          <Link to="/login" className="font-bold underline hover:text-pink">Connecte-toi</Link>
+          <Link to="/login" className="font-bold text-ink underline underline-offset-2 hover:text-pink">Connecte-toi</Link>
         </p>
       </form>
     </AuthLayout>
   );
 }
 
-function Field({ id, label, ...props }: { id: string; label: string } & React.ComponentProps<typeof Input>) {
+function Field({ id, label, ...props }: { id: string; label: string } & React.ComponentPropsWithoutRef<"input">) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input id={id} className={authInput} {...props} />
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-sm font-bold text-ink">{label}</Label>
+      <input id={id} className={authInput} {...props} />
     </div>
   );
 }

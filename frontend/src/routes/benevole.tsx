@@ -14,7 +14,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, getInitial } from '@/context/AuthContext';
 import logoImage from '@/assets/logo.png';
 import {
   DropdownMenu,
@@ -94,8 +94,16 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         </ul>
       </nav>
 
-      {/* Logout */}
-      <div className="border-t-2 border-ink p-4">
+      {/* Logout + Retour accueil */}
+      <div className="border-t-2 border-ink p-4 space-y-2">
+        <Link
+          to="/"
+          onClick={onClose}
+          className="flex w-full items-center gap-3 rounded-xl border-2 border-ink bg-mustard px-3 py-2.5 text-sm font-semibold text-ink shadow-[3px_3px_0_var(--color-ink)] hover:bg-mustard/80"
+        >
+          <span aria-hidden="true">←</span>
+          Retour à l'accueil
+        </Link>
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-xl border-2 border-ink bg-paper px-3 py-2.5 text-sm font-semibold text-ink shadow-[3px_3px_0_var(--color-ink)] hover:bg-muted"
@@ -112,6 +120,7 @@ function BenevoleLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const userInitial = getInitial(user);
 
   // Protection d'accès : redirige si non connecté ou mauvais rôle
   if (!user) {
@@ -129,9 +138,9 @@ function BenevoleLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-paper">
-      {/* Desktop Sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r-2 border-ink bg-paper lg:flex lg:flex-col">
+    <div className="flex h-screen overflow-hidden bg-paper">
+      {/* Desktop Sidebar — fixe, ne scroll pas */}
+      <aside className="hidden w-64 shrink-0 border-r-2 border-ink bg-paper lg:flex lg:flex-col h-screen sticky top-0">
         <SidebarContent />
       </aside>
 
@@ -143,7 +152,7 @@ function BenevoleLayout() {
       </Sheet>
 
       {/* Main */}
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b-2 border-ink bg-paper px-4">
           <div className="flex items-center gap-3">
@@ -174,10 +183,10 @@ function BenevoleLayout() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex items-center gap-2 rounded-xl border-2 border-ink bg-mustard px-3 py-1.5 text-sm font-bold text-ink shadow-[2px_2px_0_var(--color-ink)] hover:opacity-90"
+                  className="flex items-center gap-2 rounded-xl border-2 border-ink bg-mustard px-3 py-1.5 text-sm font-bold text-ink shadow-[2px_2px_0_var(--color-ink)] hover:opacity-90 uppercase"
                   aria-label="Menu utilisateur"
                 >
-                  <span>YE</span>
+                  <span>{userInitial}</span>
                   <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>

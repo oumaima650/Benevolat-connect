@@ -3,7 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { AuthLayout, FormError, FormSuccess, authButton, authInput } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { forgotPassword } from "@/services/authApi";
 
@@ -29,28 +28,52 @@ function ForgotPasswordPage() {
     setLoading(true);
     try {
       await forgotPassword(email.trim());
-      setSuccess("Un e-mail de réinitialisation a été envoyé si un compte existe avec cette adresse.");
+      setSuccess(
+        "Si un compte existe avec cette adresse, vous recevrez un e-mail de réinitialisation dans quelques minutes."
+      );
     } catch {
-      setError("Une erreur est survenue.");
+      setError("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <AuthLayout title="Mot de passe oublié ?" subtitle="Entrez votre e-mail pour recevoir un lien de réinitialisation.">
-      <form onSubmit={onSubmit} className="space-y-4">
+    <AuthLayout
+      title="Mot de passe oublié ?"
+      subtitle="Entrez votre e-mail pour recevoir un lien de réinitialisation."
+    >
+      <form onSubmit={onSubmit} className="space-y-5">
         <FormSuccess message={success} />
         <FormError message={error} />
-        <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
-          <Input id="email" type="email" required autoComplete="email" className={authInput} value={email} onChange={(e) => setEmail(e.target.value)} />
+
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-sm font-bold text-ink">
+            Adresse e-mail
+          </Label>
+          <input
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="toi@example.ma"
+            className={authInput}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
+
         <Button type="submit" disabled={loading} className={authButton}>
-          {loading ? "Envoi…" : "Envoyer le lien"}
+          {loading ? "Envoi en cours…" : "Envoyer le lien →"}
         </Button>
-        <p className="text-center text-sm font-medium">
-          <Link to="/login" className="font-bold underline hover:text-pink">← Retour à la connexion</Link>
+
+        <p className="text-center text-sm font-medium text-muted-foreground">
+          <Link
+            to="/login"
+            className="font-bold text-ink underline underline-offset-2 hover:text-pink"
+          >
+            ← Retour à la connexion
+          </Link>
         </p>
       </form>
     </AuthLayout>
