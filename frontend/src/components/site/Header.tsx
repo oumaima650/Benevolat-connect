@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { Menu, X, LogOut, User } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Menu, X, LogOut, LayoutDashboard } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { useAuth, getInitial } from "@/context/AuthContext";
 
@@ -14,7 +14,17 @@ const liens = [
 export function Header() {
   const [ouvert, setOuvert] = useState(false);
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const initial = getInitial(user);
+
+  function goToDashboard() {
+    if (!user) return;
+    if (user.role === "ASSOCIATION") {
+      navigate({ to: "/association" });
+    } else {
+      navigate({ to: "/benevole" });
+    }
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b-4 border-ink bg-paper w-full">
@@ -45,16 +55,25 @@ export function Header() {
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
-              <div
-                title={user.email}
-                className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-mustard text-lg font-extrabold text-ink shadow-[3px_3px_0_var(--color-ink)]"
+              <button
+                onClick={goToDashboard}
+                title={user.role === "ASSOCIATION" ? "Espace Association" : "Espace Bénévole"}
+                className="press flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-mustard text-lg font-extrabold text-ink shadow-[3px_3px_0_var(--color-ink)] hover:bg-pink hover:text-pink-foreground transition-colors"
               >
                 {initial}
-              </div>
+              </button>
+              <button
+                onClick={goToDashboard}
+                title="Mon espace"
+                className="press hidden sm:inline-flex items-center gap-1.5 rounded-xl border-2 border-ink bg-mustard px-4 py-2.5 text-sm font-semibold shadow-[3px_3px_0_var(--color-ink)] hover:bg-pink hover:text-pink-foreground"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Mon espace
+              </button>
               <button
                 onClick={logout}
                 title="Se déconnecter"
-                className="press hidden sm:inline-flex items-center gap-1.5 rounded-xl border-2 border-ink bg-paper px-4 py-2.5 text-sm font-semibold hover:bg-pink hover:text-pink-foreground"
+                className="press hidden sm:inline-flex items-center gap-1.5 rounded-xl border-2 border-ink bg-paper px-4 py-2.5 text-sm font-semibold hover:bg-muted"
               >
                 <LogOut className="h-4 w-4" />
                 Déconnexion
@@ -119,17 +138,27 @@ export function Header() {
                     <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink bg-paper font-bold">
                       {initial}
                     </div>
-                    <span className="text-xs font-bold truncate max-w-[150px]">{user.email}</span>
+                    <span className="text-xs font-bold truncate max-w-[120px]">{user.email}</span>
                   </div>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setOuvert(false);
-                    }}
-                    className="p-2 rounded-lg bg-pink text-pink-foreground border border-ink"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => { goToDashboard(); setOuvert(false); }}
+                      className="p-2 rounded-lg bg-paper text-ink border border-ink"
+                      title="Mon espace"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setOuvert(false);
+                      }}
+                      className="p-2 rounded-lg bg-pink text-pink-foreground border border-ink"
+                      title="Déconnexion"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>

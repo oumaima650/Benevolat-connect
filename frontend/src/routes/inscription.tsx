@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@/context/AuthContext";
 import { z } from "zod";
 import { MapPin, Loader2, Check, Plus } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -67,6 +68,7 @@ const assoSchema = z.object({
 function RegisterPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
+  const { loginUser } = useAuth();
   const siteKey = import.meta.env["VITE_RECAPTCHA_SITE_KEY"] as string | undefined;
   const [role, setRole] = useState<Role>(search.role ?? "BENEVOLE");
 
@@ -227,10 +229,26 @@ function RegisterPage() {
     try {
       const res = await register(payload);
       if (res.success) {
-        setSuccess("Compte créé avec succès ! Redirection vers la page de connexion...");
+        // Connexion automatique après inscription
+        const token = res.token || "token_" + Date.now();
+        const userData = {
+          email: payload.email,
+          role: role,
+          nom: role === "BENEVOLE" ? payload.nom : undefined,
+          prenom: role === "BENEVOLE" ? payload.prenom : undefined,
+          nomAssociation: role === "ASSOCIATION" ? payload.nomAssociation : undefined,
+          photoUrl: role === "BENEVOLE" ? payload.photoUrl : undefined,
+          logoUrl: role === "ASSOCIATION" ? payload.logoUrl : undefined,
+        };
+        loginUser(userData, token);
+        setSuccess("Compte créé avec succès ! Redirection vers votre espace…");
         setTimeout(() => {
-          navigate({ to: "/login", search: { registered: "true" } });
-        }, 1500);
+          if (role === "ASSOCIATION") {
+            navigate({ to: "/association" });
+          } else {
+            navigate({ to: "/benevole" });
+          }
+        }, 1200);
       } else {
         setError(res.message || "Échec de la création du compte.");
       }

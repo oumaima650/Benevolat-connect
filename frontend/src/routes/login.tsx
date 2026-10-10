@@ -51,7 +51,15 @@ function LoginPage() {
           if (redirect) {
             navigate({ to: redirect as any });
           } else {
-            navigate({ to: "/" });
+            // Redirection selon le rôle
+            const role = userData.role ?? "BENEVOLE";
+            if (role === "ASSOCIATION") {
+              navigate({ to: "/association" });
+            } else if (role === "ADMIN") {
+              navigate({ to: "/" });
+            } else {
+              navigate({ to: "/benevole" });
+            }
           }
         }, 800);
       } else {

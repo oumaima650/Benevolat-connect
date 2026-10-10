@@ -47,7 +47,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
   function handleLogout() {
     logout();
-    navigate({ to: '/dashboard-login' });
+    navigate({ to: '/' });
   }
 
   return (
@@ -110,12 +110,22 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
 function BenevoleLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Protection d'accès : redirige si non connecté ou mauvais rôle
+  if (!user) {
+    navigate({ to: '/login' });
+    return null;
+  }
+  if (user.role === 'ASSOCIATION') {
+    navigate({ to: '/association' });
+    return null;
+  }
 
   function handleLogout() {
     logout();
-    navigate({ to: '/dashboard-login' });
+    navigate({ to: '/' });
   }
 
   return (

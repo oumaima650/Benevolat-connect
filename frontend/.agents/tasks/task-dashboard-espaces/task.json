@@ -1,0 +1,7 @@
+{
+  "task_id": "task-dashboard-espaces",
+  "task_description": "Construire les deux espaces connectés de CountMeIn : dashboard Bénévole (/benevole/...) et dashboard Association (/association/...) avec données fictives réalistes, en préservant l'identité visuelle existante (design neo-brutaliste : border-ink, shadow-neo, couleurs mustard/pink/emerald/ink).",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

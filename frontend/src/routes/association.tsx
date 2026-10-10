@@ -49,7 +49,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
   function handleLogout() {
     logout();
-    navigate({ to: '/dashboard-login' });
+    navigate({ to: '/' });
   }
 
   return (
@@ -112,13 +112,24 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
 function AssociationLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Protection d'accès : redirige si non connecté ou mauvais rôle
+  if (!user) {
+    navigate({ to: '/login' });
+    return null;
+  }
+  if (user.role === 'BENEVOLE') {
+    navigate({ to: '/benevole' });
+    return null;
+  }
+
   const isPending = associationProfile.statut === 'EN_ATTENTE';
 
   function handleLogout() {
     logout();
-    navigate({ to: '/dashboard-login' });
+    navigate({ to: '/' });
   }
 
   return (
