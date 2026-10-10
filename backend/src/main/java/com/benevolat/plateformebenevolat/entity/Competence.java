@@ -7,10 +7,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Entité représentant une Compétence (ex: Informatique, Premier Secours, Logistique, Enseignement...).
+ * Entité Competence mappée sur la table 'Competence'.
  */
 @Entity
-@Table(name = "competences")
+@Table(name = "Competence")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,13 +19,16 @@ public class Competence {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "idCompetence")
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(name = "nom", nullable = false, unique = true, length = 100)
     private String nom;
 
+    @Column(name = "categorie", length = 100)
     private String categorie;
 
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     public Competence(String nom, String categorie, String description) {

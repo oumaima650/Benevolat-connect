@@ -1,37 +1,48 @@
 package com.benevolat.plateformebenevolat.config;
 
+import com.benevolat.plateformebenevolat.entity.Badge;
 import com.benevolat.plateformebenevolat.entity.Competence;
 import com.benevolat.plateformebenevolat.entity.Domaine;
+import com.benevolat.plateformebenevolat.entity.Niveau;
+import com.benevolat.plateformebenevolat.repository.BadgeRepository;
 import com.benevolat.plateformebenevolat.repository.CompetenceRepository;
 import com.benevolat.plateformebenevolat.repository.DomaineRepository;
+import com.benevolat.plateformebenevolat.repository.NiveauRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
  * Initialiseur de données exécuté au démarrage du serveur backend.
- * Pré-remplit les tables 'competences' et 'domaines' si elles sont vides.
+ * Pré-remplit les tables prédéfinies (Competence, Domaine, Niveau, Badge) si elles sont vides.
+ * S'exécute avant DataSeeder (@Order).
  */
 @Component
+@Order(1)
 @RequiredArgsConstructor
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
 
     private final CompetenceRepository competenceRepository;
     private final DomaineRepository domaineRepository;
+    private final NiveauRepository niveauRepository;
+    private final BadgeRepository badgeRepository;
 
     @Override
     public void run(String... args) {
         initCompetences();
         initDomaines();
+        initNiveaux();
+        initBadges();
     }
 
     private void initCompetences() {
         if (competenceRepository.count() == 0) {
-            log.info("Pré-remplissage de la table 'competences'...");
+            log.info("Pré-remplissage de la table 'Competence'...");
             List<Competence> competences = List.of(
                 new Competence("Informatique & Web", "Technique", "Développement web, maintenance PC, réseaux sociaux"),
                 new Competence("Soutien scolaire", "Éducation", "Aide aux devoirs, cours de soutien, alphabétisation"),
@@ -52,7 +63,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initDomaines() {
         if (domaineRepository.count() == 0) {
-            log.info("Pré-remplissage de la table 'domaines'...");
+            log.info("Pré-remplissage de la table 'Domaine'...");
             List<Domaine> domaines = List.of(
                 new Domaine("Écologie & Environnement", "Environnement", "Protection de la nature, recyclage, nettoyages citoyens"),
                 new Domaine("Protection Animale", "Environnement", "Refuges pour animaux, sauvetage, soin animalier"),
@@ -69,6 +80,34 @@ public class DataInitializer implements CommandLineRunner {
             );
             domaineRepository.saveAll(domaines);
             log.info("{} domaines initiaux insérés avec succès !", domaines.size());
+        }
+    }
+
+    private void initNiveaux() {
+        if (niveauRepository.count() == 0) {
+            niveauRepository.saveAll(List.of(
+                new Niveau("Débutant"),
+                new Niveau("Engagé"),
+                new Niveau("Expert"),
+                new Niveau("Champion")
+            ));
+            log.info("4 niveaux initiaux insérés avec succès !");
+        }
+    }
+
+    private void initBadges() {
+        if (badgeRepository.count() == 0) {
+            Niveau debutant = niveauRepository.findByNom("Débutant").orElseThrow();
+            Niveau engage = niveauRepository.findByNom("Engagé").orElseThrow();
+            Niveau expert = niveauRepository.findByNom("Expert").orElseThrow();
+            Niveau champion = niveauRepository.findByNom("Champion").orElseThrow();
+            badgeRepository.saveAll(List.of(
+                new Badge("PREMIERE_MISSION", "Première mission", debutant),
+                new Badge("ENGAGE", "Engagé", engage),
+                new Badge("EXPERT", "Expert", expert),
+                new Badge("CHAMPION", "Champion", champion)
+            ));
+            log.info("4 badges initiaux insérés avec succès !");
         }
     }
 }

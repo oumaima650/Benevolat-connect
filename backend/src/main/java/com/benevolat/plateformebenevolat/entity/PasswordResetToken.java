@@ -9,10 +9,11 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 /**
- * Jeton de réinitialisation de mot de passe associé à un Utilisateur.
+ * Jeton de réinitialisation de mot de passe (F05) : un jeton actif par utilisateur.
+ * Le service doit supprimer l'ancien jeton avant d'en créer un nouveau.
  */
 @Entity
-@Table(name = "password_reset_tokens")
+@Table(name = "PasswordResetToken")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,16 +22,17 @@ public class PasswordResetToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "idToken")
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "token", nullable = false, unique = true)
     private String token;
 
     @OneToOne(targetEntity = Utilisateur.class, fetch = FetchType.EAGER)
-    @JoinColumn(nullable = false, name = "utilisateur_id")
+    @JoinColumn(name = "idUtilisateur", nullable = false, unique = true)
     private Utilisateur utilisateur;
 
-    @Column(nullable = false)
+    @Column(name = "dateExpiration", nullable = false)
     private LocalDateTime expiryDate;
 
     public boolean isExpired() {

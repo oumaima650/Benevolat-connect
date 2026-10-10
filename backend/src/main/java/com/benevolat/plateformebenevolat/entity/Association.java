@@ -1,7 +1,6 @@
 package com.benevolat.plateformebenevolat.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,7 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entité Association mappée sur la table 'Association' de la base de données.
+ * Entité Association héritant d'Utilisateur (table 'Association').
+ * Le logo de l'association est la photoProfil héritée d'Utilisateur.
  */
 @Entity
 @Table(name = "Association")
@@ -18,7 +18,6 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Association extends Utilisateur {
 
     @Column(name = "nom", nullable = false, length = 150)
@@ -35,49 +34,68 @@ public class Association extends Utilisateur {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "domaine", length = 100)
-    private String domaine;
-
     @Column(name = "ville", length = 100)
     private String ville;
 
     @Column(name = "contact", length = 255)
     private String contact;
 
-    @Column(name = "logoUrl")
-    private String logoUrl;
+    /** Remplace l'ancien booléen valideeParAdmin : EN_ATTENTE / VALIDE / REFUSE (RM06). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "statutValidation", nullable = false, length = 20)
+    private StatutValidation statutValidation = StatutValidation.EN_ATTENTE;
 
-    @Column(name = "estvalidee", nullable = false)
-    private Boolean estvalidee = false;
-
+    /** Compatibilité : vrai uniquement si l'association est VALIDE. */
     public boolean isValideeParAdmin() {
-        return Boolean.TRUE.equals(estvalidee);
+        return statutValidation == StatutValidation.VALIDE;
     }
 
     public void setValideeParAdmin(boolean validee) {
-        this.estvalidee = validee;
+        this.statutValidation = validee ? StatutValidation.VALIDE : StatutValidation.EN_ATTENTE;
     }
 
-    @Transient
+    @Column(name = "latitude")
     private Double latitude;
 
-    @Transient
+    @Column(name = "longitude")
     private Double longitude;
 
+    /** Administrateur qui a traité la demande (association « valide ») ; null tant qu'en attente. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "idAdministrateur")
+    private Administrateur administrateur;
+
+    /** Domaines de spécialisation (association « se specialise »). */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "association_domaines",
-        joinColumns = @JoinColumn(name = "association_id"),
-        inverseJoinColumns = @JoinColumn(name = "domaine_id")
+        name = "AssociationDomaine",
+        joinColumns = @JoinColumn(name = "idAssociation"),
+        inverseJoinColumns = @JoinColumn(name = "idDomaine")
     )
     private List<Domaine> domaines = new ArrayList<>();
 
-    public Association(String email, String motDePasse, String photoProfil, String nom, String description, String domaine, String ville, String contact) {
+    public String getDomaine() {
+        return (domaines != null && !domaines.isEmpty()) ? domaines.get(0).getNom() : null;
+    }
+
+    public String getLogoUrl() {
+        return getPhotoProfil();
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        setPhotoProfil(logoUrl);
+    }
+
+    public Association(String email, String motDePasse, String photoProfil, String nom, String description, String ville, String contact) {
         super(email, motDePasse, photoProfil);
         this.nom = nom;
         this.description = description;
-        this.domaine = domaine;
         this.ville = ville;
         this.contact = contact;
+    }
+
+    @Override
+    public Role getRole() {
+        return Role.ASSOCIATION;
     }
 }

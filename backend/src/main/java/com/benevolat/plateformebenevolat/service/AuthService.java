@@ -6,6 +6,7 @@ import com.benevolat.plateformebenevolat.dto.RegisterRequest;
 import com.benevolat.plateformebenevolat.entity.*;
 import com.benevolat.plateformebenevolat.repository.AssociationRepository;
 import com.benevolat.plateformebenevolat.repository.BenevoleRepository;
+import com.benevolat.plateformebenevolat.repository.CompetenceRepository;
 import com.benevolat.plateformebenevolat.repository.DomaineRepository;
 import com.benevolat.plateformebenevolat.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class AuthService {
     private final BenevoleRepository benevoleRepository;
     private final AssociationRepository associationRepository;
     private final DomaineRepository domaineRepository;
+    private final CompetenceRepository competenceRepository;
     private final PasswordEncoder passwordEncoder;
     private final RecaptchaService recaptchaService;
     private final JwtService jwtService;
@@ -89,7 +91,11 @@ public class AuthService {
             benevole.setRayonDeplacementKm(request.getRayonDeplacementKm() != null ? request.getRayonDeplacementKm() : 20.0);
             benevole.setLatitude(request.getLatitude());
             benevole.setLongitude(request.getLongitude());
-            if (request.getCompetences() != null) benevole.getCompetences().addAll(request.getCompetences());
+            if (request.getCompetences() != null && !request.getCompetences().isEmpty()) {
+                for (String compStr : request.getCompetences()) {
+                    competenceRepository.findByNomIgnoreCase(compStr).ifPresent(benevole.getCompetences()::add);
+                }
+            }
             benevole.getDomaines().addAll(domainesToLink);
             benevole.setStatut(StatutUtilisateur.ACTIF);
             savedUser = benevoleRepository.save(benevole);
