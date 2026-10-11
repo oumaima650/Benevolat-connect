@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, X, LogOut } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { useAuth, getInitial } from "@/context/AuthContext";
+import { useAuthModal } from "@/context/AuthModalContext";
 
 const liens = [
   { label: "Accueil", to: "/" as const },
@@ -14,6 +15,7 @@ const liens = [
 export function Header() {
   const [ouvert, setOuvert] = useState(false);
   const { user, logout } = useAuth();
+  const { openLogin, openRegisterBenevole, openRegisterAssociation } = useAuthModal();
   const navigate = useNavigate();
   const initial = getInitial(user);
 
@@ -74,26 +76,27 @@ export function Header() {
             </div>
           ) : (
             <>
-              <Link
-                to="/login"
+              <button
+                type="button"
+                onClick={openLogin}
                 className="press hidden items-center rounded-xl border-2 border-ink bg-paper px-4 py-2.5 text-sm font-semibold shadow-[3px_3px_0_var(--color-ink)] hover:bg-muted sm:inline-flex"
               >
                 Connexion
-              </Link>
-              <Link
-                to="/inscription"
-                search={{ role: "ASSOCIATION" }}
+              </button>
+              <button
+                type="button"
+                onClick={openRegisterAssociation}
                 className="press hidden items-center rounded-xl border-2 border-ink bg-paper px-5 py-2.5 text-sm font-semibold shadow-[4px_4px_0_var(--color-emerald)] sm:inline-flex"
               >
                 Je suis une association
-              </Link>
-              <Link
-                to="/inscription"
-                search={{ role: "BENEVOLE" }}
+              </button>
+              <button
+                type="button"
+                onClick={openRegisterBenevole}
                 className="press hidden shrink-0 items-center rounded-xl border-2 border-ink bg-pink px-5 py-2.5 text-sm font-semibold text-pink-foreground shadow-[4px_4px_0_var(--color-ink)] sm:inline-flex"
               >
                 Devenir bénévole
-              </Link>
+              </button>
             </>
           )}
 
@@ -146,29 +149,27 @@ export function Header() {
                 </div>
               ) : (
                 <>
-                  <Link
-                    to="/login"
-                    onClick={() => setOuvert(false)}
+                  <button
+                    type="button"
+                    onClick={() => { openLogin(); setOuvert(false); }}
                     className="rounded-xl border-2 border-ink bg-paper px-4 py-3 text-center text-sm font-semibold shadow-[3px_3px_0_var(--color-ink)]"
                   >
                     Connexion
-                  </Link>
-                  <Link
-                    to="/inscription"
-                    search={{ role: "BENEVOLE" }}
-                    onClick={() => setOuvert(false)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { openRegisterBenevole(); setOuvert(false); }}
                     className="rounded-xl border-2 border-ink bg-pink px-4 py-3 text-center text-sm font-semibold text-pink-foreground shadow-[4px_4px_0_var(--color-ink)]"
                   >
                     Devenir bénévole
-                  </Link>
-                  <Link
-                    to="/inscription"
-                    search={{ role: "ASSOCIATION" }}
-                    onClick={() => setOuvert(false)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { openRegisterAssociation(); setOuvert(false); }}
                     className="rounded-xl border-2 border-ink bg-paper px-4 py-3 text-center text-sm font-semibold shadow-[4px_4px_0_var(--color-emerald)]"
                   >
                     Je suis une association
-                  </Link>
+                  </button>
                 </>
               )}
             </div>
