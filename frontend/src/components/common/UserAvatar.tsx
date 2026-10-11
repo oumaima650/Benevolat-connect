@@ -31,7 +31,8 @@ export function UserAvatar({ user, size = "md", className = "", onClick }: Props
   const [imgError, setImgError] = useState(false);
 
   const initial   = getInitial(user);
-  const photoUrl  = user?.photoUrl;
+  // Le backend retourne "photoProfil", le frontend stocke parfois "photoUrl" ou "logoUrl"
+  const photoUrl  = user?.photoUrl || user?.photoProfil || user?.logoUrl;
   const isAsso    = user?.role === "ASSOCIATION";
   const bgColor   = isAsso ? "bg-emerald" : "bg-mustard";
   const textColor = isAsso ? "text-emerald-foreground" : "text-ink";

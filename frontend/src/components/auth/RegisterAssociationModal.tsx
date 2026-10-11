@@ -58,12 +58,23 @@ function Field({ id, label, ...props }: { id: string; label: string } & React.Co
   );
 }
 
-function PasswordField({ id, label, value, onChange, autoComplete }: {
+function PasswordField({ id, label, value, onChange, autoComplete, showStrength }: {
   id: string; label: string; value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   autoComplete?: string;
+  showStrength?: boolean;
 }) {
   const [show, setShow] = useState(false);
+
+  const strength = value.length === 0 ? 0
+    : value.length < 4 ? 1
+    : value.length < 7 ? 2
+    : value.length < 10 ? 3
+    : 4;
+
+  const strengthLabel = ["", "Faible", "Moyen", "Bien", "Fort"][strength];
+  const strengthColors = ["", "bg-red-400", "bg-orange-400", "bg-yellow-400", "bg-emerald"];
+
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-sm font-bold text-ink">{label}</Label>
@@ -77,6 +88,19 @@ function PasswordField({ id, label, value, onChange, autoComplete }: {
           {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       </div>
+      {showStrength && value.length > 0 && (
+        <div className="flex items-center gap-1 pt-0.5">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className={`h-1.5 flex-1 rounded-full transition-colors border border-ink/10 ${
+                i <= strength ? strengthColors[strength] : "bg-border"
+              }`}
+            />
+          ))}
+          <span className="ml-1 text-[10px] font-semibold text-muted-foreground">{strengthLabel}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -246,7 +270,7 @@ export function RegisterAssociationModal() {
           <form onSubmit={handleStep1} className="space-y-4">
             <Field id="asso-email" label="E-mail *" type="email" required autoComplete="email" value={form.email} onChange={set("email")} placeholder="contact@monasso.ma" />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <PasswordField id="asso-pwd" label="Mot de passe *" autoComplete="new-password" value={form.password} onChange={set("password")} />
+              <PasswordField id="asso-pwd" label="Mot de passe *" autoComplete="new-password" value={form.password} onChange={set("password")} showStrength />
               <PasswordField id="asso-confirm" label="Confirmation *" autoComplete="new-password" value={form.confirm} onChange={set("confirm")} />
             </div>
             <Button type="submit" className={authButton}>Suivant →</Button>
