@@ -1,10 +1,12 @@
-import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, HeartHandshake } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import heroImage from "@/assets/hero-benevoles.jpg";
 import { useAuth } from "@/context/AuthContext";
+import { useAuthModal } from "@/context/AuthModalContext";
 
 export function Hero() {
   const { user } = useAuth();
+  const { openRegisterAssociation } = useAuthModal();
 
   return (
     <section className="volunteer-hero relative isolate flex items-center overflow-hidden border-b-4 border-ink bg-ink">
@@ -34,7 +36,6 @@ export function Hero() {
           </p>
 
           <div className="mt-7 flex flex-wrap gap-3">
-            {/* CTA principal selon l'état de connexion */}
             {user?.role === "BENEVOLE" ? (
               <Link
                 to="/benevole"
@@ -57,13 +58,13 @@ export function Hero() {
                 >
                   Explorer les missions <ArrowUpRight className="h-4 w-4" />
                 </Link>
-                <Link
-                  to="/inscription"
-                  search={{ role: "ASSOCIATION" }}
+                <button
+                  type="button"
+                  onClick={openRegisterAssociation}
                   className="press inline-flex h-auto items-center gap-2 rounded-xl border-2 border-paper bg-transparent px-5 py-3.5 text-sm font-bold text-paper hover:bg-paper hover:text-ink"
                 >
                   Inscrire mon association <ArrowUpRight className="h-4 w-4" />
-                </Link>
+                </button>
               </>
             )}
           </div>

@@ -101,6 +101,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 
 import { AuthProvider } from "@/context/AuthContext";
+import { AuthModalProvider } from "@/context/AuthModalContext";
+import { AuthModals } from "@/components/auth/AuthModals";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -108,7 +110,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Outlet />
+        <AuthModalProvider>
+          <AuthModals />
+          <Outlet />
+        </AuthModalProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

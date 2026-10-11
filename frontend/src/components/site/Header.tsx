@@ -3,19 +3,21 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, X, LogOut } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 import { useAuth } from "@/context/AuthContext";
+import { useAuthModal } from "@/context/AuthModalContext";
 import { UserAvatar } from "@/components/common/UserAvatar";
 
 const liens = [
-  { label: "Accueil",              to: "/" as const },
-  { label: "Missions",             to: "/missions" as const },
-  { label: "Associations",         to: "/associations" as const },
-  { label: "Comment ça marche",    to: "/comment-ca-marche" as const },
+  { label: "Accueil",               to: "/" as const },
+  { label: "Missions",              to: "/missions" as const },
+  { label: "Associations",          to: "/associations" as const },
+  { label: "Comment ça marche",     to: "/comment-ca-marche" as const },
   { label: "Vérifier un certificat", to: "/certificat" as const },
 ];
 
 export function Header() {
   const [ouvert, setOuvert] = useState(false);
   const { user, logout } = useAuth();
+  const { openLogin, openRegisterBenevole, openRegisterAssociation } = useAuthModal();
   const navigate = useNavigate();
 
   function goToDashboard() {
@@ -64,28 +66,29 @@ export function Header() {
               </button>
             </div>
           ) : (
-            /* ── Non connecté : 3 boutons compacts ── */
+            /* ── Non connecté ── */
             <>
-              <Link
-                to="/login"
+              <button
+                type="button"
+                onClick={openLogin}
                 className="press inline-flex items-center rounded-xl border-2 border-ink bg-paper px-4 py-2.5 text-sm font-semibold shadow-[3px_3px_0_var(--color-ink)] hover:bg-muted"
               >
                 Connexion
-              </Link>
-              <Link
-                to="/inscription"
-                search={{ role: "ASSOCIATION" }}
+              </button>
+              <button
+                type="button"
+                onClick={openRegisterAssociation}
                 className="press inline-flex items-center rounded-xl border-2 border-ink bg-paper px-5 py-2.5 text-sm font-semibold shadow-[4px_4px_0_var(--color-emerald)]"
               >
                 Je suis une association
-              </Link>
-              <Link
-                to="/inscription"
-                search={{ role: "BENEVOLE" }}
+              </button>
+              <button
+                type="button"
+                onClick={openRegisterBenevole}
                 className="press inline-flex shrink-0 items-center rounded-xl border-2 border-ink bg-pink px-5 py-2.5 text-sm font-semibold text-pink-foreground shadow-[4px_4px_0_var(--color-ink)]"
               >
                 Devenir bénévole
-              </Link>
+              </button>
             </>
           )}
         </div>
@@ -95,7 +98,7 @@ export function Header() {
           type="button"
           aria-label={ouvert ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={ouvert}
-          onClick={() => setOuvert(o => !o)}
+          onClick={() => setOuvert((o) => !o)}
           className="press inline-flex h-11 w-11 items-center justify-center rounded-xl border-2 border-ink bg-mustard lg:hidden"
         >
           {ouvert ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -121,7 +124,11 @@ export function Header() {
               {user ? (
                 <div className="flex items-center justify-between rounded-xl border-2 border-ink bg-mustard p-3">
                   <div className="flex items-center gap-2">
-                    <UserAvatar user={user} size="sm" onClick={() => { goToDashboard(); setOuvert(false); }} />
+                    <UserAvatar
+                      user={user}
+                      size="sm"
+                      onClick={() => { goToDashboard(); setOuvert(false); }}
+                    />
                     <span className="text-xs font-bold truncate max-w-[140px]">{user.email}</span>
                   </div>
                   <button
@@ -134,29 +141,27 @@ export function Header() {
                 </div>
               ) : (
                 <>
-                  <Link
-                    to="/login"
-                    onClick={() => setOuvert(false)}
+                  <button
+                    type="button"
+                    onClick={() => { openLogin(); setOuvert(false); }}
                     className="flex items-center justify-center gap-2 rounded-xl border-2 border-ink bg-paper px-4 py-3 text-sm font-semibold shadow-[3px_3px_0_var(--color-ink)]"
                   >
                     Connexion
-                  </Link>
-                  <Link
-                    to="/inscription"
-                    search={{ role: "BENEVOLE" }}
-                    onClick={() => setOuvert(false)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { openRegisterBenevole(); setOuvert(false); }}
                     className="flex items-center justify-center gap-2 rounded-xl border-2 border-ink bg-pink px-4 py-3 text-sm font-semibold text-pink-foreground shadow-[3px_3px_0_var(--color-ink)]"
                   >
                     Devenir bénévole
-                  </Link>
-                  <Link
-                    to="/inscription"
-                    search={{ role: "ASSOCIATION" }}
-                    onClick={() => setOuvert(false)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { openRegisterAssociation(); setOuvert(false); }}
                     className="flex items-center justify-center gap-2 rounded-xl border-2 border-ink bg-emerald px-4 py-3 text-sm font-semibold text-emerald-foreground shadow-[3px_3px_0_var(--color-ink)]"
                   >
                     Je suis une association
-                  </Link>
+                  </button>
                 </>
               )}
             </div>

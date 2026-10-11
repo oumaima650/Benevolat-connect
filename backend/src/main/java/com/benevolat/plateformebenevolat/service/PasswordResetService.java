@@ -27,6 +27,7 @@ public class PasswordResetService {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     /**
      * Traite la demande de réinitialisation de mot de passe (génère un token).
@@ -56,7 +57,9 @@ public class PasswordResetService {
         tokenRepository.save(resetToken);
 
         log.info("Token de réinitialisation créé pour {} : {}", emailClean, tokenStr);
-        log.info("Lien de réinitialisation : http://localhost:5173/reset-password?token={}", tokenStr);
+
+        // Envoi de l'email avec le lien (asynchrone)
+        emailService.sendPasswordReset(emailClean, tokenStr);
 
         return true;
     }

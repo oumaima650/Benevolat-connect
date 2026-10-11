@@ -7,7 +7,9 @@ export type UserProfile = {
   prenom?: string;
   nomAssociation?: string;
   role?: "BENEVOLE" | "ASSOCIATION" | "ADMIN";
-  photoUrl?: string;   // photo bénévole ou logo association (URL Cloudinary)
+  photoUrl?: string;     // photo bénévole ou logo association (URL Cloudinary)
+  photoProfil?: string;  // alias retourné par le backend
+  logoUrl?: string;      // alias logo association
   ville?: string;
   telephone?: string;
 };
@@ -36,9 +38,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const loginUser = (newUser: UserProfile, newToken: string) => {
-    setUser(newUser);
+    // Normaliser : s'assurer que photoUrl est toujours rempli
+    // (le backend retourne "photoProfil", certains endroits utilisent "logoUrl")
+    const normalized: UserProfile = {
+      ...newUser,
+      photoUrl: newUser.photoUrl || newUser.photoProfil || newUser.logoUrl || "",
+    };
+    setUser(normalized);
     setToken(newToken);
-    localStorage.setItem("countmein_user", JSON.stringify(newUser));
+    localStorage.setItem("countmein_user", JSON.stringify(normalized));
     localStorage.setItem("countmein_token", newToken);
   };
 
