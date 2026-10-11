@@ -232,13 +232,16 @@ function RegisterPage() {
         // Connexion automatique après inscription
         const token = res.token || "token_" + Date.now();
         const userData = {
-          email: payload.email,
-          role: role,
-          nom: role === "BENEVOLE" ? payload.nom : undefined,
-          prenom: role === "BENEVOLE" ? payload.prenom : undefined,
-          nomAssociation: role === "ASSOCIATION" ? payload.nomAssociation : undefined,
-          photoUrl: role === "BENEVOLE" ? payload.photoUrl : undefined,
-          logoUrl: role === "ASSOCIATION" ? payload.logoUrl : undefined,
+          email:          payload.email,
+          role:           role as "BENEVOLE" | "ASSOCIATION",
+          nom:            role === "BENEVOLE"      ? payload.nom           : undefined,
+          prenom:         role === "BENEVOLE"      ? payload.prenom        : undefined,
+          nomAssociation: role === "ASSOCIATION"   ? payload.nomAssociation: undefined,
+          photoUrl:       role === "BENEVOLE"      ? payload.photoUrl      // bénévole : photoUrl uploadée
+                        : role === "ASSOCIATION"   ? payload.logoUrl       // association : logoUrl uploadée
+                        : undefined,
+          ville:          payload.ville,
+          telephone:      role === "BENEVOLE" ? payload.telephone : payload.contact,
         };
         loginUser(userData, token);
         setSuccess("Compte créé avec succès ! Redirection vers l'accueil…");

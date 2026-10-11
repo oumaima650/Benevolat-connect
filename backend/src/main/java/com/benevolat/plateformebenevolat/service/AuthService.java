@@ -142,12 +142,26 @@ public class AuthService {
     }
 
     private AuthResponse.UserDto mapToUserDto(Utilisateur user, Role role) {
-        String nom = "", prenom = "", ville = "", tel = "";
+        String nom = "", prenom = "", ville = "", tel = "", photoProfil = "", nomAssociation = "";
 
         if (user instanceof Benevole b) {
-            nom = b.getNom(); prenom = b.getPrenom(); ville = b.getVille(); tel = b.getTelephone() != null ? b.getTelephone() : "";
+            nom    = b.getNom() != null ? b.getNom() : "";
+            prenom = b.getPrenom() != null ? b.getPrenom() : "";
+            ville  = b.getVille() != null ? b.getVille() : "";
+            tel    = b.getTelephone() != null ? b.getTelephone() : "";
+            // Photo de profil bénévole : d'abord photoUrl (table benevoles), puis photoProfil (table Utilisateur)
+            photoProfil = (b.getPhotoUrl() != null && !b.getPhotoUrl().isBlank())
+                    ? b.getPhotoUrl()
+                    : (user.getPhotoProfil() != null ? user.getPhotoProfil() : "");
         } else if (user instanceof Association a) {
-            nom = a.getNomAssociation(); ville = a.getVille(); tel = a.getContact() != null ? a.getContact() : "";
+            nom           = a.getNomAssociation() != null ? a.getNomAssociation() : "";
+            nomAssociation = nom;
+            ville          = a.getVille() != null ? a.getVille() : "";
+            tel            = a.getContact() != null ? a.getContact() : "";
+            // Logo association : logoUrl (table Association), puis photoProfil (table Utilisateur)
+            photoProfil = (a.getLogoUrl() != null && !a.getLogoUrl().isBlank())
+                    ? a.getLogoUrl()
+                    : (user.getPhotoProfil() != null ? user.getPhotoProfil() : "");
         }
 
         return AuthResponse.UserDto.builder()
@@ -156,6 +170,8 @@ public class AuthService {
                 .nom(nom).prenom(prenom).ville(ville).telephone(tel)
                 .role(role)
                 .statut(user.getStatut() != null ? user.getStatut().name() : "ACTIF")
+                .photoProfil(photoProfil)
+                .nomAssociation(nomAssociation)
                 .build();
     }
 }

@@ -9,6 +9,8 @@ export interface AssociationBackend {
   email: string;
   contact: string;
   photoProfil: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export const associationApi = {

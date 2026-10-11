@@ -1,20 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, CalendarDays, MapPin, Users, Clock3, Navigation } from "lucide-react";
 import { formaterDate, type Mission } from "./data";
-import { missionPresentation } from "./mission-presentation";
 
 export function MissionCard({ mission, distance, actif, onHover }: { mission: Mission; distance?: number | undefined; actif?: boolean; onHover?: (id: string) => void }) {
   const complet = mission.placesRestantes === 0;
-  const { Icon, color, background } = missionPresentation(mission.domaine);
   return (
     <article
       onMouseEnter={() => onHover?.(mission.id)}
       className={`mission-card flex h-full flex-col overflow-hidden rounded-lg border-2 border-ink bg-paper transition-transform duration-200 ${actif ? "shadow-[6px_6px_0_var(--color-pink)]" : ""}`}
     >
-      <div className={`flex items-center justify-between gap-3 border-b-2 border-ink px-5 py-4 ${background} ${color}`}>
-        <Icon className="h-8 w-8 shrink-0" strokeWidth={1.7} aria-hidden="true" />
-        <span className="text-right text-xs font-bold">{mission.domaine}</span>
-      </div>
       <div className="flex flex-1 flex-col p-5">
         <p className="text-xs font-semibold text-muted-foreground">{mission.association}</p>
         <h3 className="mt-2 text-xl leading-tight">{mission.titre}</h3>
