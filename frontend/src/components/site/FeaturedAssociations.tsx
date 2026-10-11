@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, MapPin } from "lucide-react";
-import { missionPresentation } from "./mission-presentation";
 import { Reveal } from "./Reveal";
 import associationApi, { type AssociationBackend } from "@/services/associationApi";
 
@@ -12,7 +11,6 @@ function isValidUrl(url: string | null | undefined): boolean {
 
 function CarteAssociation({ association }: { association: AssociationBackend }) {
   const nom         = association.nom || "";
-  const domaine     = association.domaine || "Solidarité";
   const ville       = association.ville || "";
   const description = association.description || "";
   const rawPhoto    = association.photoProfil ?? null;
@@ -26,8 +24,6 @@ function CarteAssociation({ association }: { association: AssociationBackend }) 
         .join("")
         .toUpperCase()
     : "A";
-
-  const { Icon, color, background } = missionPresentation(domaine);
 
   return (
     <article className="flex h-full flex-col rounded-2xl border-2 border-ink bg-paper shadow-[4px_4px_0_var(--color-ink)] transition-all hover:-translate-y-1">
@@ -44,7 +40,7 @@ function CarteAssociation({ association }: { association: AssociationBackend }) 
           ) : (
             <span
               aria-hidden="true"
-              className={`grid h-14 w-14 shrink-0 place-items-center rounded-xl border-2 border-ink font-display text-sm font-black ${background} ${color}`}
+              className="grid h-14 w-14 shrink-0 place-items-center rounded-xl border-2 border-ink bg-ink font-display text-sm font-black text-paper"
             >
               {initiales}
             </span>
@@ -52,15 +48,7 @@ function CarteAssociation({ association }: { association: AssociationBackend }) 
 
           {/* Infos */}
           <div className="min-w-0 flex-1">
-            {/* Badge domaine */}
-            <span
-              className={`inline-flex items-center gap-1 rounded-md border border-ink/20 px-2 py-0.5 text-xs font-bold ${background} ${color}`}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              {domaine}
-            </span>
-
-            <h3 className="mt-1.5 truncate font-display text-lg leading-tight">
+            <h3 className="truncate font-display text-lg leading-tight">
               {nom}
             </h3>
 

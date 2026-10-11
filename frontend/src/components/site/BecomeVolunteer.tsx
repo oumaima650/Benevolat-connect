@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { GlobeMotif, HandsMotif, SmileMotif } from "./icons";
 import { Reveal } from "./Reveal";
+import { useAuth } from "@/context/AuthContext";
+import { LayoutDashboard, ArrowUpRight } from "lucide-react";
 
 const avantages = [
   { Icon: SmileMotif, couleur: "text-mustard", titre: "Des missions près de chez toi", texte: "Choisis selon ta ville, tes envies et ton emploi du temps." },
@@ -9,6 +11,43 @@ const avantages = [
 ];
 
 export function BecomeVolunteer() {
+  const { user } = useAuth();
+
+  // Un bénévole ou une association déjà connecté(e) ne voit pas cette section
+  if (user) {
+    // Si c'est un bénévole connecté → afficher un bloc de bienvenue personnalisé
+    if (user.role === "BENEVOLE") {
+      return (
+        <section id="devenir-benevole" className="border-b-4 border-ink bg-mustard">
+          <div className="mx-auto max-w-6xl px-5 py-14 lg:py-20">
+            <Reveal className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-ink/60">Bienvenue</p>
+                <h2 className="mt-2 text-3xl sm:text-4xl text-ink">
+                  Content de te revoir,{" "}
+                  <span className="font-black">{user.prenom ?? user.nom ?? "bénévole"} !</span>
+                </h2>
+                <p className="mt-3 max-w-lg text-ink/70">
+                  Retrouve tes missions confirmées, ta liste d'attente et tes certificats dans ton espace personnel.
+                </p>
+              </div>
+              <Link
+                to="/benevole"
+                className="press inline-flex shrink-0 items-center gap-2 rounded-xl border-2 border-ink bg-ink px-6 py-3.5 text-sm font-bold text-paper shadow-[4px_4px_0_var(--color-paper)]"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Mon espace bénévole
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Reveal>
+          </div>
+        </section>
+      );
+    }
+    // Si c'est une association → ne rien afficher (ForAssociations gère son propre cas)
+    return null;
+  }
+
   return (
     <section id="devenir-benevole" className="border-b-4 border-ink bg-paper">
       <div className="mx-auto max-w-6xl px-5 py-14 lg:py-20">
@@ -30,7 +69,7 @@ export function BecomeVolunteer() {
         <Reveal className="mt-10">
           <Link
             to="/inscription"
-            search={{ profil: "benevole" }}
+            search={{ role: "BENEVOLE" }}
             className="press inline-flex items-center rounded-xl border-2 border-ink bg-pink px-5 py-3 text-sm font-semibold text-pink-foreground shadow-[5px_5px_0_var(--color-ink)]"
           >
             Je m'inscris comme bénévole

@@ -3,6 +3,7 @@ package com.benevolat.plateformebenevolat.controller;
 import com.benevolat.plateformebenevolat.dto.AssociationSummaryDto;
 import com.benevolat.plateformebenevolat.repository.AssociationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,16 +18,22 @@ public class AssociationController {
     private final AssociationRepository associationRepository;
 
     @GetMapping
+    @Transactional(readOnly = true)
     public List<AssociationSummaryDto> getAssociations() {
-        return associationRepository.findAll().stream().map(a -> new AssociationSummaryDto(
-                a.getIdUtilisateur(),
-                a.getNom(),
-                a.getDescription(),
-                a.getDomaine(),
-                a.getVille(),
-                a.getEmail(),
-                a.getContact(),
-                a.getPhotoProfil()
-        )).collect(Collectors.toList());
+        return associationRepository.findAll().stream().map(a -> {
+            String domaine = a.getDomaine();
+            return new AssociationSummaryDto(
+                    a.getIdUtilisateur(),
+                    a.getNom(),
+                    a.getDescription(),
+                    domaine,
+                    a.getVille(),
+                    a.getEmail(),
+                    a.getContact(),
+                    a.getPhotoProfil(),
+                    a.getLatitude(),
+                    a.getLongitude()
+            );
+        }).collect(Collectors.toList());
     }
 }

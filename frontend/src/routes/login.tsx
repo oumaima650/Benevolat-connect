@@ -45,7 +45,18 @@ function LoginPage() {
       if (res.success) {
         setSuccess("Connexion réussie !");
         const token = res.token || "demo_token_" + Date.now();
-        const userData = res.user || { email: email.trim(), role: "BENEVOLE" };
+        const u = res.user || {};
+        const userData = {
+          id:             u.id,
+          email:          u.email ?? email.trim(),
+          nom:            u.nom,
+          prenom:         u.prenom,
+          nomAssociation: u.nomAssociation ?? (u.role === "ASSOCIATION" ? u.nom : undefined),
+          role:           u.role ?? "BENEVOLE",
+          photoUrl:       u.photoProfil ?? undefined,  // URL Cloudinary depuis la colonne photoProfil
+          ville:          u.ville,
+          telephone:      u.telephone,
+        };
         loginUser(userData, token);
         setTimeout(() => {
           navigate({ to: redirect ? (redirect as any) : "/" });

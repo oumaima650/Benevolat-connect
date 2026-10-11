@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, X, LogOut } from "lucide-react";
 import logoImage from "@/assets/logo.png";
-import { useAuth, getInitial } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
+import { UserAvatar } from "@/components/common/UserAvatar";
 
 const liens = [
   { label: "Accueil", to: "/" as const },
   { label: "Missions", to: "/missions" as const },
-  { label: "Comment ça marche", to: "/" as const, hash: "comment" },
+  { label: "Comment ça marche", to: "/comment-ca-marche" as const },
   { label: "Vérifier un certificat", to: "/certificat" as const },
 ];
 
@@ -15,7 +16,6 @@ export function Header() {
   const [ouvert, setOuvert] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const initial = getInitial(user);
 
   function goToDashboard() {
     if (!user) return;
@@ -24,17 +24,13 @@ export function Header() {
     } else {
       navigate({ to: "/benevole" });
     }
-  }
-
-  return (
+  }  return (
     <header className="sticky top-0 z-40 border-b-4 border-ink bg-paper w-full">
       <div className="w-full flex items-center justify-between gap-6 px-6 py-4 lg:px-12">
         <Link to="/" className="flex shrink-0 items-center gap-3">
           <img
             src={logoImage}
             alt="CountMeIn — Connecter, Soutenir, Agir"
-            width={348}
-            height={96}
             className="h-12 w-auto max-w-full lg:h-14"
           />
         </Link>
@@ -55,14 +51,8 @@ export function Header() {
         <div className="flex items-center gap-3">
           {user ? (
             <div className="flex items-center gap-3">
-              {/* Avatar cliquable — initiales correctes, redirige vers le bon dashboard */}
-              <button
-                onClick={goToDashboard}
-                title={user.role === "ASSOCIATION" ? "Espace Association" : "Espace Bénévole"}
-                className="press flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink bg-mustard text-sm font-extrabold text-ink shadow-[3px_3px_0_var(--color-ink)] hover:bg-pink hover:text-pink-foreground transition-colors uppercase"
-              >
-                {initial}
-              </button>
+              {/* Avatar cliquable — photo Cloudinary ou initiales en fallback */}
+              <UserAvatar user={user} size="md" onClick={goToDashboard} />
               <button
                 onClick={logout}
                 title="Se déconnecter"
@@ -128,12 +118,7 @@ export function Header() {
               {user ? (
                 <div className="flex items-center justify-between p-2 rounded-xl border-2 border-ink bg-mustard">
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => { goToDashboard(); setOuvert(false); }}
-                      className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink bg-paper text-sm font-extrabold text-ink uppercase"
-                    >
-                      {initial}
-                    </button>
+                    <UserAvatar user={user} size="sm" onClick={() => { goToDashboard(); setOuvert(false); }} />
                     <span className="text-xs font-bold truncate max-w-[120px]">{user.email}</span>
                   </div>
                   <button

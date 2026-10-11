@@ -18,4 +18,6 @@ public class AssociationSummaryDto {
     private String email;
     private String contact;
     private String photoProfil;
+    private Double latitude;
+    private Double longitude;
 }
