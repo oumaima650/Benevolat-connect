@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, Megaphone, ListChecks, Award, LayoutDashboard } from "lucide-react";
+import { ArrowUpRight, Megaphone, ListChecks, Award } from "lucide-react";
 import associationsImage from "@/assets/associations.jpg";
 import associationApi, { type AssociationBackend } from "@/services/associationApi";
 import { useAuth } from "@/context/AuthContext";
@@ -23,8 +23,7 @@ export function ForAssociations() {
       .finally(() => setLoading(false));
   }, []);
 
-  const isAssociation = user?.role === "ASSOCIATION";
-  const isBenevole    = user?.role === "BENEVOLE";
+
 
   return (
     <section id="associations" className="border-b-4 border-ink bg-paper">
@@ -71,24 +70,8 @@ export function ForAssociations() {
                 })
               )}
             </div>
-            {/* CTA selon l'état de connexion */}
-            {isAssociation ? (
-              <div className="mt-8 space-y-2">
-                <p className="text-sm font-semibold text-mustard">
-                  Bonjour, {user?.nomAssociation ?? "votre association"} !
-                </p>
-                <Link to="/association" className="press inline-flex w-fit items-center gap-2 rounded-xl border-2 border-paper bg-mustard px-5 py-3 text-sm font-bold text-ink">
-                  <LayoutDashboard className="h-4 w-4" /> Mon espace association <ArrowUpRight className="h-4 w-4" />
-                </Link>
-              </div>
-            ) : isBenevole ? (
-              <div className="mt-8 space-y-2">
-                <p className="text-sm text-paper/70">Découvrez les associations qui ont besoin de vous.</p>
-                <Link to="/associations" className="press inline-flex w-fit items-center gap-2 rounded-xl border-2 border-paper bg-mustard px-5 py-3 text-sm font-bold text-ink">
-                  Voir toutes les associations <ArrowUpRight className="h-4 w-4" />
-                </Link>
-              </div>
-            ) : (
+            {/* CTA uniquement si non connecté */}
+            {!user && (
               <Link to="/inscription" search={{ role: "ASSOCIATION" }} className="press mt-8 inline-flex w-fit items-center gap-2 rounded-xl border-2 border-paper bg-mustard px-5 py-3 text-sm font-bold text-ink">
                 Créer un compte association <ArrowUpRight className="h-4 w-4" />
               </Link>

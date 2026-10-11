@@ -61,7 +61,8 @@ public class SecurityConfig {
                     "/api/domaines/**",
                     "/api/stats/**",
                     "/api/missions/**",
-                    "/api/associations/**"
+                    "/api/associations/**",
+                    "/api/certificates/**"
                 ).permitAll()
                 // Toutes les autres requêtes API nécessitent un JWT valide
                 .requestMatchers("/api/**").authenticated()

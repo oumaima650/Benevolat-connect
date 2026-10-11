@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { BecomeVolunteer } from "@/components/site/BecomeVolunteer";
 import { CertificateCheck } from "@/components/site/CertificateCheck";
 import { FeaturedAssociations } from "@/components/site/FeaturedAssociations";
 import { Footer } from "@/components/site/Footer";
@@ -43,7 +42,6 @@ function Index() {
         <MissionSearch limite={4} />
         <FeaturedAssociations />
         <HowItWorksDetailed />
-        <BecomeVolunteer />
         <ForAssociations />
         <CertificateCheck />
       </main>
