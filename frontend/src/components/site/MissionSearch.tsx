@@ -9,9 +9,9 @@ import { Reveal } from "./Reveal";
 import missionApi from "@/services/missionApi";
 
 const vide = { motCle: "", ville: "", domaine: "" };
-const champ = "w-full rounded-xl border-2 border-ink bg-paper px-3 py-2.5 text-sm outline-none focus:shadow-[3px_3px_0_var(--color-pink)]";
+const champ = "w-full rounded-xl border-2 border-ink bg-paper px-3 py-2.5 text-sm text-ink outline-none focus:shadow-[3px_3px_0_var(--color-pink)]";
 
-export function MissionSearch({ limite, titre = "Rechercher une mission" }: { limite?: number; titre?: string }) {
+export function MissionSearch({ limite, titre = "Trouvez votre mission" }: { limite?: number; titre?: string }) {
   const [filtres, setFiltres] = useState(vide);
   const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [geoEtat, setGeoEtat] = useState<"" | "chargement" | "refus">("");
@@ -83,7 +83,7 @@ export function MissionSearch({ limite, titre = "Rechercher une mission" }: { li
 
         <form
           onSubmit={(e) => e.preventDefault()}
-          className="mt-8 grid gap-3 rounded-lg border-2 border-ink bg-mustard p-4 md:grid-cols-[2fr_1fr_1fr_auto]"
+          className="mt-8 grid gap-3 rounded-lg border-2 border-ink bg-ink p-4 md:grid-cols-[2fr_1fr_1fr_auto]"
         >
           <div className="relative">
             <Search aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -125,7 +125,7 @@ export function MissionSearch({ limite, titre = "Rechercher une mission" }: { li
             variant="outline"
             type="button"
             onClick={reset}
-            className="press h-auto rounded-lg border-2 border-ink bg-paper px-4 py-2.5 text-sm font-semibold"
+            className="press h-auto rounded-lg border-2 border-ink bg-mustard px-4 py-2.5 text-sm font-semibold text-ink"
           >
             <RotateCcw /> Réinitialiser
           </Button>
@@ -209,9 +209,14 @@ export function MissionSearch({ limite, titre = "Rechercher une mission" }: { li
         )}
 
         {limite && resultats.length > limite && (
-          <Link to="/missions" className="mt-8 inline-block text-sm font-semibold underline underline-offset-4">
-            Voir les {resultats.length} missions
-          </Link>
+          <div className="mt-8 flex justify-center">
+            <Link
+              to="/missions"
+              className="press rounded-xl border-2 border-ink bg-pink px-6 py-3 text-sm font-bold text-pink-foreground shadow-[4px_4px_0_var(--color-ink)] transition-all hover:-translate-y-0.5"
+            >
+              Voir les {resultats.length} missions
+            </Link>
+          </div>
         )}
       </div>
     </section>
