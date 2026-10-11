@@ -35,6 +35,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RecaptchaService recaptchaService;
     private final JwtService jwtService;
+    private final OtpService otpService;
+    private final EmailService emailService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -47,7 +49,7 @@ public class AuthService {
             return AuthResponse.builder().success(false).message("Un compte existe déjà avec cette adresse email.").build();
         }
 
-        // Résolution des Domaines sélectionnés (partagés entre Bénévole et Association)
+        // Résolution des Domaines sélectionnés
         List<Domaine> domainesToLink = new ArrayList<>();
         if (request.getDomaineIds() != null && !request.getDomaineIds().isEmpty()) {
             domainesToLink = domaineRepository.findAllById(request.getDomaineIds());
@@ -103,14 +105,44 @@ public class AuthService {
 
         log.info("Nouvel utilisateur inscrit [{}] : {}", request.getRole(), savedUser.getEmail());
 
+        // Envoyer l'OTP de vérification email (le compte est créé mais doit être confirmé)
+        otpService.generateAndSendOtp(emailClean);
+
         String jwtToken = jwtService.generateToken(savedUser.getEmail(), savedUser.getId(), request.getRole().name());
 
         return AuthResponse.builder()
                 .success(true)
-                .message("Inscription réussie !")
+                .message("Compte créé ! Vérifiez votre email pour confirmer votre inscription.")
                 .token(jwtToken)
                 .user(mapToUserDto(savedUser, request.getRole()))
                 .build();
+    }
+
+    /**
+     * Vérifie l'OTP après inscription et envoie l'email de bienvenue.
+     */
+    @Transactional
+    public AuthResponse verifyEmailOtp(String email, String code) {
+        String emailClean = email.toLowerCase().trim();
+        if (!otpService.verifyOtp(emailClean, code)) {
+            return AuthResponse.builder().success(false).message("Code invalide ou expiré.").build();
+        }
+
+        // Récupérer l'utilisateur pour l'email de bienvenue
+        userRepository.findByEmail(emailClean).ifPresent(user -> {
+            String prenom = "";
+            String role = "BENEVOLE";
+            if (user instanceof Benevole b) {
+                prenom = b.getPrenom() != null ? b.getPrenom() : b.getNom();
+            } else if (user instanceof Association a) {
+                prenom = a.getNomAssociation();
+                role = "ASSOCIATION";
+            }
+            emailService.sendWelcome(emailClean, prenom, role);
+        });
+
+        log.info("Email vérifié avec succès pour : {}", emailClean);
+        return AuthResponse.builder().success(true).message("Email vérifié avec succès ! Bienvenue sur CountMeIn.").build();
     }
 
     public AuthResponse login(LoginRequest request) {

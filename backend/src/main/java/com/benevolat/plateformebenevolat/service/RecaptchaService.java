@@ -15,7 +15,7 @@ import java.net.URI;
 @Slf4j
 public class RecaptchaService {
 
-    @Value("${recaptcha.secret:6LeIxAcTAAAAAGG-vFI1TnRW8mzNFuojJ4WifJWe}")
+    @Value("${recaptcha.secret.key:6LeIxAcTAAAAAGG-vFI1TnRW8mzNFuojJ4WifJWe}")
     private String recaptchaSecret;
 
     @Value("${recaptcha.enabled:true}")

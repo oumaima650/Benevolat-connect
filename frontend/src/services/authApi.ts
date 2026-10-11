@@ -34,6 +34,9 @@ export type RegisterPayload = {
 
   // Domaines partagés (IDs) — Bénévole ET Association
   domaineIds?: number[];
+
+  // Code OTP de vérification email
+  otpCode?: string;
 };
 
 async function post<T>(path: string, body: unknown): Promise<T> {
@@ -63,6 +66,15 @@ export const register = (payload: RegisterPayload) =>
 
 export const login = (email: string, password: string) =>
   post<{ success: boolean; message: string; token?: string; user?: any }>("/api/auth/login", { email, password });
+
+export const sendOtp = (email: string) =>
+  post<{ success: boolean; message: string }>("/api/auth/send-otp", { email });
+
+export const verifyOtpCode = (email: string, code: string) =>
+  post<{ success: boolean; message: string }>("/api/auth/verify-otp", { email, code });
+
+export const verifyEmail = (email: string, code: string) =>
+  post<{ success: boolean; message: string }>("/api/auth/verify-email", { email, code });
 
 export const forgotPassword = (email: string) =>
   post<{ success: boolean; message: string }>("/api/auth/forgot-password", { email });

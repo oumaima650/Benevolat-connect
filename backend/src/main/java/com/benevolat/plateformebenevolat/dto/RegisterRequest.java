@@ -51,4 +51,7 @@ public class RegisterRequest {
 
     // --- Domaines partagés (IDs sélectionnés par le bénévole ou l'association) ---
     private List<Long> domaineIds;
+
+    // --- Vérification email OTP ---
+    private String otpCode;
 }

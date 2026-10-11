@@ -40,6 +40,22 @@ public class AuthController {
                 : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    /** POST /api/auth/verify-email — Vérifie l'OTP après inscription */
+    @PostMapping("/verify-email")
+    public ResponseEntity<AuthResponse> verifyEmail(@RequestBody Map<String, String> body) {
+        String email = body.getOrDefault("email", "").toLowerCase().trim();
+        String code  = body.getOrDefault("code", "").trim();
+        if (email.isBlank() || code.isBlank()) {
+            return ResponseEntity.badRequest().body(
+                AuthResponse.builder().success(false).message("Email et code requis.").build()
+            );
+        }
+        AuthResponse response = authService.verifyEmailOtp(email, code);
+        return response.isSuccess()
+                ? ResponseEntity.ok(response)
+                : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     /** POST /api/auth/login — Connexion (retourne JWT) */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {

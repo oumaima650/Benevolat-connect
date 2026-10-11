@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 
 import {
@@ -16,7 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAuthModal } from "@/context/AuthModalContext";
 
 export function LoginModal() {
-  const { modal, closeModal, openRegisterBenevole, openRegisterAssociation } = useAuthModal();
+  const { modal, closeModal, openRegisterBenevole, openRegisterAssociation, openForgotPassword } = useAuthModal();
   const { loginUser } = useAuth();
   const navigate = useNavigate();
 
@@ -127,13 +127,13 @@ export function LoginModal() {
                 {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <Link
-              to="/mot-de-passe-oublie"
-              onClick={closeModal}
+            <button
+              type="button"
+              onClick={() => { reset(); openForgotPassword(); }}
               className="inline-block text-xs font-bold text-ink underline underline-offset-2 hover:text-pink"
             >
               Mot de passe oublié ?
-            </Link>
+            </button>
           </div>
 
           {/* Submit */}
