@@ -1,21 +1,12 @@
 import { createFileRoute, Outlet, Link, useNavigate, useMatchRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import {
-  LayoutDashboard,
-  ClipboardList,
-  PlusCircle,
-  Users,
-  Zap,
-  FileText,
-  Bell,
-  Building2,
-  Menu,
-  LogOut,
-  ChevronDown,
-  AlertTriangle,
+  LayoutDashboard, ClipboardList, PlusCircle, Users, Zap,
+  FileText, Bell, Building2, Menu, LogOut, ChevronDown, AlertTriangle,
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { useAuth, getInitial } from '@/context/AuthContext';
+import { UserAvatar } from '@/components/common/UserAvatar';
 import logoImage from '@/assets/logo.png';
 import {
   DropdownMenu,
@@ -196,13 +187,10 @@ function AssociationLayout() {
             {/* Avatar dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  className="flex items-center gap-2 rounded-xl border-2 border-ink bg-emerald px-3 py-1.5 text-sm font-bold text-emerald-foreground shadow-[2px_2px_0_var(--color-ink)] hover:opacity-90 uppercase"
-                  aria-label="Menu association"
-                >
-                  <span>{userInitial}</span>
-                  <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
+                <div className="flex items-center gap-1.5 cursor-pointer rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] overflow-hidden hover:opacity-90">
+                  <UserAvatar user={user} size="sm" />
+                  <ChevronDown className="h-3.5 w-3.5 mr-2 text-ink" aria-hidden="true" />
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="border-2 border-ink shadow-[3px_3px_0_var(--color-ink)]">
                 <DropdownMenuItem asChild>

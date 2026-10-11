@@ -7,8 +7,9 @@ export type UserProfile = {
   prenom?: string;
   nomAssociation?: string;
   role?: "BENEVOLE" | "ASSOCIATION" | "ADMIN";
-  photoUrl?: string;
-  logoUrl?: string;
+  photoUrl?: string;   // photo bénévole ou logo association (URL Cloudinary)
+  ville?: string;
+  telephone?: string;
 };
 
 type AuthContextType = {

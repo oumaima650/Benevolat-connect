@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, Megaphone, ListChecks, Award } from "lucide-react";
 import associationsImage from "@/assets/associations.jpg";
 import associationApi, { type AssociationBackend } from "@/services/associationApi";
+import { useAuth } from "@/context/AuthContext";
 
 const etapes = [
   { Icon: Megaphone, titre: "Publiez", texte: "Une mission en 2 minutes, avec adresse, dates et nombre de places.", fond: "bg-mustard text-ink" },
@@ -11,13 +12,18 @@ const etapes = [
 ];
 
 export function ForAssociations() {
+  const { user } = useAuth();
   const [assosList, setAssosList] = useState<any[]>([]);
+  const [loading, setLoading]     = useState(true);
 
   useEffect(() => {
-    associationApi.getFeaturedAssociations().then((data: AssociationBackend[]) => {
-      setAssosList(data);
-    }).catch(() => {});
+    associationApi.getFeaturedAssociations()
+      .then((data: AssociationBackend[]) => setAssosList(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
+
+
 
   return (
     <section id="associations" className="border-b-4 border-ink bg-paper">
@@ -45,19 +51,31 @@ export function ForAssociations() {
           <div className="flex flex-col justify-center p-8 lg:p-10">
             <p className="text-sm opacity-80">Elles nous font déjà confiance</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {assosList.map((a) => {
-                const nom = a.nom || "";
-                const initiales = nom ? nom.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase() : "A";
-                return (
-                  <span key={a.id || nom} className="inline-flex items-center gap-2 rounded-full border border-paper/30 py-1 pl-1 pr-3 text-xs font-semibold">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-mustard text-[10px] font-black text-ink">{initiales}</span>{nom}
-                  </span>
-                );
-              })}
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <span key={i} className="h-8 w-32 animate-pulse rounded-full bg-paper/20" />
+                ))
+              ) : assosList.length === 0 ? (
+                <p className="text-sm text-paper/60">Aucune association enregistrée.</p>
+              ) : (
+                assosList.map((a) => {
+                  const nom = a.nom || "";
+                  const initiales = a.initiales
+                                 ?? (nom ? nom.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase() : "A");
+                  return (
+                    <span key={a.id || nom} className="inline-flex items-center gap-2 rounded-full border border-paper/30 py-1 pl-1 pr-3 text-xs font-semibold">
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-mustard text-[10px] font-black text-ink">{initiales}</span>{nom}
+                    </span>
+                  );
+                })
+              )}
             </div>
-            <Link to="/inscription" search={{ profil: "association" }} className="press mt-8 inline-flex w-fit items-center gap-2 rounded-xl border-2 border-paper bg-mustard px-5 py-3 text-sm font-bold text-ink">
-              Créer un compte association <ArrowUpRight className="h-4 w-4" />
-            </Link>
+            {/* CTA uniquement si non connecté */}
+            {!user && (
+              <Link to="/inscription" search={{ role: "ASSOCIATION" }} className="press mt-8 inline-flex w-fit items-center gap-2 rounded-xl border-2 border-paper bg-mustard px-5 py-3 text-sm font-bold text-ink">
+                Créer un compte association <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            )}
           </div>
         </div>
       </div>

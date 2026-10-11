@@ -1,87 +1,149 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, MapPin, Building2 } from "lucide-react";
-import { associations as fallbackAssociations, type Association } from "./data";
-import { missionPresentation } from "./mission-presentation";
+import { ArrowUpRight, MapPin } from "lucide-react";
 import { Reveal } from "./Reveal";
 import associationApi, { type AssociationBackend } from "@/services/associationApi";
 
-function CarteAssociation({ association }: { association: any }) {
-  const nom = association.nom || "";
-  const domaine = association.domaine || "Solidarité";
-  const ville = association.ville || "";
-  const description = association.description || "";
-  const photo = association.photoProfil;
-  const initiales = nom ? nom.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase() : "A";
+function isValidUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return url.startsWith("http://") || url.startsWith("https://");
+}
 
-  const { Icon, color, background } = missionPresentation(domaine);
+function CarteAssociation({ association }: { association: AssociationBackend }) {
+  const nom         = association.nom || "";
+  const ville       = association.ville || "";
+  const description = association.description || "";
+  const rawPhoto    = association.photoProfil ?? null;
+  const photo       = isValidUrl(rawPhoto) ? rawPhoto : null;
+  const initiales   = nom
+    ? nom
+        .split(" ")
+        .map((w: string) => w[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "A";
 
   return (
-    <article className="mission-card flex h-full flex-col overflow-hidden rounded-lg border-2 border-ink bg-paper">
-      <div className={`flex items-center justify-between gap-3 border-b-2 border-ink px-5 py-4 ${background} ${color}`}>
-        <Icon className="h-8 w-8 shrink-0" strokeWidth={1.7} aria-hidden="true" />
-        <span className="text-right text-xs font-bold">{domaine}</span>
-      </div>
-      <div className="flex flex-1 flex-col p-5">
-        <div className="flex items-center gap-3">
+    <article className="flex h-full flex-col rounded-2xl border-2 border-ink bg-paper shadow-[4px_4px_0_var(--color-ink)] transition-all hover:-translate-y-1">
+      {/* Corps : avatar + infos */}
+      <div className="flex flex-1 flex-col gap-4 p-5">
+        <div className="flex items-start gap-4">
+          {/* Avatar 56×56 */}
           {photo ? (
-            <img src={photo} alt={nom} className="h-12 w-12 shrink-0 rounded-full border-2 border-ink object-cover" />
+            <img
+              src={photo}
+              alt={nom}
+              className="h-14 w-14 shrink-0 rounded-xl border-2 border-ink object-cover"
+            />
           ) : (
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-ink bg-ink font-display text-sm font-black text-paper" aria-hidden="true">
+            <span
+              aria-hidden="true"
+              className="grid h-14 w-14 shrink-0 place-items-center rounded-xl border-2 border-ink bg-ink font-display text-sm font-black text-paper"
+            >
               {initiales}
             </span>
           )}
-          <div className="min-w-0">
-            <h3 className="truncate text-lg leading-tight font-display">{nom}</h3>
+
+          {/* Infos */}
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate font-display text-lg leading-tight">
+              {nom}
+            </h3>
+
             {ville && (
               <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5 shrink-0" /> {ville}
+                <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                {ville}
               </p>
             )}
           </div>
         </div>
-        <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
-        <div className="mt-auto pt-5">
-          <Link to="/missions" className="flex items-center justify-between border-t border-ink/20 pt-4 text-sm font-bold hover:text-pink">
-            Voir ses missions <ArrowUpRight className="h-4 w-4" />
-          </Link>
-        </div>
+
+        <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          {description}
+        </p>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t-2 border-ink px-5 py-3">
+        <Link
+          to="/missions"
+          className="flex items-center justify-between text-sm font-bold hover:text-pink"
+        >
+          Voir ses missions <ArrowUpRight className="h-4 w-4" />
+        </Link>
       </div>
     </article>
   );
 }
 
+function SkeletonCarte() {
+  return (
+    <div className="h-32 animate-pulse rounded-xl border-2 border-ink bg-muted" />
+  );
+}
+
 export function FeaturedAssociations() {
-  const [assosList, setAssosList] = useState<any[]>([]);
+  const [assosList, setAssosList] = useState<AssociationBackend[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    associationApi.getFeaturedAssociations().then((data: AssociationBackend[]) => {
-      setAssosList(data);
-    }).catch(() => {});
+    associationApi
+      .getFeaturedAssociations()
+      .then((data: AssociationBackend[]) => {
+        setAssosList(data);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   return (
     <section className="border-b-4 border-ink bg-muted">
       <div className="mx-auto max-w-6xl px-5 py-14 lg:py-20">
-        <Reveal className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 sm:flex sm:justify-between">
+        <Reveal className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="text-3xl sm:text-4xl">Associations vedettes</h2>
+            <h2 className="text-3xl sm:text-4xl">Ils agissent près de vous</h2>
             <p className="mt-3 text-muted-foreground">
               Des équipes locales qui font bouger le Maroc. Rejoins celle qui te ressemble.
             </p>
           </div>
-          <Link to="/missions" className="shrink-0 text-sm font-semibold underline underline-offset-4 hover:text-pink">
-            Voir les missions
+          <Link
+            to="/associations"
+            className="shrink-0 text-sm font-semibold underline underline-offset-4 hover:text-pink"
+          >
+            Voir toutes les associations
           </Link>
         </Reveal>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {assosList.slice(0, 4).map((asso, i) => (
-            <Reveal key={asso.id || asso.nom} delay={i * 100}>
-              <CarteAssociation association={asso} />
-            </Reveal>
-          ))}
+          {loading ? (
+            Array.from({ length: 4 }).map((_, i) => <SkeletonCarte key={i} />)
+          ) : assosList.length === 0 ? (
+            <p className="col-span-4 text-sm text-muted-foreground">
+              Aucune association disponible pour le moment.
+            </p>
+          ) : (
+            assosList.slice(0, 4).map((asso, i) => (
+              <Reveal key={asso.id ?? asso.nom} delay={i * 100}>
+                <CarteAssociation association={asso} />
+              </Reveal>
+            ))
+          )}
         </div>
+
+        {!loading && assosList.length > 4 && (
+          <div className="mt-8 flex justify-center">
+            <Link
+              to="/associations"
+              className="press inline-flex items-center gap-2 rounded-xl border-2 border-ink bg-ink px-6 py-3 text-sm font-bold text-paper shadow-[4px_4px_0_var(--color-mustard)] hover:opacity-90"
+            >
+              Voir toutes les {assosList.length} associations
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

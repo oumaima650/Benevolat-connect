@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { BecomeVolunteer } from "@/components/site/BecomeVolunteer";
 import { CertificateCheck } from "@/components/site/CertificateCheck";
 import { FeaturedAssociations } from "@/components/site/FeaturedAssociations";
 import { Footer } from "@/components/site/Footer";
@@ -8,6 +7,7 @@ import { ForAssociations } from "@/components/site/ForAssociations";
 import { Header } from "@/components/site/Header";
 import { Hero } from "@/components/site/Hero";
 import { HowItWorks } from "@/components/site/HowItWorks";
+import { HowItWorksDetailed } from "@/components/site/HowItWorksDetailed";
 import { Impact } from "@/components/site/Impact";
 import { Marquee } from "@/components/site/Marquee";
 import { MissionSearch } from "@/components/site/MissionSearch";
@@ -37,11 +37,11 @@ function Index() {
       <main>
         <Hero />
         <Marquee />
-        <HowItWorks />
-        <FeaturedAssociations />
-        <MissionSearch limite={4} />
-        <BecomeVolunteer />
         <Impact />
+        <HowItWorks />
+        <MissionSearch limite={4} />
+        <FeaturedAssociations />
+        <HowItWorksDetailed />
         <ForAssociations />
         <CertificateCheck />
       </main>

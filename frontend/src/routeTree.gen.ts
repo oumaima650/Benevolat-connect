@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AssociationRouteImport } from './routes/association'
+import { Route as AssociationsRouteImport } from './routes/associations'
 import { Route as BenevoleRouteImport } from './routes/benevole'
 import { Route as CertificatRouteImport } from './routes/certificat'
+import { Route as CommentCaMarcheRouteImport } from './routes/comment-ca-marche'
 import { Route as DashboardLoginRouteImport } from './routes/dashboard-login'
 import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as LoginRouteImport } from './routes/login'
@@ -48,6 +50,11 @@ const AssociationRoute = AssociationRouteImport.update({
   path: '/association',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AssociationsRoute = AssociationsRouteImport.update({
+  id: '/associations',
+  path: '/associations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BenevoleRoute = BenevoleRouteImport.update({
   id: '/benevole',
   path: '/benevole',
@@ -56,6 +63,11 @@ const BenevoleRoute = BenevoleRouteImport.update({
 const CertificatRoute = CertificatRouteImport.update({
   id: '/certificat',
   path: '/certificat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommentCaMarcheRoute = CommentCaMarcheRouteImport.update({
+  id: '/comment-ca-marche',
+  path: '/comment-ca-marche',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardLoginRoute = DashboardLoginRouteImport.update({
@@ -184,8 +196,10 @@ const MissionsIdRoute = MissionsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/association': typeof AssociationRouteWithChildren
+  '/associations': typeof AssociationsRoute
   '/benevole': typeof BenevoleRouteWithChildren
   '/certificat': typeof CertificatRoute
+  '/comment-ca-marche': typeof CommentCaMarcheRoute
   '/dashboard-login': typeof DashboardLoginRoute
   '/inscription': typeof InscriptionRoute
   '/login': typeof LoginRoute
@@ -213,7 +227,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/associations': typeof AssociationsRoute
   '/certificat': typeof CertificatRoute
+  '/comment-ca-marche': typeof CommentCaMarcheRoute
   '/dashboard-login': typeof DashboardLoginRoute
   '/inscription': typeof InscriptionRoute
   '/login': typeof LoginRoute
@@ -242,8 +258,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/association': typeof AssociationRouteWithChildren
+  '/associations': typeof AssociationsRoute
   '/benevole': typeof BenevoleRouteWithChildren
   '/certificat': typeof CertificatRoute
+  '/comment-ca-marche': typeof CommentCaMarcheRoute
   '/dashboard-login': typeof DashboardLoginRoute
   '/inscription': typeof InscriptionRoute
   '/login': typeof LoginRoute
@@ -274,8 +292,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/association'
+    | '/associations'
     | '/benevole'
     | '/certificat'
+    | '/comment-ca-marche'
     | '/dashboard-login'
     | '/inscription'
     | '/login'
@@ -303,7 +323,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/associations'
     | '/certificat'
+    | '/comment-ca-marche'
     | '/dashboard-login'
     | '/inscription'
     | '/login'
@@ -331,8 +353,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/association'
+    | '/associations'
     | '/benevole'
     | '/certificat'
+    | '/comment-ca-marche'
     | '/dashboard-login'
     | '/inscription'
     | '/login'
@@ -362,8 +386,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AssociationRoute: typeof AssociationRouteWithChildren
+  AssociationsRoute: typeof AssociationsRoute
   BenevoleRoute: typeof BenevoleRouteWithChildren
   CertificatRoute: typeof CertificatRoute
+  CommentCaMarcheRoute: typeof CommentCaMarcheRoute
   DashboardLoginRoute: typeof DashboardLoginRoute
   InscriptionRoute: typeof InscriptionRoute
   LoginRoute: typeof LoginRoute
@@ -388,6 +414,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AssociationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/associations': {
+      id: '/associations'
+      path: '/associations'
+      fullPath: '/associations'
+      preLoaderRoute: typeof AssociationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/benevole': {
       id: '/benevole'
       path: '/benevole'
@@ -400,6 +433,13 @@ declare module '@tanstack/react-router' {
       path: '/certificat'
       fullPath: '/certificat'
       preLoaderRoute: typeof CertificatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comment-ca-marche': {
+      id: '/comment-ca-marche'
+      path: '/comment-ca-marche'
+      fullPath: '/comment-ca-marche'
+      preLoaderRoute: typeof CommentCaMarcheRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard-login': {
@@ -642,8 +682,10 @@ const MissionsRouteWithChildren = MissionsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AssociationRoute: AssociationRouteWithChildren,
+  AssociationsRoute: AssociationsRoute,
   BenevoleRoute: BenevoleRouteWithChildren,
   CertificatRoute: CertificatRoute,
+  CommentCaMarcheRoute: CommentCaMarcheRoute,
   DashboardLoginRoute: DashboardLoginRoute,
   InscriptionRoute: InscriptionRoute,
   LoginRoute: LoginRoute,

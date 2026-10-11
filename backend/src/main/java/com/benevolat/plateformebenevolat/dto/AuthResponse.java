@@ -33,5 +33,7 @@ public class AuthResponse {
         private String telephone;
         private Role role;
         private String statut;
+        private String photoProfil;   // URL Cloudinary (photoProfil pour bénévole, logoUrl pour association)
+        private String nomAssociation; // spécifique association
     }
 }
