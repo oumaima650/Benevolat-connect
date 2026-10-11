@@ -142,7 +142,7 @@ public class EmailService {
                           <span style="font-size:40px;font-weight:900;letter-spacing:10px;color:#1a1a1a;">%s</span>
                         </div>
                         <p style="margin:0;font-size:13px;color:#888;">
-                          Ce code est valable <strong>%d minute(s)</strong>.<br>
+                          Ce code est valable <strong>%d minute</strong>.<br>
                           Si tu n'as pas créé de compte CountMeIn, ignore cet email.
                         </p>
                       </td>
