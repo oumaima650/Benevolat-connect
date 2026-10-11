@@ -1,7 +1,6 @@
 package com.benevolat.plateformebenevolat.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,7 +8,8 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 /**
- * Entité Utilisateur mappée sur la table 'Utilisateur' de la base de données.
+ * Entité Utilisateur (abstraite) mappée sur la table 'Utilisateur'.
+ * Les sous-classes Benevole, Association et Administrateur partagent sa clé (JOINED).
  */
 @Entity
 @Table(name = "Utilisateur")
@@ -17,8 +17,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-public class Utilisateur {
+public abstract class Utilisateur {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,25 +49,9 @@ public class Utilisateur {
     @Column(name = "photoProfil", length = 500)
     private String photoProfil;
 
-    @Column(name = "Active", nullable = false)
-    private String Active = "actif";
-
     @Enumerated(EnumType.STRING)
-    @Transient
+    @Column(name = "statut", nullable = false, length = 20)
     private StatutUtilisateur statut = StatutUtilisateur.ACTIF;
-
-    public StatutUtilisateur getStatut() {
-        if ("desactif".equalsIgnoreCase(Active)) return StatutUtilisateur.DESACTIVE;
-        if ("suspendu".equalsIgnoreCase(Active)) return StatutUtilisateur.SUSPENDUE;
-        return StatutUtilisateur.ACTIF;
-    }
-
-    public void setStatut(StatutUtilisateur s) {
-        this.statut = s;
-        if (s == StatutUtilisateur.DESACTIVE) this.Active = "desactif";
-        else if (s == StatutUtilisateur.SUSPENDUE) this.Active = "suspendu";
-        else this.Active = "actif";
-    }
 
     @Column(name = "notifEstActive", nullable = false)
     private Boolean notifEstActive = true;
@@ -92,9 +75,12 @@ public class Utilisateur {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public Utilisateur(String email, String motDePasse, String photoProfil) {
+    protected Utilisateur(String email, String motDePasse, String photoProfil) {
         this.email = email;
         this.motDePasse = motDePasse;
         this.photoProfil = photoProfil;
     }
+
+    /** Rôle déduit du type de l'utilisateur (non persisté). */
+    public abstract Role getRole();
 }

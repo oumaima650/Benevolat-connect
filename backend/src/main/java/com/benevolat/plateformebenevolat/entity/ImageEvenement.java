@@ -1,20 +1,21 @@
 package com.benevolat.plateformebenevolat.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 /**
- * Entité ImageEvenement mappée sur la table 'ImageEvenement' de la base de données.
+ * Entité ImageEvenement mappée sur la table 'ImageEvenement'.
+ * Une image appartient à une seule mission ; une mission peut en avoir plusieurs.
  */
 @Entity
 @Table(name = "ImageEvenement")
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class ImageEvenement {
 
     @Id
@@ -31,9 +32,17 @@ public class ImageEvenement {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    public ImageEvenement(String url, String titre, String description) {
+    @Column(name = "datePublication", nullable = false)
+    private LocalDateTime datePublication = LocalDateTime.now();
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "idMission", nullable = false)
+    private Mission mission;
+
+    public ImageEvenement(String url, String titre, String description, Mission mission) {
         this.url = url;
         this.titre = titre;
         this.description = description;
+        this.mission = mission;
     }
 }

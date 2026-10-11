@@ -8,13 +8,22 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Entité Administrateur héritant d'Utilisateur selon le diagramme de classe.
+ * Entité Administrateur héritant d'Utilisateur (table 'Administrateur').
  */
 @Entity
-@Table(name = "administrateurs")
-@PrimaryKeyJoinColumn(name = "utilisateur_id")
+@Table(name = "Administrateur")
+@PrimaryKeyJoinColumn(name = "idAdministrateur")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Administrateur extends Utilisateur {
+
+    public Administrateur(String email, String motDePasse, String photoProfil) {
+        super(email, motDePasse, photoProfil);
+    }
+
+    @Override
+    public Role getRole() {
+        return Role.ADMIN;
+    }
 }

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Entité Domaine mappée sur la table 'Domaine' de la base de données.
+ * Entité Domaine mappée sur la table 'Domaine'.
  */
 @Entity
 @Table(name = "Domaine")
@@ -22,13 +22,13 @@ public class Domaine {
     @Column(name = "idDomaine")
     private Long idDomaine;
 
-    @Column(name = "nom", nullable = false, length = 100)
+    @Column(name = "nom", nullable = false, unique = true, length = 100)
     private String nom;
 
-    @Transient
+    @Column(name = "categorie", length = 100)
     private String categorie;
 
-    @Transient
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     public Domaine(String nom) {

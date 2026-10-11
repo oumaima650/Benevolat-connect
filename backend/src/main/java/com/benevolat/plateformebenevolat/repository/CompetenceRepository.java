@@ -8,6 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface CompetenceRepository extends JpaRepository<Competence, Long> {
+    Optional<Competence> findByNom(String nom);
     Optional<Competence> findByNomIgnoreCase(String nom);
     boolean existsByNomIgnoreCase(String nom);
 }
