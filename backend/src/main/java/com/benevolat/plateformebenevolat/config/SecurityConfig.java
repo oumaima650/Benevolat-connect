@@ -16,6 +16,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.http.HttpMethod;
+
 import java.util.List;
 
 /**
@@ -61,9 +63,14 @@ public class SecurityConfig {
                     "/api/domaines/**",
                     "/api/stats/**",
                     "/api/missions/**",
-                    "/api/associations/**",
                     "/api/certificates/**"
                 ).permitAll()
+                // GET /api/associations (liste publique) — accessible sans authentification
+                .requestMatchers(HttpMethod.GET, "/api/associations").permitAll()
+                // /api/associations/me/** — réservé aux associations authentifiées
+                .requestMatchers("/api/associations/me/**").hasRole("ASSOCIATION")
+                // Autres endpoints associations restent publics (pages de détail, etc.)
+                .requestMatchers("/api/associations/**").permitAll()
                 // Toutes les autres requêtes API nécessitent un JWT valide
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()

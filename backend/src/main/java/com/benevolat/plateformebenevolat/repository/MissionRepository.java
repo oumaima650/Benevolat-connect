@@ -34,4 +34,6 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
 
     @Query("SELECT COALESCE(SUM(m.nbPlaces), 0) FROM Mission m WHERE m.statut NOT IN ('BROUILLON', 'ANNULEE')")
     Long sumTotalNbPlaces();
+
+    List<Mission> findByAssociationIdUtilisateurOrderByDateDebutDesc(Long associationId);
 }
