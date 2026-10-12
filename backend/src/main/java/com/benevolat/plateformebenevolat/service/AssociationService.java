@@ -8,12 +8,14 @@ import com.benevolat.plateformebenevolat.entity.Association;
 import com.benevolat.plateformebenevolat.entity.Domaine;
 import com.benevolat.plateformebenevolat.entity.Mission;
 import com.benevolat.plateformebenevolat.entity.StatutMission;
+import com.benevolat.plateformebenevolat.entity.StatutUtilisateur;
 import com.benevolat.plateformebenevolat.repository.AssociationRepository;
 import com.benevolat.plateformebenevolat.repository.CompetenceRepository;
 import com.benevolat.plateformebenevolat.repository.DomaineRepository;
 import com.benevolat.plateformebenevolat.repository.MissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -31,6 +33,8 @@ public class AssociationService {
     private final DomaineRepository domaineRepository;
     private final MissionRepository missionRepository;
     private final CompetenceRepository competenceRepository;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
 
     // ─── Profile ──────────────────────────────────────────────────────────────
 
@@ -58,7 +62,8 @@ public class AssociationService {
         if (req.getLogoUrl() != null && !req.getLogoUrl().isBlank()) {
             asso.setPhotoProfil(req.getLogoUrl());
         }
-        // adresse: not stored on Association entity (no column) — requires DB migration
+        if (req.getLatitude() != null)  asso.setLatitude(req.getLatitude());
+        if (req.getLongitude() != null) asso.setLongitude(req.getLongitude());
         if (req.getDomaineIds() != null) {
             asso.setDomaines(domaineRepository.findAllById(req.getDomaineIds()));
         }
@@ -67,7 +72,28 @@ public class AssociationService {
         return toProfileDto(asso);
     }
 
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        Association asso = loadByEmail(email);
+        if (!passwordEncoder.matches(currentPassword, asso.getMotDePasseHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mot de passe actuel incorrect.");
+        }
+        asso.setMotDePasseHash(passwordEncoder.encode(newPassword));
+        associationRepository.save(asso);
+    }
+
+    public String toggleStatut(String email) {
+        Association asso = loadByEmail(email);
+        StatutUtilisateur current = asso.getStatut();
+        StatutUtilisateur next = (current == StatutUtilisateur.ACTIF)
+            ? StatutUtilisateur.DESACTIVE
+            : StatutUtilisateur.ACTIF;
+        asso.setStatut(next);
+        associationRepository.save(asso);
+        return next.name();
+    }
+
     // ─── Missions ─────────────────────────────────────────────────────────────
+
 
     @Transactional(readOnly = true)
     public List<MissionDto> getMissions(String email) {
@@ -198,7 +224,10 @@ public class AssociationService {
                 .ville(asso.getVille())
                 .contact(asso.getContact())
                 .logoUrl(asso.getPhotoProfil())
-                .statutValidation(asso.getStatutValidation().name())
+                .statutValidation(asso.getStatutValidation() != null ? asso.getStatutValidation().name() : "EN_ATTENTE")
+                .statutCompte(asso.getStatut() != null ? asso.getStatut().name() : "ACTIF")
+                .latitude(asso.getLatitude())
+                .longitude(asso.getLongitude())
                 .domaineIds(domaineIds)
                 .domaineNoms(domaineNoms)
                 .build();
@@ -225,7 +254,7 @@ public class AssociationService {
                 .nbPlaces(m.getNbPlaces())
                 .nbInscritsConfirmes(0)
                 .nbListeAttente(m.getNbPlacesListeAttente())
-                .statut(m.getStatut())
+                .statut(m.getStatut() != null ? m.getStatut().name() : "BROUILLON")
                 .domaineId(m.getDomaine() != null ? m.getDomaine().getIdDomaine() : null)
                 .domaineNom(m.getDomaine() != null ? m.getDomaine().getNom() : null)
                 .competenceNoms(competenceNoms)

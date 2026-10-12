@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Lock } from 'lucide-react';
+import { Lock, Sprout, Handshake, Medal, Trophy, LucideIcon } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { badges, niveauLabel, prochainNiveau } from '@/components/dashboard/data';
 
@@ -7,11 +7,11 @@ export const Route = createFileRoute('/benevole/badges')({
   component: BadgesNiveau,
 });
 
-const PALIERS = [
-  { label: 'Débutant', min: 0, max: 4, icone: '🌱' },
-  { label: 'Engagé', min: 5, max: 14, icone: '🤝' },
-  { label: 'Expert', min: 15, max: 29, icone: '🏅' },
-  { label: 'Champion', min: 30, max: Infinity, icone: '🏆' },
+const PALIERS: { label: string; min: number; max: number; Icon: LucideIcon; color: string }[] = [
+  { label: 'Débutant',  min: 0,  max: 4,        Icon: Sprout,    color: 'text-green-600' },
+  { label: 'Engagé',   min: 5,  max: 14,       Icon: Handshake, color: 'text-blue-600'  },
+  { label: 'Expert',   min: 15, max: 29,       Icon: Medal,     color: 'text-amber-600' },
+  { label: 'Champion', min: 30, max: Infinity, Icon: Trophy,    color: 'text-pink'      },
 ];
 
 function BadgesNiveau() {
@@ -30,8 +30,8 @@ function BadgesNiveau() {
       {/* Current level card */}
       <div className="rounded-2xl border-2 border-ink bg-mustard p-6 shadow-[4px_4px_0_var(--color-ink)]">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-paper text-3xl">
-            🤝
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-paper">
+            <Handshake className="h-8 w-8 text-blue-600" />
           </div>
           <div className="flex-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink/60">Niveau actuel</p>
@@ -70,7 +70,7 @@ function BadgesNiveau() {
                     className={`border-b border-ink/10 ${isActuel ? 'bg-mustard/20' : ''}`}
                   >
                     <td className="py-2.5 pr-4 font-semibold text-ink">
-                      <span className="mr-2">{p.icone}</span>
+                      <span className="mr-2 inline-flex"><p.Icon className={`h-4 w-4 ${p.color}`} /></span>
                       {p.label}
                     </td>
                     <td className="py-2.5 pr-4 text-muted-foreground">

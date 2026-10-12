@@ -43,6 +43,7 @@ export type AssociationProfile = {
   contact: string;
   logoUrl?: string;
   statutValidation: "EN_ATTENTE" | "VALIDE" | "REFUSE";
+  statutCompte?: "ACTIF" | "DESACTIVE" | "SUSPENDUE";
   latitude?: number;
   longitude?: number;
   domaineIds: number[];
@@ -97,6 +98,17 @@ export const updateMyProfile = (data: Partial<AssociationProfile> & { domaineIds
   request<AssociationProfile>("/api/associations/me", {
     method: "PUT",
     body: JSON.stringify(data),
+  });
+
+export const changePassword = (currentPassword: string, newPassword: string) =>
+  request<{ success: boolean; message: string }>("/api/associations/me/password", {
+    method: "PATCH",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+export const toggleAccountStatut = () =>
+  request<{ success: boolean; statut: string; message: string }>("/api/associations/me/statut", {
+    method: "PATCH",
   });
 
 export const getMyMissions = () =>

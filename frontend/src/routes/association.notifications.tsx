@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, CheckCircle2, PartyPopper, XCircle, Clock, Siren, LucideIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -62,12 +62,12 @@ const NOTIFS_ASSO: NotificationDash[] = [
   },
 ];
 
-const typeIcons: Record<NotificationDash['type'], string> = {
-  CONFIRMATION: '✅',
-  PROMOTION: '🎉',
-  ANNULATION: '❌',
-  RAPPEL: '⏰',
-  RENFORT_URGENT: '🚨',
+const typeIcons: Record<NotificationDash['type'], LucideIcon> = {
+  CONFIRMATION:   CheckCircle2,
+  PROMOTION:      PartyPopper,
+  ANNULATION:     XCircle,
+  RAPPEL:         Clock,
+  RENFORT_URGENT: Siren,
 };
 
 const typeColors: Record<NotificationDash['type'], string> = {
@@ -89,7 +89,7 @@ function NotifItem({ n, onMarkRead }: { n: NotificationDash; onMarkRead: (id: st
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm ${typeColors[n.type]}`}
         aria-hidden="true"
       >
-        {typeIcons[n.type]}
+        {(() => { const Icon = typeIcons[n.type]; return <Icon className="h-4 w-4" />; })()}
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">

@@ -15,4 +15,6 @@ public class UpdateAssociationRequest {
     private String contact;
     private String logoUrl;
     private List<Long> domaineIds;
+    private Double latitude;
+    private Double longitude;
 }

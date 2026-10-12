@@ -25,6 +25,7 @@ public class AssociationProfileDto {
     private String contact;
     private String logoUrl;
     private String statutValidation; // EN_ATTENTE / VALIDE / REFUSE
+    private String statutCompte;     // ACTIF / DESACTIVE / SUSPENDUE
     private Double latitude;
     private Double longitude;
 

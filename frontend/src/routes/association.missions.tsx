@@ -68,9 +68,9 @@ function MesMissions() {
       const updated = await changeMissionStatut(action.id, actionStatutMap[action.action]);
       setMissions((prev) => prev.map((m) => (m.id === action.id ? updated : m)));
       const msgs = {
-        publier: '🚀 Mission publiée !',
+        publier: 'Mission publiée !',
         annuler: 'Mission annulée.',
-        cloturer: '✅ Mission clôturée !',
+        cloturer: 'Mission clôturée !',
         depublier: 'Mission repassée en brouillon.',
       };
       toast.success(msgs[action.action]);

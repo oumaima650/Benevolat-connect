@@ -85,7 +85,7 @@ function Certificats() {
 
     setDelivered((prev) => [...prev, ...newCerts]);
     setSelections((prev) => ({ ...prev, [mission.id]: [] }));
-    toast.success(`✅ ${newCerts.length} certificat(s) délivré(s) !`);
+    toast.success(`${newCerts.length} certificat(s) délivré(s) avec succès !`);
   }
 
   return (
@@ -201,7 +201,7 @@ function Certificats() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => toast.info('📄 Téléchargement en cours…')}
+                      onClick={() => toast.info('Téléchargement en cours…')}
                       className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]"
                       aria-label={`Télécharger le certificat de ${c.benevoleNom}`}
                     >
