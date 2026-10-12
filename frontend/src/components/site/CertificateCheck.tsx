@@ -30,7 +30,9 @@ export function CertificateCheck() {
       if (res.valide) {
         setResultat({ valide: true, data: res, code: v });
       } else {
-        setResultat({ valide: false, code: v, message: res.message });
+        setResultat(res.message
+          ? { valide: false, code: v, message: res.message }
+          : { valide: false, code: v });
       }
     } catch {
       setResultat({ valide: false, code: v, message: "Erreur serveur. Réessayez dans un instant." });

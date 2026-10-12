@@ -6,11 +6,15 @@ export interface BenevoleProfileApi {
   prenom: string;
   nom: string;
   telephone?: string;
+  dateNaissance?: string;
   ville: string;
   biographie: string;
   rayonDeplacementKm: number;
   competences: string[];
+  domaineIds?: number[];
   photoUrl?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 async function authFetch(url: string, token: string, options: RequestInit = {}) {
