@@ -78,16 +78,6 @@ public class Benevole extends Utilisateur {
         setPhotoProfil(photoUrl);
     }
 
-    public String getAdresse() {
-        return ville;
-    }
-
-    public void setAdresse(String adresse) {
-        if (this.ville == null) {
-            this.ville = adresse;
-        }
-    }
-
     public Benevole(String email, String motDePasse, String photoProfil) {
         super(email, motDePasse, photoProfil);
     }

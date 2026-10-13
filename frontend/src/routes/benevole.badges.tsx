@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Lock, Sprout, Handshake, Medal, Trophy, LucideIcon } from 'lucide-react';
+import { Lock, Sprout, Handshake, Medal, Trophy, Check } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { badges, niveauLabel, prochainNiveau } from '@/components/dashboard/data';
 
@@ -7,11 +7,11 @@ export const Route = createFileRoute('/benevole/badges')({
   component: BadgesNiveau,
 });
 
-const PALIERS: { label: string; min: number; max: number; Icon: LucideIcon; color: string }[] = [
-  { label: 'Débutant',  min: 0,  max: 4,        Icon: Sprout,    color: 'text-green-600' },
-  { label: 'Engagé',   min: 5,  max: 14,       Icon: Handshake, color: 'text-blue-600'  },
-  { label: 'Expert',   min: 15, max: 29,       Icon: Medal,     color: 'text-amber-600' },
-  { label: 'Champion', min: 30, max: Infinity, Icon: Trophy,    color: 'text-pink'      },
+const PALIERS = [
+  { label: 'Débutant', min: 0, max: 4, icone: <Sprout className="h-5 w-5" /> },
+  { label: 'Engagé', min: 5, max: 14, icone: <Handshake className="h-5 w-5" /> },
+  { label: 'Expert', min: 15, max: 29, icone: <Medal className="h-5 w-5" /> },
+  { label: 'Champion', min: 30, max: Infinity, icone: <Trophy className="h-5 w-5" /> },
 ];
 
 function BadgesNiveau() {
@@ -19,6 +19,7 @@ function BadgesNiveau() {
   const niveau = niveauLabel(nMissions);
   const niveauInfo = prochainNiveau(nMissions);
   const progressPct = Math.round((niveauInfo.actuel / niveauInfo.suivant) * 100);
+  const palierActuel = PALIERS.find((p) => p.label === niveau) ?? PALIERS[0]!;
 
   return (
     <div className="space-y-6">
@@ -30,8 +31,8 @@ function BadgesNiveau() {
       {/* Current level card */}
       <div className="rounded-2xl border-2 border-ink bg-mustard p-6 shadow-[4px_4px_0_var(--color-ink)]">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-paper">
-            <Handshake className="h-8 w-8 text-blue-600" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-paper text-ink">
+            {palierActuel.icone}
           </div>
           <div className="flex-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink/60">Niveau actuel</p>
@@ -70,7 +71,7 @@ function BadgesNiveau() {
                     className={`border-b border-ink/10 ${isActuel ? 'bg-mustard/20' : ''}`}
                   >
                     <td className="py-2.5 pr-4 font-semibold text-ink">
-                      <span className="mr-2 inline-flex"><p.Icon className={`h-4 w-4 ${p.color}`} /></span>
+                      <span className="mr-2 inline-flex align-middle">{p.icone}</span>
                       {p.label}
                     </td>
                     <td className="py-2.5 pr-4 text-muted-foreground">
@@ -82,8 +83,8 @@ function BadgesNiveau() {
                           Niveau actuel
                         </span>
                       ) : isAtteint ? (
-                        <span className="rounded-full border border-green-300 bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-                          ✓ Atteint
+                        <span className="inline-flex items-center gap-1 rounded-full border border-green-300 bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
+                          <Check className="h-3 w-3" /> Atteint
                         </span>
                       ) : (
                         <span className="rounded-full border border-ink/20 bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
@@ -106,14 +107,13 @@ function BadgesNiveau() {
           {badges.map((b) => (
             <div
               key={b.id}
-              className={`flex flex-col items-center gap-3 rounded-2xl border-2 border-ink p-5 text-center shadow-[4px_4px_0_var(--color-ink)] ${
-                b.debloque ? 'bg-paper' : 'bg-muted opacity-70'
-              }`}
+              className={`flex flex-col items-center gap-3 rounded-2xl border-2 border-ink p-5 text-center shadow-[4px_4px_0_var(--color-ink)] ${b.debloque ? 'bg-paper' : 'bg-muted opacity-70'
+                }`}
             >
               {b.debloque ? (
-                <span className="text-4xl" role="img" aria-label={b.nom}>
-                  {b.icone}
-                </span>
+                <div className="flex h-12 w-12 items-center justify-center text-ink" aria-label={b.nom}>
+                  <b.icone className="h-10 w-10" />
+                </div>
               ) : (
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-200">
                   <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />

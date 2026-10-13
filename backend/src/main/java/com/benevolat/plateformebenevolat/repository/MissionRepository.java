@@ -8,9 +8,18 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MissionRepository extends JpaRepository<Mission, Long> {
+
+    /**
+     * Chargement d'une mission avec verrou pessimiste en écriture (SELECT ... FOR UPDATE).
+     * Requête native car MariaDB ne supporte pas la syntaxe « FOR UPDATE OF alias »
+     * générée par Hibernate avec @Lock(PESSIMISTIC_WRITE) sur une requête JPQL.
+     */
+    @Query(value = "SELECT * FROM mission WHERE id_mission = :id FOR UPDATE", nativeQuery = true)
+    Optional<Mission> findByIdForUpdate(@Param("id") Long id);
 
     @Query("SELECT DISTINCT m.association.ville FROM Mission m WHERE m.association.ville IS NOT NULL AND m.statut NOT IN ('BROUILLON', 'ANNULEE') ORDER BY m.association.ville")
     List<String> findDistinctVilles();

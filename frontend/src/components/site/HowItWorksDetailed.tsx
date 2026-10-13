@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   ChevronDown, UserCheck, BellRing, CheckCircle2, XCircle,
   Sparkles, Award, ShieldCheck, Mail, ArrowUpRight, Zap,
   Clock3, Info, Star, Trophy, Crown, Sprout, BadgeCheck,
-  Building2, FileText, Users, BarChart3, CalendarCheck,
+  Building2, FileText, Users, BarChart3, CalendarCheck, Check,
 } from "lucide-react";
 import { Reveal } from "./Reveal";
 import { useAuth } from "@/context/AuthContext";
@@ -17,7 +17,7 @@ function Accordion({
 }: {
   id: string; numero: string; titre: string;
   icon: React.FC<any>; accent: string;
-  children: React.ReactNode; defaultOpen?: boolean;
+  children: ReactNode; defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -56,7 +56,7 @@ function Accordion({
   );
 }
 
-function Note({ children }: { children: React.ReactNode }) {
+function Note({ children }: { children: ReactNode }) {
   return (
     <div className="mt-5 flex items-start gap-3 rounded-xl border-2 border-ink bg-muted px-4 py-3 shadow-[2px_2px_0_var(--color-ink)]">
       <Info className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
@@ -92,9 +92,9 @@ function FileAttente() {
           let bg = confirmed
             ? "bg-emerald text-emerald-foreground border-emerald"
             : "bg-orange-100 text-orange-700 border-orange-300";
-          let label = confirmed ? `${n}` : `W${rankW}`;
+          let label: React.ReactNode = confirmed ? `${n}` : `W${rankW}`;
           let extra = "";
-          if (promoted) { bg = "bg-mustard text-ink border-ink"; label = `${n}✓`; extra = "ring-2 ring-mustard ring-offset-1 scale-110"; }
+          if (promoted) { bg = "bg-mustard text-ink border-ink"; label = <span className="inline-flex items-center gap-0.5">{n}<Check className="h-2.5 w-2.5" /></span>; extra = "ring-2 ring-mustard ring-offset-1 scale-110"; }
           if (shifted)  { label = "W1"; }
           return (
             <span key={n} className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-[10px] font-black transition-all duration-500 ${bg} ${extra}`}>
@@ -105,7 +105,7 @@ function FileAttente() {
       </div>
       <div className="rounded-lg border-2 border-ink bg-muted px-3 py-2 text-xs font-semibold text-ink min-h-[2.5rem] flex items-center shadow-[2px_2px_0_var(--color-ink)]">
         {step === 0 && "10 bénévoles confirmés (vert). Les suivants sont en liste d'attente."}
-        {step === 1 && "Un bénévole annule → le premier de la liste obtient sa place automatiquement. ✓"}
+        {step === 1 && <span className="inline-flex items-center gap-1">Un bénévole annule → le premier de la liste obtient sa place automatiquement. <Check className="h-3.5 w-3.5" /></span>}
         {step === 2 && "Les rangs avancent d'un cran. L'ordre d'arrivée est toujours respecté."}
       </div>
       <div className="mt-3 flex gap-4 text-[10px] text-muted-foreground">
@@ -272,8 +272,8 @@ function B4({ nomAffiche }: { nomAffiche: string }) {
         </div>
       </div>
       <div className="rounded-xl border-4 border-ink bg-paper p-6 shadow-[6px_6px_0_var(--color-mustard)] relative">
-        <div className="absolute -right-3 -top-3 flex h-14 w-14 rotate-12 items-center justify-center rounded-full border-4 border-ink bg-emerald text-center text-[9px] font-black leading-tight text-paper">
-          Certifié<br />✓
+        <div className="absolute -right-3 -top-3 flex h-14 w-14 rotate-12 flex-col items-center justify-center rounded-full border-4 border-ink bg-emerald text-center text-[9px] font-black leading-tight text-paper">
+          Certifié<br /><Check className="h-3.5 w-3.5" />
         </div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-emerald mb-2">Certificat de bénévolat</p>
         <p className="text-xs text-muted-foreground">Décerné à</p>

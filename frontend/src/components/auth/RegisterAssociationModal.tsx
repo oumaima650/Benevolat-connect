@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { MapPin, Loader2, Check, Plus, ChevronLeft, Mail, RefreshCw, Eye, EyeOff, Sprout } from "lucide-react";
+import { MapPin, Loader2, Check, Plus, ChevronLeft, Mail, RefreshCw, Eye, EyeOff, Sprout, PartyPopper } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -69,9 +69,9 @@ function PasswordField({ id, label, value, onChange, autoComplete, showStrength 
 
   const strength = value.length === 0 ? 0
     : value.length < 4 ? 1
-    : value.length < 7 ? 2
-    : value.length < 10 ? 3
-    : 4;
+      : value.length < 7 ? 2
+        : value.length < 10 ? 3
+          : 4;
 
   const strengthLabel = ["", "Faible", "Moyen", "Bien", "Fort"][strength];
   const strengthColors = ["", "bg-red-400", "bg-orange-400", "bg-yellow-400", "bg-emerald"];
@@ -94,9 +94,8 @@ function PasswordField({ id, label, value, onChange, autoComplete, showStrength 
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className={`h-1.5 flex-1 rounded-full transition-colors border border-ink/10 ${
-                i <= strength ? strengthColors[strength] : "bg-border"
-              }`}
+              className={`h-1.5 flex-1 rounded-full transition-colors border border-ink/10 ${i <= strength ? strengthColors[strength] : "bg-border"
+                }`}
             />
           ))}
           <span className="ml-1 text-[10px] font-semibold text-muted-foreground">{strengthLabel}</span>
@@ -148,8 +147,10 @@ export function RegisterAssociationModal() {
     setStep(1); setSelectedDomaineIds([]);
     setRecaptchaToken(null); setError(null); setSuccess(null); setLoading(false);
     setRegisteredEmail(""); setOtpCode(""); setOtpSending(false); setOtpCooldown(0);
-    setForm({ email: "", password: "", confirm: "", nomAssociation: "", contact: "",
-      adresse: "", ville: "", logoUrl: "", description: "", latitude: null, longitude: null });
+    setForm({
+      email: "", password: "", confirm: "", nomAssociation: "", contact: "",
+      adresse: "", ville: "", logoUrl: "", description: "", latitude: null, longitude: null
+    });
   }
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -174,7 +175,7 @@ export function RegisterAssociationModal() {
             const street = [addr.road, addr.house_number].filter(Boolean).join(" ");
             setForm(f => ({ ...f, ville: city || f.ville, adresse: street || data.display_name || f.adresse }));
           }
-        } catch {} finally { setGeolocating(false); }
+        } catch { } finally { setGeolocating(false); }
       },
       (err) => { setGeolocating(false); setError("Position indisponible : " + err.message); },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -240,8 +241,8 @@ export function RegisterAssociationModal() {
     try {
       const res = await verifyEmail(registeredEmail, otpCode.trim());
       if (res.success) {
-        setSuccess("Email vérifié ! Bienvenue sur CountMeIn.");
-        setTimeout(() => { closeModal(); resetAll(); navigate({ to: '/' }); }, 1500);
+        setSuccess("Email vérifié ! Bienvenue sur CountMeIn");
+        setTimeout(() => { closeModal(); resetAll(); }, 1500);
       } else {
         setError(res.message || "Code invalide ou expiré.");
       }
@@ -292,7 +293,7 @@ export function RegisterAssociationModal() {
               <div className="flex items-center justify-between">
                 <Label className="font-bold flex items-center gap-1"><MapPin className="h-4 w-4 text-pink" /> Siège social *</Label>
                 <Button type="button" variant="outline" size="sm" onClick={handleGeolocate} disabled={geolocating} className="text-xs border-ink hover:bg-mustard font-bold">
-                  {geolocating ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />GPS…</> : <><MapPin className="mr-1 h-3 w-3" />Me géolocaliser</>}
+                  {geolocating ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />GPS…</> : <><MapPin className="mr-1 h-3 w-3" /> Me géolocaliser</>}
                 </Button>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -315,7 +316,7 @@ export function RegisterAssociationModal() {
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2 rounded-xl border-2 border-ink bg-paper/50 p-3">
               <Label className="font-bold flex items-center justify-between">
-                <span className="flex items-center gap-1.5"><Sprout className="h-3.5 w-3.5 text-green-600" /> Domaines d'activité</span>
+                <span className="inline-flex items-center gap-1.5"><Sprout className="h-4 w-4" /> Domaines d'activité</span>
                 <span className="text-xs text-muted-foreground font-normal">{selectedDomaineIds.length} sélectionné(s)</span>
               </Label>
               <div className="flex flex-wrap gap-1.5 pt-1">
@@ -343,7 +344,7 @@ export function RegisterAssociationModal() {
                 <ChevronLeft className="h-4 w-4 mr-1" /> Précédent
               </Button>
               <Button type="submit" disabled={loading} className={authButton + " flex-1"}>
-                {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Création…</> : "Créer mon compte"}
+                {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Création…</> : <span className="inline-flex items-center gap-1.5">Créer mon compte <PartyPopper className="h-4 w-4" /></span>}
               </Button>
             </div>
           </form>

@@ -5,7 +5,9 @@ import com.benevolat.plateformebenevolat.dto.MissionDetailDto;
 import com.benevolat.plateformebenevolat.dto.MissionSearchCriteria;
 import com.benevolat.plateformebenevolat.entity.Association;
 import com.benevolat.plateformebenevolat.entity.Mission;
+import com.benevolat.plateformebenevolat.entity.StatutInscription;
 import com.benevolat.plateformebenevolat.entity.StatutMission;
+import com.benevolat.plateformebenevolat.repository.InscriptionRepository;
 import com.benevolat.plateformebenevolat.repository.MissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 public class MissionService {
 
     private final MissionRepository missionRepository;
+    private final InscriptionRepository inscriptionRepository;
 
     public List<MissionCardDto> searchMissions(MissionSearchCriteria criteria) {
         String q = (criteria != null && criteria.getQ() != null) ? criteria.getQ().trim() : null;
@@ -51,8 +54,14 @@ public class MissionService {
     }
 
     public MissionCardDto toCardDto(Mission mission) {
-        int bienInscrits = 0; // Handled by Personne A / Inscription table if needed
-        int placesRestantes = Math.max(0, (mission.getNbPlaces() != null ? mission.getNbPlaces() : 0) - bienInscrits);
+        // mission.nbPlaces stocke les places RESTANTES (décrémentées à chaque inscription confirmée).
+        int placesRestantes = mission.getNbPlaces() != null ? mission.getNbPlaces() : 0;
+
+        // Nombre total de places demandées = restantes + inscriptions confirmées.
+        long confirmes = inscriptionRepository
+                .findByMission_IdMissionAndStatutOrderByRangAsc(mission.getIdMission(), StatutInscription.CONFIRMEE)
+                .size();
+        int nbPlacesTotal = placesRestantes + (int) confirmes;
 
         StatutMission effectiveStatut = mission.getStatut();
         if (effectiveStatut == StatutMission.PUBLIEE && placesRestantes == 0) {
@@ -72,7 +81,7 @@ public class MissionService {
                 mission.getLongitude(),
                 mission.getDateDebut(),
                 mission.getDateFin(),
-                mission.getNbPlaces(),
+                nbPlacesTotal,
                 placesRestantes,
                 mission.getNbPlacesListeAttente(),
                 effectiveStatut,

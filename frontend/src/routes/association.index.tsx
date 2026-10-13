@@ -60,10 +60,10 @@ function AssociationDashboard() {
     if (validationStatus === 'VALIDE') {
       Promise.all([getMyMissions(), getMyProfile()])
         .then(([m, p]) => { setMissions(m); setProfile(p); })
-        .catch(() => {})
+        .catch(() => { })
         .finally(() => setLoading(false));
     } else if (validationStatus !== null) {
-      getMyProfile().then(setProfile).catch(() => {}).finally(() => setLoading(false));
+      getMyProfile().then(setProfile).catch(() => { }).finally(() => setLoading(false));
     }
   }, [validationStatus]);
 
@@ -193,11 +193,11 @@ function AssociationDashboard() {
 
       {/* KPI Cards — 5 colonnes */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
-        <KpiCard label="Missions actives"     value={String(actives.length)}  icon={Target}      colorClass="text-emerald" />
-        <KpiCard label="Taux de remplissage"  value={`${tauxGlobal}%`}         icon={CheckCircle} colorClass="text-mustard" />
-        <KpiCard label="Inscrits confirmés"   value={String(totalInscrits)}    icon={Users}       colorClass="text-pink" />
-        <KpiCard label="En liste d'attente"   value={String(totalAttente)}     icon={Clock}       colorClass="text-muted-foreground" />
-        <KpiCard label="Total missions"       value={String(missions.length)}  icon={FileText}    colorClass="text-blue-500" />
+        <KpiCard label="Missions actives" value={String(actives.length)} icon={Target} colorClass="text-emerald" />
+        <KpiCard label="Taux de remplissage" value={`${tauxGlobal}%`} icon={CheckCircle} colorClass="text-mustard" />
+        <KpiCard label="Inscrits confirmés" value={String(totalInscrits)} icon={Users} colorClass="text-pink" />
+        <KpiCard label="En liste d'attente" value={String(totalAttente)} icon={Clock} colorClass="text-muted-foreground" />
+        <KpiCard label="Total missions" value={String(missions.length)} icon={FileText} colorClass="text-blue-500" />
       </div>
 
       {/* Ligne 2 : Jauge + À faire + Accès rapides */}
@@ -256,12 +256,12 @@ function AssociationDashboard() {
           </h2>
           <div className="grid grid-cols-2 gap-2">
             {([
-              { label: 'Missions',    to: '/association/missions',         bg: 'bg-emerald text-emerald-foreground', Icon: FileText },
-              { label: 'Nouvelle',   to: '/association/nouvelle-mission', bg: 'bg-mustard text-ink',                Icon: Plus },
-              { label: 'Inscrits',    to: '/association/inscrits',         bg: 'bg-pink text-pink-foreground',       Icon: UserCheck },
-              { label: 'Renforts',    to: '/association/renforts',         bg: 'bg-paper text-ink',                  Icon: Zap },
-              { label: 'Certificats', to: '/association/certificats',      bg: 'bg-paper text-ink',                  Icon: Award },
-              { label: 'Profil',      to: '/association/profil',           bg: 'bg-paper text-ink',                  Icon: User },
+              { label: 'Missions', to: '/association/missions', bg: 'bg-emerald text-emerald-foreground', Icon: FileText },
+              { label: 'Nouvelle', to: '/association/nouvelle-mission', bg: 'bg-mustard text-ink', Icon: Plus },
+              { label: 'Inscrits', to: '/association/inscrits', bg: 'bg-pink text-pink-foreground', Icon: UserCheck },
+              { label: 'Renforts', to: '/association/renforts', bg: 'bg-paper text-ink', Icon: Zap },
+              { label: 'Certificats', to: '/association/certificats', bg: 'bg-paper text-ink', Icon: Award },
+              { label: 'Profil', to: '/association/profil', bg: 'bg-paper text-ink', Icon: User },
             ] as { label: string; to: string; bg: string; Icon: LucideIcon }[]).map(({ label, to, bg, Icon }) => (
               <Link key={to} to={to as any}
                 className={`press flex items-center gap-1.5 rounded-xl border-2 border-ink px-2.5 py-2.5 text-xs font-semibold shadow-[2px_2px_0_var(--color-ink)] hover:opacity-90 ${bg}`}>

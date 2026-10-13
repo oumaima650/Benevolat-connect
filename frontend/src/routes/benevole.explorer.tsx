@@ -10,8 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
-  CheckCircle2,
-  ClipboardList,
+  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
@@ -197,7 +196,8 @@ function MissionCard({ mission, onDetail }: { mission: MissionDash; onDetail: ()
     >
       {isUrgent && (
         <div className="flex items-center justify-center gap-1.5 bg-red-500 px-4 py-1 text-center text-xs font-bold text-white">
-          <Zap className="h-3 w-3" /> Renfort urgent
+          <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+          Renfort urgent
         </div>
       )}
       <div className="flex flex-1 flex-col p-5">
@@ -256,7 +256,7 @@ function MissionCard({ mission, onDetail }: { mission: MissionDash; onDetail: ()
           )}
         >
           {inscrit
-            ? <><CheckCircle2 className="h-3.5 w-3.5 mr-1" />Inscrit</>
+            ? <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4" /> Inscrit</span>
             : isComplete
               ? "Rejoindre la liste d'attente"
               : "S'inscrire"}

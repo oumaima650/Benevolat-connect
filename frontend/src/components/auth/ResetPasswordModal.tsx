@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Check, X } from "lucide-react";
 
 import {
   Dialog,
@@ -151,8 +151,8 @@ export function ResetPasswordModal() {
               </button>
             </div>
             {confirm.length > 0 && (
-              <p className={`text-xs font-semibold ${password === confirm ? "text-emerald" : "text-destructive"}`}>
-                {password === confirm ? "✓ Les mots de passe correspondent" : "✗ Les mots de passe ne correspondent pas"}
+              <p className={`flex items-center gap-1 text-xs font-semibold ${password === confirm ? "text-emerald" : "text-destructive"}`}>
+                {password === confirm ? <><Check className="h-3.5 w-3.5" /> Les mots de passe correspondent</> : <><X className="h-3.5 w-3.5" /> Les mots de passe ne correspondent pas</>}
               </p>
             )}
           </div>

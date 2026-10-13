@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BadgeCheck, ShieldCheck, ShieldX, ScanLine, CalendarDays, Building2 } from "lucide-react";
+import { BadgeCheck, ShieldCheck, ShieldX, ScanLine, CalendarDays, Building2, Check } from "lucide-react";
 import { Reveal } from "./Reveal";
 import certificatApi from "@/services/certificatApi";
 
@@ -30,7 +30,9 @@ export function CertificateCheck() {
       if (res.valide) {
         setResultat({ valide: true, data: res, code: v });
       } else {
-        setResultat({ valide: false, code: v, message: res.message });
+        setResultat(res.message
+          ? { valide: false, code: v, message: res.message }
+          : { valide: false, code: v });
       }
     } catch {
       setResultat({ valide: false, code: v, message: "Erreur serveur. Réessayez dans un instant." });
@@ -109,8 +111,8 @@ export function CertificateCheck() {
           {/* Certificat valide */}
           {resultat?.valide && (
             <div key={resultat.code} className="relative rounded-2xl border-4 border-ink bg-paper p-8 text-ink shadow-[10px_10px_0_var(--color-mustard)]">
-              <div className="absolute -right-4 -top-4 grid h-20 w-20 rotate-12 place-items-center rounded-full border-4 border-ink bg-emerald text-center text-[10px] font-black uppercase leading-tight text-paper">
-                Certifié<br />✓
+              <div className="absolute -right-4 -top-4 flex h-20 w-20 rotate-12 flex-col items-center justify-center rounded-full border-4 border-ink bg-emerald text-center text-[10px] font-black uppercase leading-tight text-paper">
+                Certifié<br /><Check className="h-4 w-4" />
               </div>
 
               <p className="flex items-center gap-2 text-xs font-bold uppercase text-emerald">

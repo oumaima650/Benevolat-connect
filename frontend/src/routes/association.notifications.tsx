@@ -63,10 +63,10 @@ const NOTIFS_ASSO: NotificationDash[] = [
 ];
 
 const typeIcons: Record<NotificationDash['type'], LucideIcon> = {
-  CONFIRMATION:   CheckCircle2,
-  PROMOTION:      PartyPopper,
-  ANNULATION:     XCircle,
-  RAPPEL:         Clock,
+  CONFIRMATION: CheckCircle2,
+  PROMOTION: PartyPopper,
+  ANNULATION: XCircle,
+  RAPPEL: Clock,
   RENFORT_URGENT: Siren,
 };
 
@@ -81,9 +81,8 @@ const typeColors: Record<NotificationDash['type'], string> = {
 function NotifItem({ n, onMarkRead }: { n: NotificationDash; onMarkRead: (id: string) => void }) {
   return (
     <div
-      className={`flex items-start gap-3 rounded-2xl border-2 border-ink p-4 shadow-[3px_3px_0_var(--color-ink)] ${
-        n.lu ? 'bg-paper' : 'bg-emerald/10'
-      }`}
+      className={`flex items-start gap-3 rounded-2xl border-2 border-ink p-4 shadow-[3px_3px_0_var(--color-ink)] ${n.lu ? 'bg-paper' : 'bg-emerald/10'
+        }`}
     >
       <span
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm ${typeColors[n.type]}`}

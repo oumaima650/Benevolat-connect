@@ -1,3 +1,6 @@
+import type { LucideIcon } from 'lucide-react';
+import { Sparkles, Handshake, Medal, Trophy } from 'lucide-react';
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export type MissionStatut =
@@ -55,7 +58,7 @@ export interface BadgeDash {
   id: string;
   nom: string;
   description: string;
-  icone: string;
+  icone: LucideIcon;
   debloque: boolean;
   dateObtention?: string;
 }
@@ -370,7 +373,7 @@ export const badges: BadgeDash[] = [
     id: 'badge-1',
     nom: 'Première mission',
     description: 'Félicitations pour votre toute première mission accomplie !',
-    icone: '🌟',
+    icone: Sparkles,
     debloque: true,
     dateObtention: '2025-03-14',
   },
@@ -378,7 +381,7 @@ export const badges: BadgeDash[] = [
     id: 'badge-2',
     nom: 'Engagé',
     description: 'Vous avez réalisé 5 missions ou plus.',
-    icone: '🤝',
+    icone: Handshake,
     debloque: true,
     dateObtention: '2025-11-08',
   },
@@ -386,14 +389,14 @@ export const badges: BadgeDash[] = [
     id: 'badge-3',
     nom: 'Expert',
     description: 'Vous avez réalisé 15 missions ou plus.',
-    icone: '🏅',
+    icone: Medal,
     debloque: false,
   },
   {
     id: 'badge-4',
     nom: 'Champion',
     description: 'Vous avez réalisé 30 missions ou plus.',
-    icone: '🏆',
+    icone: Trophy,
     debloque: false,
   },
 ];

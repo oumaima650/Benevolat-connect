@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapPin, CalendarDays } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import type { MissionStatut } from './data';
 
@@ -55,8 +56,8 @@ export default function MapComponent({
             <div style={{ minWidth: 180 }}>
               <p style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.3, marginBottom: 6 }}>{m.titre}</p>
               <StatusBadge statut={m.statut} />
-              <p style={{ fontSize: 12, color: '#555', marginTop: 4 }}>📍 {m.lieu}</p>
-              <p style={{ fontSize: 12, color: '#555', marginTop: 2 }}>📅 {m.date}</p>
+              <p style={{ fontSize: 12, color: '#555', marginTop: 4 }} className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {m.lieu}</p>
+              <p style={{ fontSize: 12, color: '#555', marginTop: 2 }} className="flex items-center gap-1"><CalendarDays className="h-3 w-3" /> {m.date}</p>
               <p style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
                 {m.places > 0 ? `${m.places} place(s) restante(s)` : 'Complet'}
               </p>

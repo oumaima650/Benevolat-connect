@@ -276,8 +276,8 @@ function ProfilAssociation() {
               </div>
               <div className="p-4 space-y-3">
                 {([
-                  { key: 'current' as const, label: 'Actuel',    id: 'pwd-current', ac: 'current-password' },
-                  { key: 'next'    as const, label: 'Nouveau',   id: 'pwd-next',    ac: 'new-password' },
+                  { key: 'current' as const, label: 'Actuel', id: 'pwd-current', ac: 'current-password' },
+                  { key: 'next' as const, label: 'Nouveau', id: 'pwd-next', ac: 'new-password' },
                   { key: 'confirm' as const, label: 'Confirmer', id: 'pwd-confirm', ac: 'new-password' },
                 ] as const).map(({ key, label, id, ac }) => (
                   <div key={key} className="space-y-1">
@@ -318,11 +318,10 @@ function ProfilAssociation() {
                       {accountStatut === 'ACTIF' ? 'Actif et visible.' : 'Désactivé et invisible.'}
                     </p>
                   </div>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
-                    accountStatut === 'ACTIF'
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${accountStatut === 'ACTIF'
                       ? 'bg-green-100 text-green-700 border-green-300'
                       : 'bg-red-100 text-red-600 border-red-300'
-                  }`}>
+                    }`}>
                     {accountStatut === 'ACTIF' ? 'Actif' : 'Désactivé'}
                   </span>
                 </div>
@@ -473,9 +472,8 @@ function ProfilAssociation() {
                     const active = selectedDomaineIds.includes(d.id);
                     return (
                       <Badge key={d.id} onClick={() => toggleDomaine(d.id)}
-                        className={`cursor-pointer border border-ink text-xs transition-all select-none ${
-                          active ? 'bg-emerald text-emerald-foreground font-bold shadow-[2px_2px_0_var(--color-ink)]' : 'bg-paper hover:bg-emerald/20 text-ink/80'
-                        }`}>
+                        className={`cursor-pointer border border-ink text-xs transition-all select-none ${active ? 'bg-emerald text-emerald-foreground font-bold shadow-[2px_2px_0_var(--color-ink)]' : 'bg-paper hover:bg-emerald/20 text-ink/80'
+                          }`}>
                         {active ? <Check className="mr-1 h-3 w-3 inline" /> : <Plus className="mr-1 h-3 w-3 inline" />}
                         {d.nom}
                       </Badge>

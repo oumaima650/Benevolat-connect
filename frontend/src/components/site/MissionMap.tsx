@@ -4,6 +4,7 @@
  * Aucune clé requise — OpenStreetMap est gratuit et open-source.
  */
 import { useEffect, useRef, useState } from "react";
+import { Map as MapIcon } from "lucide-react";
 import type { Mission } from "./data";
 
 /* ── types ── */
@@ -202,10 +203,10 @@ export function MissionMap({ missions, selectedId, onSelect, position, className
                   flex-shrink: 0;
                 ">
                   <span style="color:#fff;font-size:9px;font-weight:800;">
-                    ${m.association.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()}
+                    ${(m.association || "A").split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()}
                   </span>
                 </div>
-                <span style="font-size:11px;font-weight:600;color:#374151;line-height:1.2;">${m.association}</span>
+                <span style="font-size:11px;font-weight:600;color:#374151;line-height:1.2;">${m.association ?? "Association"}</span>
               </div>
 
               <!-- Adresse -->
@@ -346,7 +347,7 @@ export function MissionMap({ missions, selectedId, onSelect, position, className
       )}
       {erreur && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground bg-muted p-4 text-center">
-          <span className="text-2xl">🗺️</span>
+          <MapIcon className="h-8 w-8" />
           <p className="font-semibold text-ink">Impossible de charger la carte</p>
           <p>Vérifiez votre connexion internet.</p>
         </div>
