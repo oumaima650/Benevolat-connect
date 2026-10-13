@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   CheckCircle, Star, Award, Clock,
   CalendarDays, MapPin, Bell, TrendingUp,
-  ArrowUpRight, Flame,
+  ArrowUpRight, Flame, Hand,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -107,7 +107,9 @@ function BenevoleDashboard() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-black text-ink">Bonjour, Yasmine 👋</h1>
+          <h1 className="font-display text-2xl font-black text-ink inline-flex items-center gap-2">
+            Bonjour, Yasmine <Hand className="h-6 w-6 text-mustard" />
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">Voici un aperçu de votre activité bénévole.</p>
         </div>
         <Link

@@ -19,6 +19,7 @@ type AuthContextType = {
   token: string | null;
   loginUser: (user: UserProfile, token: string) => void;
   logout: () => void;
+  updateUser: (partial: Partial<UserProfile>) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,8 +58,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("countmein_token");
   };
 
+  const updateUser = (partial: Partial<UserProfile>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated: UserProfile = {
+        ...prev,
+        ...partial,
+        photoUrl: partial.photoUrl ?? partial.photoProfil ?? prev.photoUrl ?? "",
+      };
+      localStorage.setItem("countmein_user", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loginUser, logout }}>
+    <AuthContext.Provider value={{ user, token, loginUser, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

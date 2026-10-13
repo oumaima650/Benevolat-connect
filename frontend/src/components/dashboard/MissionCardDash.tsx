@@ -1,4 +1,4 @@
-import { CalendarDays, MapPin, Users } from 'lucide-react';
+import { CalendarDays, MapPin, Users, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from './StatusBadge';
@@ -25,8 +25,9 @@ export function MissionCardDash({ mission, onAction, actionLabel, className }: M
     >
       {/* Urgent banner */}
       {urgent && (
-        <div className="bg-red-500 px-4 py-1 text-center text-xs font-bold text-white">
-          🚨 Renfort urgent
+        <div className="flex items-center justify-center gap-1.5 bg-red-500 px-4 py-1 text-center text-xs font-bold text-white">
+          <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+          Renfort urgent
         </div>
       )}
 

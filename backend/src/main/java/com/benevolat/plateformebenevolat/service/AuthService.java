@@ -86,7 +86,6 @@ public class AuthService {
                     log.warn("Format de date de naissance invalide : {}", request.getDateNaissance());
                 }
             }
-            benevole.setAdresse(request.getAdresse());
             benevole.setVille(request.getVille());
             benevole.setBiographie(request.getBiographie());
             benevole.setPhotoUrl(request.getPhotoUrl());

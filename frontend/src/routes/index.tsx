@@ -30,6 +30,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+
 function Index() {
   return (
     <div className="min-h-screen bg-paper">

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { Check, AlertTriangle } from "lucide-react";
 import logoImage from "@/assets/logo.png";
 
 /* ── classes réutilisables exportées vers les pages ── */
@@ -70,7 +71,7 @@ export function FormSuccess({ message }: { message: string | null }) {
   if (!message) return null;
   return (
     <div className="flex items-start gap-2 rounded-xl border-2 border-emerald bg-emerald/10 p-3 text-sm font-semibold text-ink shadow-[2px_2px_0_var(--color-emerald)]">
-      <span className="shrink-0 text-emerald">✓</span>
+      <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald" />
       <span>{message}</span>
     </div>
   );
@@ -80,7 +81,7 @@ export function FormError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
     <div className="flex items-start gap-2 rounded-xl border-2 border-destructive bg-destructive/10 p-3 text-sm font-semibold text-ink shadow-[2px_2px_0_var(--color-destructive)]">
-      <span className="shrink-0">⚠️</span>
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
       <span>{message}</span>
     </div>
   );

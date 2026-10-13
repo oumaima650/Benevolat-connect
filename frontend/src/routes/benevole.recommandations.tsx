@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { MapPin, CalendarDays, Users } from 'lucide-react';
+import { MapPin, CalendarDays, Users, RefreshCw } from 'lucide-react';
 import { ScoreGauge } from '@/components/dashboard/ScoreGauge';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
 import { Progress } from '@/components/ui/progress';
@@ -36,7 +36,7 @@ function Recommandations() {
               {/* Fallback banner */}
               {m.rescueScore && (
                 <div className="mb-3 flex items-center gap-1.5 rounded-lg border border-gray-300 bg-gray-100 px-3 py-1.5 text-xs text-gray-500">
-                  🔄 Score calculé par formule de secours
+                  <RefreshCw className="h-3.5 w-3.5" /> Score calculé par formule de secours
                 </div>
               )}
 
@@ -106,8 +106,8 @@ function Recommandations() {
                     size="sm"
                     onClick={() =>
                       isComplete
-                        ? toast.info("📋 Ajouté à la liste d'attente")
-                        : toast.success('✅ Inscription confirmée !')
+                        ? toast.info("Ajouté à la liste d'attente")
+                        : toast.success('Inscription confirmée !')
                     }
                     className="rounded-xl border-2 border-ink bg-pink font-bold text-pink-foreground shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90"
                   >

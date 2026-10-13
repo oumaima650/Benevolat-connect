@@ -77,7 +77,7 @@ function Renforts() {
           : m,
       ),
     );
-    toast.success(`🚨 Besoin de ${n} renforts déclaré !`);
+    toast.success(`Besoin de ${n} renforts déclaré !`);
     setDialogId(null);
     setNombreRenforts('');
   }
