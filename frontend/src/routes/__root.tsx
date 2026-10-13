@@ -103,6 +103,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 import { AuthProvider } from "@/context/AuthContext";
 import { AuthModalProvider } from "@/context/AuthModalContext";
 import { AuthModals } from "@/components/auth/AuthModals";
+import { Toaster } from "@/components/ui/sonner";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -113,6 +114,7 @@ function RootComponent() {
         <AuthModalProvider>
           <AuthModals />
           <Outlet />
+          <Toaster richColors position="top-right" />
         </AuthModalProvider>
       </AuthProvider>
     </QueryClientProvider>

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight, CalendarDays, Clock3, Mail, MapPin, Phone, Users, Building2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/site/Footer";
 import { Header } from "@/components/site/Header";
@@ -9,6 +9,8 @@ import { MissionMap } from "@/components/site/MissionMap";
 import { formaterDate, trouverAssociation, trouverMission } from "@/components/site/data";
 import { missionPresentation } from "@/components/site/mission-presentation";
 import missionApi, { type MissionDetailBackend } from "@/services/missionApi";
+import { inscriptionApi, type InscriptionStatus } from "@/services/missionApi";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/missions/$id")({
   loader: async ({ params }) => {
@@ -55,17 +57,66 @@ function MissionDetail() {
   const loaderData = Route.useLoaderData();
   const detail = loaderData.detail;
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [engaged, setEngaged] = useState(false);
+  const { user, token } = useAuth();
 
   const missionId = detail?.id ?? (loaderData as any).mission?.id ?? "";
 
-  const handleEngagement = () => {
-    if (!user) {
+  // Compteurs mutables (mis à jour après inscription / annulation)
+  const initialPlaces = detail?.placesRestantes ?? (loaderData as any).mission?.placesRestantes ?? 0;
+  const initialListeAttente = detail?.listeAttenteCount ?? (loaderData as any).mission?.listeAttente ?? 0;
+
+  const [placesRestantes, setPlacesRestantes] = useState<number>(initialPlaces);
+  const [listeAttente, setListeAttente] = useState<number>(initialListeAttente);
+  const [inscription, setInscription] = useState<InscriptionStatus | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Récupère le statut d'inscription du bénévole connecté au chargement
+  useEffect(() => {
+    if (!user || !token || !missionId) return;
+    inscriptionApi.getStatus(token, missionId).then(setInscription).catch(() => setInscription(null));
+  }, [user, token, missionId]);
+
+  const handleEngagement = async () => {
+    if (!user || !token) {
       navigate({ to: "/login", search: { redirect: `/missions/${missionId}` } });
       return;
     }
-    setEngaged(true);
+    setLoading(true);
+    try {
+      const res = await inscriptionApi.inscrire(token, missionId);
+      setPlacesRestantes(res.nbPlaces);
+      setListeAttente(res.nbPlacesListeAttente);
+      setInscription({
+        inscrit: true,
+        statut: res.statutInscription,
+        rang: res.rang,
+      });
+      if (res.statutInscription === "CONFIRMEE") {
+        toast.success("Inscription confirmée ! Merci pour ton engagement.");
+      } else {
+        toast.success(`Tu es en liste d'attente, rang ${res.rang}.`);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Erreur lors de l'inscription.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAnnulation = async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const res = await inscriptionApi.annuler(token, missionId);
+      setPlacesRestantes(res.nbPlaces);
+      setListeAttente(res.nbPlacesListeAttente);
+      setInscription({ inscrit: false });
+      toast.success("Inscription annulée.");
+    } catch (err: any) {
+      toast.error(err?.message || "Erreur lors de l'annulation.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Use backend detail if available, otherwise fall back to static data
@@ -77,8 +128,6 @@ function MissionDetail() {
   const dateDebut = detail?.dateDebut ?? (loaderData as any).mission?.date ?? "";
   const dateFin = detail?.dateFin ?? (loaderData as any).mission?.dateFin ?? "";
   const nbPlaces = detail?.nbPlaces ?? detail?.nbBenevoles ?? (loaderData as any).mission?.placesDemandees ?? 0;
-  const placesRestantes = detail?.placesRestantes ?? (loaderData as any).mission?.placesRestantes ?? 0;
-  const listeAttente = detail?.listeAttenteCount ?? (loaderData as any).mission?.listeAttente ?? 0;
 
   // Coordinates for map
   const lat = (loaderData as any).mission?.lat ?? 48.8566;
@@ -104,7 +153,20 @@ function MissionDetail() {
   const editions = detail?.editionsPrecedentes ?? [];
 
   // Build a mission-like object for the map
-  const missionForMap = { id: missionId, titre, adresse, lat, lng } as any;
+  const missionForMap = {
+    id: missionId,
+    titre,
+    adresse,
+    lat,
+    lng,
+    association: assoNom || "Association",
+    domaine,
+    ville,
+    date: dateDebut,
+    placesRestantes,
+    placesDemandees: nbPlaces,
+    listeAttente,
+  } as any;
 
   return (
     <div className="min-h-screen bg-paper">
@@ -164,16 +226,60 @@ function MissionDetail() {
               <div className="flex items-baseline justify-between text-sm font-bold"><span>{pris} / {nbPlaces} inscrits</span><span>{pct}%</span></div>
               <div className="mt-2 h-3 overflow-hidden rounded-full border-2 border-ink bg-muted"><div className={`h-full ${complet ? "bg-pink" : "bg-emerald"}`} style={{ width: `${pct}%` }} /></div>
               <p className="mt-3 text-xs text-muted-foreground">{complet ? "Rejoins la liste d'attente : tu seras prévenu dès qu'une place se libère." : "Premier arrivé, premier servi."}</p>
-              {engaged ? (
-                <div className="mt-5 rounded-lg border-2 border-ink bg-emerald/20 p-4 text-center font-bold text-ink">
-                  🎉 Inscription confirmée ! Merci pour ton engagement.
+
+              {/* État : déjà inscrit (confirmée) */}
+              {inscription?.inscrit && inscription.statut === "CONFIRMEE" && (
+                <div className="mt-5 space-y-3">
+                  <div className="rounded-lg border-2 border-ink bg-emerald/20 p-4 text-center font-bold text-ink">
+                    🎉 Inscription confirmée !
+                  </div>
+                  <Button
+                    onClick={handleAnnulation}
+                    disabled={loading}
+                    variant="outline"
+                    className="w-full rounded-lg border-2 border-ink bg-paper text-red-600 shadow-[2px_2px_0_var(--color-ink)] hover:bg-red-50"
+                  >
+                    Annuler mon inscription
+                  </Button>
                 </div>
-              ) : (
+              )}
+
+              {/* État : déjà inscrit (liste d'attente) */}
+              {inscription?.inscrit && inscription.statut === "EN_LISTE_ATTENTE" && (
+                <div className="mt-5 space-y-3">
+                  <div className="rounded-lg border-2 border-ink bg-mustard/20 p-4 text-center font-bold text-ink">
+                    ⏳ Vous êtes n°{inscription.rang} dans la liste d'attente
+                  </div>
+                  <Button
+                    onClick={handleAnnulation}
+                    disabled={loading}
+                    variant="outline"
+                    className="w-full rounded-lg border-2 border-ink bg-paper text-red-600 shadow-[2px_2px_0_var(--color-ink)] hover:bg-red-50"
+                  >
+                    Quitter la liste d'attente
+                  </Button>
+                </div>
+              )}
+
+              {/* Bouton d'inscription */}
+              {!inscription?.inscrit && (
                 <Button
                   onClick={handleEngagement}
-                  className={`mt-5 h-auto w-full whitespace-normal rounded-lg border-2 border-ink px-4 py-3.5 font-bold ${complet ? "bg-pink text-ink hover:bg-pink" : "bg-emerald text-paper hover:bg-emerald"}`}
+                  disabled={loading || (placesRestantes === 0 && listeAttente === 0)}
+                  className={`mt-5 h-auto w-full whitespace-normal rounded-lg border-2 border-ink px-4 py-3.5 font-bold disabled:opacity-60 disabled:cursor-not-allowed ${
+                    placesRestantes > 0
+                      ? "bg-emerald text-paper hover:bg-emerald"
+                      : "bg-pink text-ink hover:bg-pink"
+                  }`}
                 >
-                  {complet ? "Rejoindre la liste d'attente" : "Je m'engage"} <ArrowUpRight className="ml-1 inline h-4 w-4" />
+                  {loading
+                    ? "Traitement…"
+                    : placesRestantes > 0
+                      ? "Je m'engage"
+                      : listeAttente > 0
+                        ? "Rejoindre la liste d'attente"
+                        : "Mission complète"}
+                  <ArrowUpRight className="ml-1 inline h-4 w-4" />
                 </Button>
               )}
             </div>

@@ -42,6 +42,102 @@ export interface AssociationDetailBackend {
 
 export type MissionDetailBackend = MissionCardBackend & AssociationDetailBackend;
 
+// --------------------------------------------------------------------------
+// Inscription à une mission (bénévole connecté)
+// --------------------------------------------------------------------------
+
+export type StatutInscription = "CONFIRMEE" | "EN_LISTE_ATTENTE" | "ANNULEE";
+
+export interface InscriptionResponse {
+  statutInscription: StatutInscription;
+  rang: number | null;
+  nbPlaces: number;
+  nbPlacesListeAttente: number;
+  statutMission: string;
+}
+
+export interface InscriptionStatus {
+  inscrit: boolean;
+  statut?: StatutInscription;
+  rang?: number | null;
+}
+
+export interface BenevoleInscription {
+  idInscription: number;
+  missionId: number;
+  missionTitre: string;
+  association: string | null;
+  domaine: string | null;
+  ville: string | null;
+  dateDebut: string;
+  dateFin: string;
+  statut: StatutInscription;
+  rang: number | null;
+  dateInscription: string;
+}
+
+/** Helper pour les requêtes authentifiées (Bearer token). */
+async function authFetch(url: string, token: string, options: RequestInit = {}) {
+  return fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...(options.headers as Record<string, string> | undefined),
+    },
+  });
+}
+
+/** Extrait le message d'erreur du backend (JSON {message} ou fallback). */
+async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    const data = await res.json();
+    return data?.message || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export const inscriptionApi = {
+  /** Récupère le statut d'inscription du bénévole pour une mission. */
+  async getStatus(token: string, missionId: string | number): Promise<InscriptionStatus> {
+    const res = await authFetch(`${API_BASE_URL}/benevoles/missions/${missionId}/inscription`, token);
+    if (!res.ok) return { inscrit: false };
+    return res.json();
+  },
+
+  /** Liste toutes les inscriptions du bénévole connecté. */
+  async getMesInscriptions(token: string): Promise<BenevoleInscription[]> {
+    const res = await authFetch(`${API_BASE_URL}/benevoles/mes-inscriptions`, token);
+    if (!res.ok) throw new Error("Erreur lors du chargement des inscriptions.");
+    return res.json();
+  },
+
+  /** S'inscrire à une mission. */
+  async inscrire(token: string, missionId: string | number): Promise<InscriptionResponse> {
+    const res = await authFetch(`${API_BASE_URL}/benevoles/missions/${missionId}/inscription`, token, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      const msg = await extractErrorMessage(res, "Erreur lors de l'inscription.");
+      throw new Error(msg);
+    }
+    return res.json();
+  },
+
+  /** Annuler son inscription à une mission. */
+  async annuler(token: string, missionId: string | number): Promise<InscriptionResponse> {
+    const res = await authFetch(`${API_BASE_URL}/benevoles/missions/${missionId}/inscription`, token, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const msg = await extractErrorMessage(res, "Erreur lors de l'annulation.");
+      throw new Error(msg);
+    }
+    return res.json();
+  },
+};
+
 // Coordonnées approximatives des villes pour l'affichage sur la carte
 const COORDONNEES_VILLES: Record<string, { lat: number; lng: number }> = {
   "Casablanca": { lat: 33.5928, lng: -7.6134 },

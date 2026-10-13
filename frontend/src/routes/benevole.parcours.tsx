@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Download, FileText, CalendarDays } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,27 +8,72 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/dashboard/ConfirmDialog';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
 import { EmptyState } from '@/components/dashboard/EmptyState';
-import { inscriptionsBenevole, certificats, formaterDate } from '@/components/dashboard/data';
+import { certificats, formaterDate } from '@/components/dashboard/data';
 import type { InscriptionBenevole } from '@/components/dashboard/data';
+import { useAuth } from '@/context/AuthContext';
+import { inscriptionApi, type BenevoleInscription } from '@/services/missionApi';
 
 export const Route = createFileRoute('/benevole/parcours')({
   component: MonParcours,
 });
 
+function mapApiToInscription(b: BenevoleInscription): InscriptionBenevole {
+  const base = {
+    id: String(b.idInscription),
+    missionId: String(b.missionId),
+    missionTitre: b.missionTitre,
+    association: b.association ?? 'Association',
+    domaine: b.domaine ?? '',
+    dateDebut: b.dateDebut,
+    dateFin: b.dateFin,
+    ville: b.ville ?? '',
+    statut: b.statut,
+    dateInscription: b.dateInscription,
+  };
+  return b.rang != null ? { ...base, rang: b.rang } : base;
+}
+
 function MonParcours() {
-  const [inscriptions, setInscriptions] = useState<InscriptionBenevole[]>(inscriptionsBenevole);
+  const { user, token } = useAuth();
+  const [inscriptions, setInscriptions] = useState<InscriptionBenevole[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filtreStatut, setFiltreStatut] = useState<string>('Tous');
   const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  // Chargement des inscriptions réelles du bénévole
+  useEffect(() => {
+    if (!user || !token) {
+      setLoading(false);
+      return;
+    }
+    inscriptionApi
+      .getMesInscriptions(token)
+      .then((data) => setInscriptions(data.map(mapApiToInscription)))
+      .catch(() => toast.error('Erreur lors du chargement des inscriptions.'))
+      .finally(() => setLoading(false));
+  }, [user, token]);
 
   const filteredInscriptions =
     filtreStatut === 'Tous' ? inscriptions : inscriptions.filter((i) => i.statut === filtreStatut);
 
-  function annulerInscription(id: string) {
-    setInscriptions((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, statut: 'ANNULEE' as const } : i)),
-    );
-    toast.success('Inscription annulée');
-    setConfirmId(null);
+  async function annulerInscription(id: string) {
+    const item = inscriptions.find((i) => i.id === id);
+    if (!item || !token) return;
+    try {
+      await inscriptionApi.annuler(token, item.missionId);
+      setInscriptions((prev) =>
+        prev.map((i) => {
+          if (i.id !== id) return i;
+          const { rang, ...rest } = i;
+          return { ...rest, statut: 'ANNULEE' as const };
+        }),
+      );
+      toast.success('Inscription annulée.');
+    } catch (err: any) {
+      toast.error(err?.message || "Erreur lors de l'annulation.");
+    } finally {
+      setConfirmId(null);
+    }
   }
 
   const confirmItem = inscriptions.find((i) => i.id === confirmId);
@@ -77,7 +122,9 @@ function MonParcours() {
             </span>
           </div>
 
-          {filteredInscriptions.length === 0 ? (
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Chargement de vos inscriptions…</p>
+          ) : filteredInscriptions.length === 0 ? (
             <EmptyState
               icon={FileText}
               title="Aucune inscription"
