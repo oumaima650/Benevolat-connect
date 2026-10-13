@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { z } from "zod";
-import { MapPin, Loader2, Check, Plus, ChevronLeft, Mail, RefreshCw, Eye, EyeOff } from "lucide-react";
+import { MapPin, Loader2, Check, Plus, ChevronLeft, Mail, RefreshCw, Eye, EyeOff, Sprout, PartyPopper } from "lucide-react";
 import ReCAPTCHA from "react-google-recaptcha";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -238,7 +238,7 @@ export function RegisterAssociationModal() {
     try {
       const res = await verifyEmail(registeredEmail, otpCode.trim());
       if (res.success) {
-        setSuccess("Email vérifié ! Bienvenue sur CountMeIn 🎉");
+        setSuccess("Email vérifié ! Bienvenue sur CountMeIn");
         setTimeout(() => { closeModal(); resetAll(); }, 1500);
       } else {
         setError(res.message || "Code invalide ou expiré.");
@@ -290,7 +290,7 @@ export function RegisterAssociationModal() {
               <div className="flex items-center justify-between">
                 <Label className="font-bold flex items-center gap-1"><MapPin className="h-4 w-4 text-pink" /> Siège social *</Label>
                 <Button type="button" variant="outline" size="sm" onClick={handleGeolocate} disabled={geolocating} className="text-xs border-ink hover:bg-mustard font-bold">
-                  {geolocating ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />GPS…</> : <>📍 Me géolocaliser</>}
+                  {geolocating ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" />GPS…</> : <><MapPin className="mr-1 h-3 w-3" /> Me géolocaliser</>}
                 </Button>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -313,7 +313,7 @@ export function RegisterAssociationModal() {
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2 rounded-xl border-2 border-ink bg-paper/50 p-3">
               <Label className="font-bold flex items-center justify-between">
-                <span>🌱 Domaines d'activité</span>
+                <span className="inline-flex items-center gap-1.5"><Sprout className="h-4 w-4" /> Domaines d'activité</span>
                 <span className="text-xs text-muted-foreground font-normal">{selectedDomaineIds.length} sélectionné(s)</span>
               </Label>
               <div className="flex flex-wrap gap-1.5 pt-1">
@@ -341,7 +341,7 @@ export function RegisterAssociationModal() {
                 <ChevronLeft className="h-4 w-4 mr-1" /> Précédent
               </Button>
               <Button type="submit" disabled={loading} className={authButton + " flex-1"}>
-                {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Création…</> : "Créer mon compte 🎉"}
+                {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Création…</> : <span className="inline-flex items-center gap-1.5">Créer mon compte <PartyPopper className="h-4 w-4" /></span>}
               </Button>
             </div>
           </form>

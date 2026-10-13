@@ -9,6 +9,8 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Zap,
+  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
@@ -173,10 +175,10 @@ function MissionCard({ mission, onDetail }: { mission: MissionDash; onDetail: ()
   function handleInscription(e: React.MouseEvent) {
     e.stopPropagation();
     if (isComplete) {
-      toast.info("📋 Ajouté à la liste d'attente");
+      toast.info("Ajouté à la liste d'attente");
     } else {
       setInscrit(true);
-      toast.success('✅ Inscription confirmée !');
+      toast.success('Inscription confirmée !');
     }
   }
 
@@ -193,8 +195,9 @@ function MissionCard({ mission, onDetail }: { mission: MissionDash; onDetail: ()
       aria-label={`Voir les détails de ${mission.titre}`}
     >
       {isUrgent && (
-        <div className="bg-red-500 px-4 py-1 text-center text-xs font-bold text-white">
-          ⚡ Renfort urgent
+        <div className="flex items-center justify-center gap-1.5 bg-red-500 px-4 py-1 text-center text-xs font-bold text-white">
+          <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+          Renfort urgent
         </div>
       )}
       <div className="flex flex-1 flex-col p-5">
@@ -252,7 +255,11 @@ function MissionCard({ mission, onDetail }: { mission: MissionDash; onDetail: ()
                 : 'bg-pink text-pink-foreground hover:opacity-90',
           )}
         >
-          {inscrit ? '✓ Inscrit' : isComplete ? "Rejoindre la liste d'attente" : "S'inscrire"}
+          {inscrit
+            ? <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4" /> Inscrit</span>
+            : isComplete
+              ? "Rejoindre la liste d'attente"
+              : "S'inscrire"}
         </Button>
       </div>
     </article>

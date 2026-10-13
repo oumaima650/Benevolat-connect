@@ -125,9 +125,9 @@ function MesMissions() {
       action === 'publier' ? 'PUBLIEE' : action === 'annuler' ? 'ANNULEE' : 'CLOTUREE';
     setMissions((prev) => prev.map((m) => (m.id === id ? { ...m, statut: newStatut } : m)));
     const msgs = {
-      publier: '🚀 Mission publiée !',
+      publier: 'Mission publiée !',
       annuler: 'Mission annulée.',
-      cloturer: '✅ Mission clôturée !',
+      cloturer: 'Mission clôturée !',
     };
     toast.success(msgs[action]);
     setConfirmAction(null);

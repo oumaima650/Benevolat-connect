@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   Target, Users, CheckCircle, Clock, FileText,
   ClipboardCheck, AlertCircle, TrendingUp, ArrowUpRight,
-  BarChart2, Activity,
+  BarChart2, Activity, ClipboardList, Plus, Zap, Bell,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -347,12 +347,12 @@ function AssociationDashboard() {
           </h2>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Mes missions',       to: '/association/missions',          bg: 'bg-emerald text-emerald-foreground',  icon: '📋' },
-              { label: 'Nouvelle mission',   to: '/association/nouvelle-mission',  bg: 'bg-mustard text-ink',                 icon: '➕' },
-              { label: 'Inscrits',           to: '/association/inscrits',          bg: 'bg-pink text-pink-foreground',        icon: '👥' },
-              { label: 'Renforts',           to: '/association/renforts',          bg: 'bg-paper text-ink',                   icon: '⚡' },
-              { label: 'Certificats',        to: '/association/certificats',       bg: 'bg-paper text-ink',                   icon: '📄' },
-              { label: 'Notifications',      to: '/association/notifications',     bg: 'bg-paper text-ink',                   icon: '🔔' },
+              { label: 'Mes missions',       to: '/association/missions',          bg: 'bg-emerald text-emerald-foreground',  icon: <ClipboardList className="h-4 w-4" /> },
+              { label: 'Nouvelle mission',   to: '/association/nouvelle-mission',  bg: 'bg-mustard text-ink',                 icon: <Plus className="h-4 w-4" /> },
+              { label: 'Inscrits',           to: '/association/inscrits',          bg: 'bg-pink text-pink-foreground',        icon: <Users className="h-4 w-4" /> },
+              { label: 'Renforts',           to: '/association/renforts',          bg: 'bg-paper text-ink',                   icon: <Zap className="h-4 w-4" /> },
+              { label: 'Certificats',        to: '/association/certificats',       bg: 'bg-paper text-ink',                   icon: <FileText className="h-4 w-4" /> },
+              { label: 'Notifications',      to: '/association/notifications',     bg: 'bg-paper text-ink',                   icon: <Bell className="h-4 w-4" /> },
             ].map(({ label, to, bg, icon }) => (
               <Link
                 key={to}

@@ -450,7 +450,9 @@ function ProfilBenevole() {
                         ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                         : 'border-red-400 bg-red-50 text-red-700'
                     }`}>
-                      {pw.nouveau === pw.confirmation ? '✓ Les mots de passe correspondent' : '✗ Les mots de passe ne correspondent pas'}
+                      {pw.nouveau === pw.confirmation
+                        ? <span className="inline-flex items-center gap-1.5"><Check className="h-3.5 w-3.5" /> Les mots de passe correspondent</span>
+                        : <span className="inline-flex items-center gap-1.5"><X className="h-3.5 w-3.5" /> Les mots de passe ne correspondent pas</span>}
                     </div>
                   )}
                   <button
@@ -458,7 +460,10 @@ function ProfilBenevole() {
                     onClick={handlePwSave}
                     className="press w-full rounded-xl border-2 border-ink bg-mustard py-3 text-sm font-black text-ink shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90 transition-colors"
                   >
-                    ✓ Valider le nouveau mot de passe
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <Check className="h-4 w-4" />
+                      Valider le nouveau mot de passe
+                    </span>
                   </button>
                 </div>
               )}

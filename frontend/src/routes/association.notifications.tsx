@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, CheckCircle2, PartyPopper, XCircle, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -62,12 +62,12 @@ const NOTIFS_ASSO: NotificationDash[] = [
   },
 ];
 
-const typeIcons: Record<NotificationDash['type'], string> = {
-  CONFIRMATION: '✅',
-  PROMOTION: '🎉',
-  ANNULATION: '❌',
-  RAPPEL: '⏰',
-  RENFORT_URGENT: '🚨',
+const typeIcons: Record<NotificationDash['type'], React.ReactNode> = {
+  CONFIRMATION: <CheckCircle2 className="h-4 w-4" />,
+  PROMOTION: <PartyPopper className="h-4 w-4" />,
+  ANNULATION: <XCircle className="h-4 w-4" />,
+  RAPPEL: <Bell className="h-4 w-4" />,
+  RENFORT_URGENT: <AlertTriangle className="h-4 w-4" />,
 };
 
 const typeColors: Record<NotificationDash['type'], string> = {

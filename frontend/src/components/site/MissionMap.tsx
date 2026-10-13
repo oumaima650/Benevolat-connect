@@ -4,6 +4,7 @@
  * Aucune clé requise — OpenStreetMap est gratuit et open-source.
  */
 import { useEffect, useRef, useState } from "react";
+import { Map as MapIcon } from "lucide-react";
 import type { Mission } from "./data";
 
 /* ── types ── */
@@ -346,7 +347,7 @@ export function MissionMap({ missions, selectedId, onSelect, position, className
       )}
       {erreur && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground bg-muted p-4 text-center">
-          <span className="text-2xl">🗺️</span>
+          <MapIcon className="h-8 w-8" />
           <p className="font-semibold text-ink">Impossible de charger la carte</p>
           <p>Vérifiez votre connexion internet.</p>
         </div>

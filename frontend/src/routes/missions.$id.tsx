@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpRight, CalendarDays, Clock3, Mail, MapPin, Phone, Users, Building2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CalendarDays, Clock3, Mail, MapPin, Phone, Users, Building2, Hourglass, PartyPopper } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/site/Footer";
@@ -230,8 +230,9 @@ function MissionDetail() {
               {/* État : déjà inscrit (confirmée) */}
               {inscription?.inscrit && inscription.statut === "CONFIRMEE" && (
                 <div className="mt-5 space-y-3">
-                  <div className="rounded-lg border-2 border-ink bg-emerald/20 p-4 text-center font-bold text-ink">
-                    🎉 Inscription confirmée !
+                  <div className="flex items-center justify-center gap-2 rounded-lg border-2 border-ink bg-emerald/20 p-4 text-center font-bold text-ink">
+                    <PartyPopper className="h-5 w-5" aria-hidden="true" />
+                    Inscription confirmée !
                   </div>
                   <Button
                     onClick={handleAnnulation}
@@ -247,8 +248,9 @@ function MissionDetail() {
               {/* État : déjà inscrit (liste d'attente) */}
               {inscription?.inscrit && inscription.statut === "EN_LISTE_ATTENTE" && (
                 <div className="mt-5 space-y-3">
-                  <div className="rounded-lg border-2 border-ink bg-mustard/20 p-4 text-center font-bold text-ink">
-                    ⏳ Vous êtes n°{inscription.rang} dans la liste d'attente
+                  <div className="flex items-center justify-center gap-2 rounded-lg border-2 border-ink bg-mustard/20 p-4 text-center font-bold text-ink">
+                    <Hourglass className="h-5 w-5" aria-hidden="true" />
+                    Vous êtes n°{inscription.rang} dans la liste d'attente
                   </div>
                   <Button
                     onClick={handleAnnulation}

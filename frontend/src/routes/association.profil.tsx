@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Hourglass, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,11 +51,11 @@ function ProfilAssociation() {
           <div className="mt-1.5">
             {isValidated ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-green-300 bg-green-100 px-3 py-0.5 text-xs font-semibold text-green-700">
-                ✓ Association validée
+                <Check className="h-3.5 w-3.5" /> Association validée
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-300 bg-yellow-50 px-3 py-0.5 text-xs font-semibold text-yellow-700">
-                ⏳ En attente de validation
+                <Hourglass className="h-3.5 w-3.5" /> En attente de validation
               </span>
             )}
           </div>
@@ -140,11 +141,11 @@ function ProfilAssociation() {
             </div>
             {isValidated ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-green-300 bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
-                ✓ Validée
+                <Check className="h-4 w-4" /> Validée
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1 text-sm font-semibold text-yellow-700">
-                ⏳ En attente
+                <Hourglass className="h-4 w-4" /> En attente
               </span>
             )}
           </div>

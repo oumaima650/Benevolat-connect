@@ -1,17 +1,17 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Download, FileText, CalendarDays } from 'lucide-react';
+import { Download, FileText, CalendarDays, Building2, Sparkles, Hourglass, CheckCircle2, XCircle, ArrowRight, MapPin } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/dashboard/ConfirmDialog';
-import { StatusBadge } from '@/components/dashboard/StatusBadge';
 import { EmptyState } from '@/components/dashboard/EmptyState';
 import { certificats, formaterDate } from '@/components/dashboard/data';
 import type { InscriptionBenevole } from '@/components/dashboard/data';
 import { useAuth } from '@/context/AuthContext';
 import { inscriptionApi, type BenevoleInscription } from '@/services/missionApi';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/benevole/parcours')({
   component: MonParcours,
@@ -131,52 +131,89 @@ function MonParcours() {
               description="Aucune inscription ne correspond à ce filtre."
             />
           ) : (
-            <div className="space-y-3">
-              {filteredInscriptions.map((i) => (
-                <div
-                  key={i.id}
-                  className="flex flex-col gap-3 rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)] sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-start gap-2">
-                      <h3 className="font-bold text-ink">{i.missionTitre}</h3>
-                      <StatusBadge
-                        statut={
-                          i.statut === 'CONFIRMEE'
-                            ? 'EN_COURS'
-                            : i.statut === 'ANNULEE'
-                              ? 'ANNULEE'
-                              : 'PUBLIEE'
-                        }
-                      />
-                      {i.statut === 'EN_LISTE_ATTENTE' && i.rang != null && (
-                        <span className="rounded-full border-2 border-orange-400 bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-700">
-                          Rang {i.rang}
-                        </span>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {filteredInscriptions.map((i) => {
+                const isConfirmed = i.statut === 'CONFIRMEE';
+                const isWaiting = i.statut === 'EN_LISTE_ATTENTE';
+                const isCancelled = i.statut === 'ANNULEE';
+                return (
+                  <div
+                    key={i.id}
+                    className={cn(
+                      'flex flex-col rounded-xl border-2 border-ink bg-white p-4 shadow-[3px_3px_0_var(--color-ink)] transition-transform hover:-translate-y-0.5',
+                      isCancelled && 'opacity-60',
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold leading-tight text-ink truncate">{i.missionTitre}</h3>
+                        {i.association && (
+                          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground truncate">
+                            <Building2 className="h-3.5 w-3.5 shrink-0" /> {i.association}
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className={cn(
+                          'inline-flex shrink-0 items-center gap-1 rounded-full border-2 px-2 py-0.5 text-[11px] font-bold',
+                          isConfirmed && 'border-emerald-600 bg-emerald-100 text-emerald-700',
+                          isWaiting && 'border-amber-500 bg-amber-100 text-amber-700',
+                          isCancelled && 'border-gray-400 bg-gray-100 text-gray-600',
+                        )}
+                      >
+                        {isConfirmed && <CheckCircle2 className="h-3 w-3" />}
+                        {isWaiting && <Hourglass className="h-3 w-3" />}
+                        {isCancelled && <XCircle className="h-3 w-3" />}
+                        {isConfirmed ? 'Confirmée' : isWaiting ? "Liste d'attente" : 'Annulée'}
+                      </span>
+                    </div>
+
+                    {isWaiting && i.rang != null && (
+                      <div className="mt-3 flex items-center gap-1.5 rounded-lg border-2 border-amber-400 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800">
+                        <Hourglass className="h-3.5 w-3.5" />
+                        Vous êtes n°{i.rang} dans la liste d'attente
+                      </div>
+                    )}
+
+                    <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                      {i.domaine && (
+                        <p className="flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5 shrink-0" /> {i.domaine}
+                        </p>
+                      )}
+                      <p className="flex items-center gap-1.5">
+                        <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                        {formaterDate(i.dateDebut)}
+                        {i.dateFin && i.dateFin !== i.dateDebut && <> → {formaterDate(i.dateFin)}</>}
+                      </p>
+                      {i.ville && (
+                        <p className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" /> {i.ville}
+                        </p>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {i.association} — {i.ville}
-                    </p>
-                    <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <CalendarDays className="h-3 w-3" aria-hidden="true" />
-                      {formaterDate(i.dateDebut)} → {formaterDate(i.dateFin)}
-                    </p>
-                  </div>
 
-                  {/* Cancel button only for non-ANNULEE and before mission start */}
-                  {i.statut !== 'ANNULEE' && new Date(i.dateDebut) > new Date() && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setConfirmId(i.id)}
-                      className="shrink-0 rounded-xl border-2 border-ink text-red-600 shadow-[2px_2px_0_var(--color-ink)] hover:bg-red-50"
-                    >
-                      Annuler mon inscription
-                    </Button>
-                  )}
-                </div>
-              ))}
+                    <div className="mt-3 flex gap-2">
+                      <Link
+                        to={`/missions/${i.missionId}`}
+                        className="press inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border-2 border-ink bg-paper px-3 py-1.5 text-xs font-bold text-ink shadow-[2px_2px_0_var(--color-ink)] hover:bg-mustard/20"
+                      >
+                        Voir la mission <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                      {i.statut !== 'ANNULEE' && new Date(i.dateDebut) > new Date() && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setConfirmId(i.id)}
+                          className="shrink-0 rounded-lg border-2 border-ink text-red-600 shadow-[2px_2px_0_var(--color-ink)] hover:bg-red-50"
+                        >
+                          Annuler
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -228,7 +265,7 @@ function MonParcours() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => toast.info('📄 Téléchargement en cours…')}
+                          onClick={() => toast.info('Téléchargement en cours…')}
                           className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]"
                           aria-label={`Télécharger le certificat pour ${c.missionTitre}`}
                         >
