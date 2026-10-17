@@ -65,7 +65,7 @@ public class MissionService {
 
         StatutMission effectiveStatut = mission.getStatut();
         if (effectiveStatut == StatutMission.PUBLIEE && placesRestantes == 0) {
-            effectiveStatut = StatutMission.COMPLETE;
+            effectiveStatut = StatutMission.SATUREE;
         }
 
         String img = mission.getImageEvenement() != null ? mission.getImageEvenement().getUrl() : null;

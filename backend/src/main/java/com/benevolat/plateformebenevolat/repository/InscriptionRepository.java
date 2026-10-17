@@ -22,7 +22,13 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
     /** Liste toutes les inscriptions d'un bénévole, triées par date d'inscription décroissante. */
     List<Inscription> findByBenevole_IdUtilisateurOrderByDateInscriptionDesc(Long benevoleId);
 
-    /** Vérifie si le bénévole possède déjà une inscription active (CONFIRMEE ou EN_LISTE_ATTENTE). */
+    /** Liste toutes les inscriptions d'une mission, triées par dateInscription. */
+    @Query("SELECT i FROM Inscription i JOIN FETCH i.benevole b LEFT JOIN FETCH b.competences " +
+           "WHERE i.mission.idMission = :missionId ORDER BY i.statut ASC, i.rang ASC NULLS LAST")
+    List<Inscription> findByMission_IdMissionWithBenevole(@Param("missionId") Long missionId);
+
+    /** Compte les inscriptions CONFIRMEE pour une mission. */
+    long countByMission_IdMissionAndStatut(Long missionId, StatutInscription statut);
     @Query("SELECT COUNT(i) > 0 FROM Inscription i " +
             "WHERE i.benevole.idUtilisateur = :benevoleId AND i.mission.idMission = :missionId " +
             "AND i.statut IN (:statuts)")

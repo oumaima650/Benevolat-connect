@@ -113,4 +113,39 @@ public class AssociationController {
         String statut = body.getOrDefault("statut", "");
         return ResponseEntity.ok(associationService.changeStatut(auth.getName(), id, statut));
     }
+
+    @GetMapping("/me/missions/{id}/inscrits")
+    public ResponseEntity<List<InscritDto>> getInscrits(
+            Authentication auth,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(associationService.getInscrits(auth.getName(), id));
+    }
+
+    @PostMapping("/me/missions/{id}/renfort")
+    public ResponseEntity<MissionDto> demanderRenfort(
+            Authentication auth,
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        int nbBenevoles = ((Number) body.getOrDefault("nbBenevoles", 0)).intValue();
+        return ResponseEntity.ok(associationService.demanderRenfort(auth.getName(), id, nbBenevoles));
+    }
+
+    @PostMapping("/me/missions/{id}/images")
+    public ResponseEntity<ImageEvenementDto> ajouterImage(
+            Authentication auth,
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        String url = body.getOrDefault("url", "");
+        String titre = body.getOrDefault("titre", "");
+        String description = body.getOrDefault("description", "");
+        ImageEvenementDto dto = associationService.ajouterImageMission(auth.getName(), id, url, titre, description);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    @GetMapping("/me/missions/{id}/images")
+    public ResponseEntity<List<ImageEvenementDto>> getImages(
+            Authentication auth,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(associationService.getImagesMission(auth.getName(), id));
+    }
 }

@@ -144,7 +144,7 @@ function AssociationDashboard() {
   }
 
   /* ── Calculs KPIs ── */
-  const actives = missions.filter(m => ['PUBLIEE', 'EN_COURS', 'RENFORT_URGENT', 'COMPLETE'].includes(m.statut));
+  const actives = missions.filter(m => ['PUBLIEE', 'EN_COURS', 'RENFORT_URGENT', 'SATUREE'].includes(m.statut));
   const totalPlaces = actives.reduce((s, m) => s + (m.nbPlaces ?? 0), 0);
   const totalInscrits = actives.reduce((s, m) => s + (m.nbInscritsConfirmes ?? 0), 0);
   const totalAttente = actives.reduce((s, m) => s + (m.nbListeAttente ?? 0), 0);

@@ -1,17 +1,24 @@
 package com.benevolat.plateformebenevolat.service;
 
 import com.benevolat.plateformebenevolat.dto.AssociationProfileDto;
+import com.benevolat.plateformebenevolat.dto.ImageEvenementDto;
+import com.benevolat.plateformebenevolat.dto.InscritDto;
 import com.benevolat.plateformebenevolat.dto.MissionDto;
 import com.benevolat.plateformebenevolat.dto.MissionRequest;
 import com.benevolat.plateformebenevolat.dto.UpdateAssociationRequest;
 import com.benevolat.plateformebenevolat.entity.Association;
 import com.benevolat.plateformebenevolat.entity.Domaine;
+import com.benevolat.plateformebenevolat.entity.ImageEvenement;
+import com.benevolat.plateformebenevolat.entity.Inscription;
 import com.benevolat.plateformebenevolat.entity.Mission;
+import com.benevolat.plateformebenevolat.entity.StatutInscription;
 import com.benevolat.plateformebenevolat.entity.StatutMission;
 import com.benevolat.plateformebenevolat.entity.StatutUtilisateur;
 import com.benevolat.plateformebenevolat.repository.AssociationRepository;
 import com.benevolat.plateformebenevolat.repository.CompetenceRepository;
 import com.benevolat.plateformebenevolat.repository.DomaineRepository;
+import com.benevolat.plateformebenevolat.repository.ImageEvenementRepository;
+import com.benevolat.plateformebenevolat.repository.InscriptionRepository;
 import com.benevolat.plateformebenevolat.repository.MissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +41,8 @@ public class AssociationService {
     private final DomaineRepository domaineRepository;
     private final MissionRepository missionRepository;
     private final CompetenceRepository competenceRepository;
+    private final InscriptionRepository inscriptionRepository;
+    private final ImageEvenementRepository imageEvenementRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 
@@ -201,6 +211,73 @@ public class AssociationService {
         return toMissionDto(saved);
     }
 
+    // ─── Inscrits / Renfort / Images ──────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<InscritDto> getInscrits(String email, Long missionId) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable : " + missionId));
+        if (!mission.getAssociation().getEmail().equals(email)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
+        }
+
+        List<Inscription> confirmes = inscriptionRepository
+                .findByMission_IdMissionAndStatutOrderByRangAsc(missionId, StatutInscription.CONFIRMEE);
+        List<Inscription> attente = inscriptionRepository
+                .findByMission_IdMissionAndStatutOrderByRangAsc(missionId, StatutInscription.EN_LISTE_ATTENTE);
+
+        List<Inscription> all = new ArrayList<>();
+        all.addAll(confirmes);
+        all.addAll(attente);
+
+        return all.stream().map(this::toInscritDto).collect(Collectors.toList());
+    }
+
+    public MissionDto demanderRenfort(String email, Long missionId, int nbBenevoles) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable : " + missionId));
+        if (!mission.getAssociation().getEmail().equals(email)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
+        }
+        if (mission.getStatut() != StatutMission.EN_COURS && mission.getStatut() != StatutMission.PUBLIEE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Le renfort ne peut être demandé que pour une mission EN_COURS ou PUBLIEE.");
+        }
+        mission.setNbRenfortDemande(nbBenevoles);
+        mission.setStatut(StatutMission.RENFORT_URGENT);
+        Mission saved = missionRepository.save(mission);
+        return toMissionDto(saved);
+    }
+
+    public ImageEvenementDto ajouterImageMission(String email, Long missionId,
+                                                  String url, String titre, String description) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable : " + missionId));
+        if (!mission.getAssociation().getEmail().equals(email)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
+        }
+        if (mission.getStatut() != StatutMission.CLOTUREE && mission.getStatut() != StatutMission.TERMINEE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mission non clôturée/terminée.");
+        }
+        ImageEvenement image = new ImageEvenement(url, titre, description, mission);
+        ImageEvenement saved = imageEvenementRepository.save(image);
+        return toImageEvenementDto(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ImageEvenementDto> getImagesMission(String email, Long missionId) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable : " + missionId));
+        if (!mission.getAssociation().getEmail().equals(email)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
+        }
+        return imageEvenementRepository
+                .findByMission_IdMissionOrderByDatePublicationDesc(missionId)
+                .stream()
+                .map(this::toImageEvenementDto)
+                .collect(Collectors.toList());
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     private Association loadByEmail(String email) {
@@ -261,6 +338,38 @@ public class AssociationService {
                 .associationId(asso != null ? asso.getIdUtilisateur() : null)
                 .associationNom(asso != null ? asso.getNom() : null)
                 .associationLogoUrl(asso != null ? asso.getPhotoProfil() : null)
+                .build();
+    }
+
+    private InscritDto toInscritDto(Inscription inscription) {
+        var benevole = inscription.getBenevole();
+        List<String> competenceNoms = benevole.getCompetences().stream()
+                .map(c -> c.getNom())
+                .collect(Collectors.toList());
+        return InscritDto.builder()
+                .inscriptionId(inscription.getIdInscription())
+                .benevoleId(benevole.getIdUtilisateur())
+                .nom(benevole.getNom())
+                .prenom(benevole.getPrenom())
+                .email(benevole.getEmail())
+                .ville(benevole.getVille())
+                .telephone(benevole.getTelephone())
+                .photoUrl(benevole.getPhotoUrl())
+                .competences(competenceNoms)
+                .statut(inscription.getStatut().name())
+                .rang(inscription.getRang())
+                .dateInscription(inscription.getDateInscription())
+                .certificatDelivre(false) // enrichi par CertificatService si besoin
+                .build();
+    }
+
+    private ImageEvenementDto toImageEvenementDto(ImageEvenement image) {
+        return ImageEvenementDto.builder()
+                .id(image.getIdImage())
+                .url(image.getUrl())
+                .titre(image.getTitre())
+                .description(image.getDescription())
+                .datePublication(image.getDatePublication())
                 .build();
     }
 

@@ -39,12 +39,12 @@ public class InscriptionService {
      * Inscrire le bénévole connecté à une mission.
      *
      * Règles :
-     * 1. La mission doit être PUBLIEE ou COMPLETE et sa date de début non passée.
+     * 1. La mission doit être PUBLIEE ou SATUREE et sa date de début non passée.
      * 2. Pas de double inscription active (CONFIRMEE ou EN_LISTE_ATTENTE).
      * 3. Cas A : nbPlaces > 0 → inscription CONFIRMEE, nbPlaces--.
      * 4. Cas B : nbPlaces == 0 et nbPlacesListeAttente > 0 → EN_LISTE_ATTENTE, rang = nb_attente+1, nbPlacesListeAttente--.
      * 5. Cas C : les deux à 0 → refus (mission pleine).
-     * 6. Si nbPlaces == 0 après inscription, la mission passe à COMPLETE.
+     * 6. Si nbPlaces == 0 après inscription, la mission passe à SATUREE.
      */
     @Transactional
     public InscriptionResponseDto inscrire(String email, Long missionId) {
@@ -55,7 +55,7 @@ public class InscriptionService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable."));
 
         // Règle 1 — statut et date
-        if (mission.getStatut() != StatutMission.PUBLIEE && mission.getStatut() != StatutMission.COMPLETE) {
+        if (mission.getStatut() != StatutMission.PUBLIEE && mission.getStatut() != StatutMission.SATUREE) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "La mission n'est pas ouverte aux inscriptions (statut : " + mission.getStatut() + ").");
         }
@@ -106,9 +106,9 @@ public class InscriptionService {
         mission.setNbPlaces(nbPlaces);
         mission.setNbPlacesListeAttente(nbListe);
 
-        // Règle 6 — si plus de place principale, mission COMPLETE
+        // Règle 6 — si plus de place principale, mission SATUREE
         if (nbPlaces == 0 && mission.getStatut() == StatutMission.PUBLIEE) {
-            mission.setStatut(StatutMission.COMPLETE);
+            mission.setStatut(StatutMission.SATUREE);
         }
 
         // Création ou réutilisation de l'inscription (contrainte unique)
@@ -130,7 +130,7 @@ public class InscriptionService {
      *
      * - Si CONFIRMEE : promotion du 1er de la liste d'attente (s'il existe) en CONFIRMEE,
      *   nbPlacesListeAttente++, décrément des rangs suivants. Sinon nbPlaces++ et mission
-     *   repasse à PUBLIEE si elle était COMPLETE.
+     *   repasse à PUBLIEE si elle était SATUREE.
      * - Si EN_LISTE_ATTENTE : nbPlacesListeAttente++ et décrément des rangs supérieurs.
      * - Dans tous les cas : statut = ANNULEE.
      */
@@ -176,7 +176,7 @@ public class InscriptionService {
             } else {
                 // Pas de liste d'attente : on libère une place
                 nbPlaces++;
-                if (mission.getStatut() == StatutMission.COMPLETE) {
+                if (mission.getStatut() == StatutMission.SATUREE) {
                     mission.setStatut(StatutMission.PUBLIEE);
                 }
             }

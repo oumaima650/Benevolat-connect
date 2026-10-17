@@ -1,91 +1,109 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, Loader2, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { formaterDate, inscritsMission } from '@/components/dashboard/data';
+import {
+  getMyMissions, getInscrits, getCertificats, delivrerCertificats, getPdfUrl,
+  type MissionDashboard, type InscritDashboard, type CertificatResult,
+} from '@/services/associationApi';
+import { formaterDate } from '@/components/dashboard/data';
 
 export const Route = createFileRoute('/association/certificats')({
   component: Certificats,
 });
 
-interface MissionTerminee {
-  id: string;
-  titre: string;
-  dateDebut: string;
-  dateDelivered: boolean;
-}
-
-const MISSIONS_TERMINEES: MissionTerminee[] = [
-  { id: 'mt1', titre: 'Marathon caritatif de Casablanca', dateDebut: '2026-05-10', dateDelivered: false },
-  { id: 'mt2', titre: 'Journée portes ouvertes culturelle', dateDebut: '2026-04-15', dateDelivered: false },
-  { id: 'mt3', titre: 'Campagne de sensibilisation santé', dateDebut: '2026-08-05', dateDelivered: false },
-];
-
-interface CertificatDelivered {
-  id: string;
-  benevoleNom: string;
-  missionTitre: string;
-  code: string;
-  date: string;
-}
-
-const INIT_DELIVERED: CertificatDelivered[] = [
-  { id: 'cd1', benevoleNom: 'Karim Benjelloun', missionTitre: 'Nettoyage plage 2025', code: 'CMI-2025-0042', date: '2025-11-15' },
-  { id: 'cd2', benevoleNom: 'Nadia Alami', missionTitre: 'Nettoyage plage 2025', code: 'CMI-2025-0043', date: '2025-11-15' },
-  { id: 'cd3', benevoleNom: 'Yasmine El Idrissi', missionTitre: 'Distribution repas 2025', code: 'CMI-2025-0118', date: '2025-12-10' },
-];
-
-const CONFIRMES = inscritsMission.filter((i) => i.statut === 'CONFIRMEE');
-
 function Certificats() {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [selections, setSelections] = useState<Record<string, string[]>>({});
-  const [delivered, setDelivered] = useState<CertificatDelivered[]>(INIT_DELIVERED);
+  const [missions, setMissions] = useState<MissionDashboard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  function toggleExpand(id: string) {
-    setExpandedId((prev) => (prev === id ? null : id));
-    if (!selections[id]) {
-      setSelections((prev) => ({ ...prev, [id]: [] }));
-    }
-  }
+  // inscrits par missionId
+  const [inscritsByMission, setInscritsByMission] = useState<Record<number, InscritDashboard[]>>({});
+  const [certsByMission, setCertsByMission] = useState<Record<number, CertificatResult[]>>({});
+  const [loadingMission, setLoadingMission] = useState<number | null>(null);
 
-  function toggleSelection(missionId: string, inscritId: string) {
-    setSelections((prev) => {
-      const current = prev[missionId] ?? [];
-      return {
-        ...prev,
-        [missionId]: current.includes(inscritId)
-          ? current.filter((x) => x !== inscritId)
-          : [...current, inscritId],
-      };
-    });
-  }
+  // sélections par missionId : Set des inscriptionIds
+  const [selections, setSelections] = useState<Record<number, Set<number>>>({});
+  const [delivering, setDelivering] = useState<number | null>(null);
 
-  function deliverCertificats(mission: MissionTerminee) {
-    const selected = selections[mission.id] ?? [];
-    if (selected.length === 0) {
-      toast.error('Sélectionnez au moins un bénévole.');
+  useEffect(() => {
+    getMyMissions()
+      .then((data) => {
+        const terminees = data.filter(m => ['TERMINEE', 'CLOTUREE'].includes(m.statut));
+        setMissions(terminees);
+      })
+      .catch(() => toast.error('Impossible de charger les missions.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function toggleExpand(missionId: number) {
+    if (expandedId === missionId) {
+      setExpandedId(null);
       return;
     }
+    setExpandedId(missionId);
+    if (inscritsByMission[missionId]) return; // déjà chargé
 
-    const newCerts = selected.map((id) => {
-      const inscrit = CONFIRMES.find((c) => c.id === id);
-      const code = `CMI-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
-      return {
-        id: `cert-${Date.now()}-${id}`,
-        benevoleNom: inscrit ? `${inscrit.prenom} ${inscrit.nom}` : id,
-        missionTitre: mission.titre,
-        code,
-        date: new Date().toISOString().split('T')[0] ?? new Date().toISOString(),
-      };
+    setLoadingMission(missionId);
+    try {
+      const [inscrits, certs] = await Promise.all([
+        getInscrits(missionId),
+        getCertificats(missionId),
+      ]);
+      const confirmes = inscrits.filter(i => i.statut === 'CONFIRMEE');
+      setInscritsByMission(prev => ({ ...prev, [missionId]: confirmes }));
+      setCertsByMission(prev => ({ ...prev, [missionId]: certs }));
+      // Initialiser sélection
+      setSelections(prev => ({ ...prev, [missionId]: new Set() }));
+    } catch {
+      toast.error('Impossible de charger les inscrits.');
+    } finally {
+      setLoadingMission(null);
+    }
+  }
+
+  function toggleSelection(missionId: number, inscriptionId: number) {
+    setSelections(prev => {
+      const s = new Set(prev[missionId] ?? []);
+      if (s.has(inscriptionId)) s.delete(inscriptionId); else s.add(inscriptionId);
+      return { ...prev, [missionId]: s };
     });
+  }
 
-    setDelivered((prev) => [...prev, ...newCerts]);
-    setSelections((prev) => ({ ...prev, [mission.id]: [] }));
-    toast.success(`${newCerts.length} certificat(s) délivré(s) avec succès !`);
+  async function handleDelivrer(missionId: number) {
+    const sel = Array.from(selections[missionId] ?? []);
+    if (sel.length === 0) { toast.error('Sélectionnez au moins un bénévole.'); return; }
+    setDelivering(missionId);
+    try {
+      const results = await delivrerCertificats(missionId, sel);
+      setCertsByMission(prev => {
+        const existing = prev[missionId] ?? [];
+        const existingIds = new Set(existing.map(c => c.certificatId));
+        const newOnes = results.filter(r => !existingIds.has(r.certificatId));
+        return { ...prev, [missionId]: [...existing, ...newOnes] };
+      });
+      setSelections(prev => ({ ...prev, [missionId]: new Set() }));
+      toast.success(`${results.length} certificat(s) délivré(s) !`);
+    } catch (err: any) {
+      toast.error(err.message ?? 'Erreur lors de la délivrance.');
+    } finally {
+      setDelivering(null);
+    }
+  }
+
+  function hasCertificat(missionId: number, inscriptionId: number) {
+    return (certsByMission[missionId] ?? []).some(c => c.inscriptionId === inscriptionId);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   return (
@@ -93,129 +111,178 @@ function Certificats() {
       <div>
         <h1 className="font-display text-2xl font-black text-ink">Certificats</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Délivrez des certificats aux bénévoles pour les missions terminées.
+          Délivrez des certificats PDF personnalisés aux bénévoles pour les missions terminées.
         </p>
       </div>
 
-      {/* Missions terminées */}
-      <div>
-        <h2 className="font-display mb-3 font-bold text-ink">Missions terminées</h2>
+      {missions.length === 0 ? (
+        <div className="rounded-2xl border-2 border-dashed border-ink/30 bg-paper p-12 text-center">
+          <p className="text-2xl mb-2">📄</p>
+          <p className="font-bold text-ink">Aucune mission terminée</p>
+          <p className="text-sm text-muted-foreground mt-1">Les certificats sont disponibles pour les missions TERMINÉE ou CLÔTURÉE.</p>
+        </div>
+      ) : (
         <div className="space-y-3">
-          {MISSIONS_TERMINEES.map((mission) => {
+          {missions.map((mission) => {
             const isExpanded = expandedId === mission.id;
-            const selected = selections[mission.id] ?? [];
+            const inscrits = inscritsByMission[mission.id] ?? [];
+            const certs = certsByMission[mission.id] ?? [];
+            const sel = selections[mission.id] ?? new Set();
+            const isLoadingThis = loadingMission === mission.id;
+            const isDelivering = delivering === mission.id;
 
             return (
-              <div
-                key={mission.id}
-                className="overflow-hidden rounded-2xl border-2 border-ink bg-paper shadow-[4px_4px_0_var(--color-ink)]"
-              >
-                <button
-                  type="button"
-                  onClick={() => toggleExpand(mission.id)}
-                  className="flex w-full items-center justify-between p-4 text-left"
-                  aria-expanded={isExpanded}
-                >
-                  <div>
-                    <p className="font-bold text-ink">{mission.titre}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formaterDate(mission.dateDebut)}
-                    </p>
+              <div key={mission.id}
+                className="overflow-hidden rounded-2xl border-2 border-ink bg-paper shadow-[4px_4px_0_var(--color-ink)]">
+                {/* Header accordion */}
+                <button type="button" onClick={() => toggleExpand(mission.id)}
+                  className="flex w-full items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors"
+                  aria-expanded={isExpanded}>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <p className="font-bold text-ink">{mission.titre}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formaterDate(mission.dateDebut)} •{' '}
+                        <span className={`font-semibold ${mission.statut === 'CLOTUREE' ? 'text-emerald' : 'text-orange-600'}`}>
+                          {mission.statut}
+                        </span>
+                        {certs.length > 0 && (
+                          <span className="ml-2 text-xs font-semibold text-emerald">
+                            {certs.length} certificat(s) délivré(s)
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  {isExpanded ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                  )}
+                  {isExpanded
+                    ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                    : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                  }
                 </button>
 
+                {/* Contenu expandé */}
                 {isExpanded && (
-                  <div className="border-t-2 border-ink p-4 space-y-3">
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Sélectionnez les bénévoles pour lesquels vous souhaitez délivrer un certificat.
-                    </p>
-                    <div className="space-y-2">
-                      {CONFIRMES.map((inscrit) => (
-                        <div key={inscrit.id} className="flex items-center gap-3 rounded-xl border border-ink/20 bg-muted p-3">
-                          <Checkbox
-                            id={`${mission.id}-${inscrit.id}`}
-                            checked={selected.includes(inscrit.id)}
-                            onCheckedChange={() => toggleSelection(mission.id, inscrit.id)}
-                          />
-                          <Label
-                            htmlFor={`${mission.id}-${inscrit.id}`}
-                            className="flex-1 cursor-pointer font-medium text-ink"
-                          >
-                            {inscrit.prenom} {inscrit.nom}
-                            <span className="ml-2 text-xs text-muted-foreground">{inscrit.ville}</span>
-                          </Label>
+                  <div className="border-t-2 border-ink p-5 space-y-5">
+                    {isLoadingThis ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : inscrits.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Aucun bénévole confirmé pour cette mission.
+                      </p>
+                    ) : (
+                      <>
+                        {/* Liste des bénévoles */}
+                        <div>
+                          <p className="text-sm font-bold text-ink mb-3">
+                            Sélectionnez les bénévoles pour lesquels délivrer un certificat :
+                          </p>
+                          <div className="space-y-2">
+                            {inscrits.map((inscrit) => {
+                              const alreadyHas = hasCertificat(mission.id, inscrit.inscriptionId);
+                              return (
+                                <div key={inscrit.inscriptionId}
+                                  className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
+                                    alreadyHas
+                                      ? 'border-emerald/40 bg-emerald/5'
+                                      : 'border-ink/20 bg-muted hover:bg-muted/80'
+                                  }`}>
+                                  {alreadyHas ? (
+                                    <Award className="h-4 w-4 text-emerald shrink-0" />
+                                  ) : (
+                                    <Checkbox
+                                      id={`${mission.id}-${inscrit.inscriptionId}`}
+                                      checked={sel.has(inscrit.inscriptionId)}
+                                      onCheckedChange={() => toggleSelection(mission.id, inscrit.inscriptionId)}
+                                    />
+                                  )}
+                                  <Label
+                                    htmlFor={`${mission.id}-${inscrit.inscriptionId}`}
+                                    className={`flex-1 ${alreadyHas ? 'cursor-default' : 'cursor-pointer'} font-medium text-ink`}
+                                  >
+                                    {inscrit.prenom} {inscrit.nom}
+                                    <span className="ml-2 text-xs text-muted-foreground">{inscrit.ville}</span>
+                                    {alreadyHas && (
+                                      <span className="ml-2 text-xs font-semibold text-emerald">✓ Certificat délivré</span>
+                                    )}
+                                  </Label>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                    <Button
-                      onClick={() => deliverCertificats(mission)}
-                      disabled={selected.length === 0}
-                      className="rounded-xl border-2 border-ink bg-emerald font-bold text-emerald-foreground shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90 disabled:opacity-40"
-                    >
-                      Délivrer {selected.length > 0 ? `(${selected.length})` : ''} certificat
-                      {selected.length > 1 ? 's' : ''}
-                    </Button>
+
+                        {/* Bouton délivrer */}
+                        {inscrits.some(i => !hasCertificat(mission.id, i.inscriptionId)) && (
+                          <Button onClick={() => handleDelivrer(mission.id)}
+                            disabled={sel.size === 0 || isDelivering}
+                            className="rounded-xl border-2 border-ink bg-emerald font-bold text-emerald-foreground shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90 disabled:opacity-40">
+                            {isDelivering
+                              ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Génération PDF…</>
+                              : <><Award className="mr-2 h-4 w-4" />Délivrer {sel.size > 0 ? `(${sel.size})` : ''} certificat{sel.size > 1 ? 's' : ''}</>
+                            }
+                          </Button>
+                        )}
+
+                        {/* Certificats délivrés pour cette mission */}
+                        {certs.length > 0 && (
+                          <div>
+                            <p className="text-sm font-bold text-ink mb-2 border-t-2 border-ink/10 pt-4">
+                              Certificats délivrés ({certs.length})
+                            </p>
+                            <div className="overflow-hidden rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]">
+                              <table className="w-full text-xs">
+                                <thead className="bg-emerald text-emerald-foreground">
+                                  <tr>
+                                    <th className="px-3 py-2 text-left font-bold">Bénévole</th>
+                                    <th className="hidden px-3 py-2 text-left font-bold sm:table-cell">Code</th>
+                                    <th className="px-3 py-2 text-left font-bold">Date</th>
+                                    <th className="px-3 py-2" />
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {certs.map((c, idx) => (
+                                    <tr key={c.certificatId} className={idx % 2 === 0 ? 'bg-paper' : 'bg-muted'}>
+                                      <td className="px-3 py-2 font-medium text-ink">
+                                        {c.benevolePrenom} {c.benevoleNom}
+                                      </td>
+                                      <td className="hidden px-3 py-2 sm:table-cell">
+                                        <code className="rounded border border-ink/20 bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+                                          {c.codeVerification}
+                                        </code>
+                                      </td>
+                                      <td className="px-3 py-2 text-muted-foreground">
+                                        {new Date(c.dateDelivrance).toLocaleDateString('fr-FR')}
+                                      </td>
+                                      <td className="px-3 py-2">
+                                        {c.urlPdf ? (
+                                          <a href={c.urlPdf} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" size="sm"
+                                              className="rounded-lg border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] h-7 px-2">
+                                              <Download className="h-3 w-3 mr-1" />PDF
+                                            </Button>
+                                          </a>
+                                        ) : (
+                                          <span className="text-xs text-muted-foreground">En cours…</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
             );
           })}
         </div>
-      </div>
-
-      {/* Certificats délivrés */}
-      <div>
-        <h2 className="font-display mb-3 font-bold text-ink">
-          Certificats délivrés ({delivered.length})
-        </h2>
-        <div className="overflow-hidden rounded-2xl border-2 border-ink shadow-[4px_4px_0_var(--color-ink)]">
-          <table className="w-full text-sm">
-            <thead className="bg-emerald text-emerald-foreground">
-              <tr>
-                <th className="border-b-2 border-ink px-4 py-3 text-left font-bold">Bénévole</th>
-                <th className="hidden border-b-2 border-ink px-4 py-3 text-left font-bold sm:table-cell">Mission</th>
-                <th className="border-b-2 border-ink px-4 py-3 text-left font-bold">Code</th>
-                <th className="hidden border-b-2 border-ink px-4 py-3 text-left font-bold md:table-cell">Date</th>
-                <th className="border-b-2 border-ink px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {delivered.map((c, idx) => (
-                <tr key={c.id} className={idx % 2 === 0 ? 'bg-paper' : 'bg-muted'}>
-                  <td className="px-4 py-3 font-medium text-ink">{c.benevoleNom}</td>
-                  <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">{c.missionTitre}</td>
-                  <td className="px-4 py-3">
-                    <code className="rounded border border-ink/20 bg-muted px-2 py-0.5 font-mono text-xs">
-                      {c.code}
-                    </code>
-                  </td>
-                  <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
-                    {formaterDate(c.date)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toast.info('Téléchargement en cours…')}
-                      onClick={() => toast.info('Téléchargement en cours…')}
-                      className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]"
-                      aria-label={`Télécharger le certificat de ${c.benevoleNom}`}
-                    >
-                      <Download className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-                      PDF
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

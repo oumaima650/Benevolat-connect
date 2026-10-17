@@ -64,6 +64,7 @@ export type MissionDashboard = {
   nbInscritsConfirmes: number;
   nbListeAttente: number;
   nbPlacesRestantes: number;
+  nbRenfortDemande?: number;
   statut: string;
   domaineId?: number;
   domaineNom?: string;
@@ -131,6 +132,79 @@ export const changeMissionStatut = (id: number, statut: string) =>
     method: "PATCH",
     body: JSON.stringify({ statut }),
   });
+
+/* ── Inscrits ── */
+
+export type InscritDashboard = {
+  inscriptionId: number;
+  benevoleId: number;
+  nom: string;
+  prenom: string;
+  email: string;
+  ville?: string;
+  telephone?: string;
+  photoUrl?: string;
+  competences: string[];
+  statut: "CONFIRMEE" | "EN_LISTE_ATTENTE" | "ANNULEE";
+  rang?: number;
+  dateInscription: string;
+  certificatDelivre: boolean;
+};
+
+export const getInscrits = (missionId: number) =>
+  request<InscritDashboard[]>(`/api/associations/me/missions/${missionId}/inscrits`);
+
+/* ── Renfort ── */
+
+export const demanderRenfort = (missionId: number, nbBenevoles: number) =>
+  request<MissionDashboard>(`/api/associations/me/missions/${missionId}/renfort`, {
+    method: "POST",
+    body: JSON.stringify({ nbBenevoles }),
+  });
+
+/* ── Photos d'événement ── */
+
+export type ImageEvenementDashboard = {
+  id: number;
+  url: string;
+  titre?: string;
+  description?: string;
+  datePublication: string;
+};
+
+export const getMissionImages = (missionId: number) =>
+  request<ImageEvenementDashboard[]>(`/api/associations/me/missions/${missionId}/images`);
+
+export const addMissionImage = (missionId: number, data: { url: string; titre?: string; description?: string }) =>
+  request<ImageEvenementDashboard>(`/api/associations/me/missions/${missionId}/images`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+/* ── Certificats ── */
+
+export type CertificatResult = {
+  certificatId: number;
+  inscriptionId: number;
+  benevoleId: number;
+  benevoleNom: string;
+  benevolePrenom: string;
+  codeVerification: string;
+  urlPdf?: string;
+  dateDelivrance: string;
+};
+
+export const delivrerCertificats = (missionId: number, inscriptionIds: number[]) =>
+  request<CertificatResult[]>(`/api/associations/me/missions/${missionId}/certificats`, {
+    method: "POST",
+    body: JSON.stringify({ inscriptionIds }),
+  });
+
+export const getCertificats = (missionId: number) =>
+  request<CertificatResult[]>(`/api/associations/me/missions/${missionId}/certificats`);
+
+export const getPdfUrl = (certificatId: number) =>
+  `${API_BASE}/api/associations/me/certificats/${certificatId}/pdf`;
 
 /* ── Compatibilité avec l'ancien associationApi ── */
 
