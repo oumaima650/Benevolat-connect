@@ -118,12 +118,17 @@ function ProfilAssociation() {
         setAccountStatut(p.statutCompte ?? 'ACTIF');
         if (p.latitude && p.longitude) {
           setPosition([p.latitude, p.longitude]);
-          if (!p.adresse && !p.ville) {
-            setReversingGeo(true);
-            reverseGeocode(p.latitude, p.longitude)
-              .then(({ ville, adresse }) => setForm(f => ({ ...f, ville: ville || f.ville, adresse: adresse || f.adresse })))
-              .finally(() => setReversingGeo(false));
-          }
+          // Toujours faire le reverse geocoding pour afficher l'adresse correcte
+          setReversingGeo(true);
+          reverseGeocode(p.latitude, p.longitude)
+            .then(({ ville, adresse }) => {
+              setForm(f => ({
+                ...f,
+                ville: f.ville || ville,   // garder la valeur BDD si elle existe
+                adresse: f.adresse || adresse, // idem
+              }));
+            })
+            .finally(() => setReversingGeo(false));
         }
       })
       .catch(() => toast.error('Impossible de charger le profil.'))
@@ -448,10 +453,15 @@ function ProfilAssociation() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="adresse-asso" className="text-sm font-bold text-ink">Adresse</Label>
-                    <Input id="adresse-asso" value={form.adresse}
-                      onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
-                      placeholder="12 Bd Mohammed V"
-                      className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] transition-shadow" />
+                    <div className="relative">
+                      <Input id="adresse-asso" value={form.adresse}
+                        onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
+                        placeholder="12 Bd Mohammed V"
+                        className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] transition-shadow" />
+                      {reversingGeo && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

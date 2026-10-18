@@ -68,6 +68,7 @@ function MissionDetail() {
   const [placesRestantes, setPlacesRestantes] = useState<number>(initialPlaces);
   const [listeAttente, setListeAttente] = useState<number>(initialListeAttente);
   const [inscription, setInscription] = useState<InscriptionStatus | null>(null);
+  const [statutMission, setStatutMission] = useState<string>(detail?.statut ?? "PUBLIEE");
   const [loading, setLoading] = useState(false);
 
   // Récupère le statut d'inscription du bénévole connecté au chargement
@@ -86,6 +87,7 @@ function MissionDetail() {
       const res = await inscriptionApi.inscrire(token, missionId);
       setPlacesRestantes(res.nbPlaces);
       setListeAttente(res.nbPlacesListeAttente);
+      if (res.statutMission) setStatutMission(res.statutMission);
       setInscription({
         inscrit: true,
         statut: res.statutInscription,
@@ -110,6 +112,7 @@ function MissionDetail() {
       const res = await inscriptionApi.annuler(token, missionId);
       setPlacesRestantes(res.nbPlaces);
       setListeAttente(res.nbPlacesListeAttente);
+      if (res.statutMission) setStatutMission(res.statutMission);
       setInscription({ inscrit: false });
       toast.success("Inscription annulée.");
     } catch (err: any) {
@@ -134,6 +137,8 @@ function MissionDetail() {
   const lng = (loaderData as any).mission?.lng ?? 2.3522;
 
   const complet = placesRestantes === 0;
+  const renfortUrgent = statutMission === "RENFORT_URGENT";
+  const inscriptionsOuvertes = ["PUBLIEE", "SATUREE", "RENFORT_URGENT"].includes(statutMission);
   const { Icon, background, color } = missionPresentation(domaine);
   const pris = Math.max(0, nbPlaces - placesRestantes);
   const pct = nbPlaces > 0 ? Math.round((pris / nbPlaces) * 100) : 0;
@@ -190,7 +195,7 @@ function MissionDetail() {
                 <Info icon={<CalendarDays className="h-4 w-4" />} titre="Date de début" valeur={formaterDate(dateDebut)} />
                 <Info icon={<CalendarDays className="h-4 w-4" />} titre="Date de fin" valeur={formaterDate(dateFin)} />
                 <Info icon={<Users className="h-4 w-4" />} titre="Places demandées" valeur={`${nbPlaces} bénévoles`} />
-                <Info icon={<Clock3 className="h-4 w-4" />} titre="Places restantes" valeur={complet ? `Complet · ${listeAttente} en attente` : `${placesRestantes}`} />
+                <Info icon={<Clock3 className="h-4 w-4" />} titre="Places restantes" valeur={complet ? `Complet · ${listeAttente} place(s) en liste d'attente` : `${placesRestantes}`} />
               </dl>
             </section>
 
@@ -225,7 +230,12 @@ function MissionDetail() {
             <div className="rounded-lg border-2 border-ink bg-paper p-6 shadow-[6px_6px_0_var(--color-ink)]">
               <div className="flex items-baseline justify-between text-sm font-bold"><span>{pris} / {nbPlaces} inscrits</span><span>{pct}%</span></div>
               <div className="mt-2 h-3 overflow-hidden rounded-full border-2 border-ink bg-muted"><div className={`h-full ${complet ? "bg-pink" : "bg-emerald"}`} style={{ width: `${pct}%` }} /></div>
-              <p className="mt-3 text-xs text-muted-foreground">{complet ? "Rejoins la liste d'attente : tu seras prévenu dès qu'une place se libère." : "Premier arrivé, premier servi."}</p>
+              {renfortUrgent && (
+                <p className="mt-3 rounded-lg border-2 border-ink bg-pink/20 p-2 text-center text-xs font-bold text-ink">
+                  ⚡ Renfort urgent : l'association a besoin de {placesRestantes} bénévole(s) supplémentaire(s) !
+                </p>
+              )}
+              <p className="mt-3 text-xs text-muted-foreground">{!inscriptionsOuvertes ? "Les inscriptions sont fermées pour cette mission." : complet ? "Rejoins la liste d'attente : tu seras prévenu dès qu'une place se libère." : "Premier arrivé, premier servi."}</p>
 
               {/* État : déjà inscrit (confirmée) */}
               {inscription?.inscrit && inscription.statut === "CONFIRMEE" && (
@@ -267,7 +277,7 @@ function MissionDetail() {
               {!inscription?.inscrit && (
                 <Button
                   onClick={handleEngagement}
-                  disabled={loading || (placesRestantes === 0 && listeAttente === 0)}
+                  disabled={loading || !inscriptionsOuvertes || (placesRestantes === 0 && listeAttente === 0)}
                   className={`mt-5 h-auto w-full whitespace-normal rounded-lg border-2 border-ink px-4 py-3.5 font-bold disabled:opacity-60 disabled:cursor-not-allowed ${
                     placesRestantes > 0
                       ? "bg-emerald text-paper hover:bg-emerald"
@@ -276,7 +286,9 @@ function MissionDetail() {
                 >
                   {loading
                     ? "Traitement…"
-                    : placesRestantes > 0
+                    : !inscriptionsOuvertes
+                      ? "Inscriptions fermées"
+                      : placesRestantes > 0
                       ? "Je m'engage"
                       : listeAttente > 0
                         ? "Rejoindre la liste d'attente"

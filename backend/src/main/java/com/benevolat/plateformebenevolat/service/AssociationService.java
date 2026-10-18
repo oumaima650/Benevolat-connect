@@ -1,17 +1,24 @@
 package com.benevolat.plateformebenevolat.service;
 
 import com.benevolat.plateformebenevolat.dto.AssociationProfileDto;
+import com.benevolat.plateformebenevolat.dto.ImageEvenementDto;
+import com.benevolat.plateformebenevolat.dto.InscritDto;
 import com.benevolat.plateformebenevolat.dto.MissionDto;
 import com.benevolat.plateformebenevolat.dto.MissionRequest;
 import com.benevolat.plateformebenevolat.dto.UpdateAssociationRequest;
 import com.benevolat.plateformebenevolat.entity.Association;
 import com.benevolat.plateformebenevolat.entity.Domaine;
+import com.benevolat.plateformebenevolat.entity.ImageEvenement;
+import com.benevolat.plateformebenevolat.entity.Inscription;
 import com.benevolat.plateformebenevolat.entity.Mission;
+import com.benevolat.plateformebenevolat.entity.StatutInscription;
 import com.benevolat.plateformebenevolat.entity.StatutMission;
 import com.benevolat.plateformebenevolat.entity.StatutUtilisateur;
 import com.benevolat.plateformebenevolat.repository.AssociationRepository;
 import com.benevolat.plateformebenevolat.repository.CompetenceRepository;
 import com.benevolat.plateformebenevolat.repository.DomaineRepository;
+import com.benevolat.plateformebenevolat.repository.ImageEvenementRepository;
+import com.benevolat.plateformebenevolat.repository.InscriptionRepository;
 import com.benevolat.plateformebenevolat.repository.MissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +41,9 @@ public class AssociationService {
     private final DomaineRepository domaineRepository;
     private final MissionRepository missionRepository;
     private final CompetenceRepository competenceRepository;
+    private final InscriptionRepository inscriptionRepository;
+    private final ImageEvenementRepository imageEvenementRepository;
+    private final MissionPlacesService missionPlacesService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 
@@ -126,7 +137,9 @@ public class AssociationService {
         mission.setLongitude(req.getLongitude());
         mission.setDateDebut(dateDebut);
         mission.setDateFin(dateFin);
-        mission.setNbPlaces(req.getNbPlaces() != null ? req.getNbPlaces() : 0);
+        int places = req.getNbPlaces() != null ? req.getNbPlaces() : 0;
+        mission.setNbPlaces(places);
+        mission.setNbPlacesListeAttente(places); // liste d'attente = même capacité que les places
         mission.setStatut(statut);
         mission.setAssociation(asso);
         mission.setDomaine(domaine);
@@ -147,8 +160,12 @@ public class AssociationService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
         }
 
-        if (mission.getStatut() == StatutMission.ANNULEE || mission.getStatut() == StatutMission.CLOTUREE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mission non modifiable.");
+        // Modifiable uniquement tant que la mission n'a pas commencé
+        StatutMission statutActuel = mission.getStatut();
+        if (statutActuel != StatutMission.BROUILLON && statutActuel != StatutMission.PUBLIEE
+                && statutActuel != StatutMission.SATUREE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Mission non modifiable (statut : " + statutActuel + "). Utilisez le renfort pour une mission en cours.");
         }
 
         if (req.getTitre() != null)       mission.setTitre(req.getTitre());
@@ -156,7 +173,15 @@ public class AssociationService {
         if (req.getAdresse() != null)     mission.setAdresse(req.getAdresse());
         if (req.getLatitude() != null)    mission.setLatitude(req.getLatitude());
         if (req.getLongitude() != null)   mission.setLongitude(req.getLongitude());
-        if (req.getNbPlaces() != null)    mission.setNbPlaces(req.getNbPlaces());
+        if (req.getNbPlaces() != null) {
+            // req.nbPlaces = capacité TOTALE souhaitée ; en BDD on stocke les places restantes
+            int confirmes = missionPlacesService.countConfirmes(missionId);
+            if (req.getNbPlaces() < confirmes) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Impossible : " + confirmes + " bénévole(s) déjà confirmé(s), le nombre de places ne peut pas être inférieur.");
+            }
+            mission.setNbPlaces(req.getNbPlaces() - confirmes);
+        }
 
         if (req.getDateDebut() != null) {
             mission.setDateDebut(parseDateTime(req.getDateDebut(), "dateDebut"));
@@ -172,6 +197,9 @@ public class AssociationService {
         if (req.getCompetenceIds() != null) {
             mission.setCompetences(competenceRepository.findAllById(req.getCompetenceIds()));
         }
+
+        // Places libérées → promotion de la liste d'attente, SATUREE ↔ PUBLIEE
+        missionPlacesService.recalculer(mission);
 
         Mission saved = missionRepository.save(mission);
         return toMissionDto(saved);
@@ -199,6 +227,83 @@ public class AssociationService {
         mission.setStatut(parsed);
         Mission saved = missionRepository.save(mission);
         return toMissionDto(saved);
+    }
+
+    // ─── Inscrits / Renfort / Images ──────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<InscritDto> getInscrits(String email, Long missionId) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable : " + missionId));
+        if (!mission.getAssociation().getEmail().equals(email)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
+        }
+
+        List<Inscription> confirmes = inscriptionRepository
+                .findByMission_IdMissionAndStatutOrderByRangAsc(missionId, StatutInscription.CONFIRMEE);
+        List<Inscription> attente = inscriptionRepository
+                .findByMission_IdMissionAndStatutOrderByRangAsc(missionId, StatutInscription.EN_LISTE_ATTENTE);
+
+        List<Inscription> all = new ArrayList<>();
+        all.addAll(confirmes);
+        all.addAll(attente);
+
+        return all.stream().map(this::toInscritDto).collect(Collectors.toList());
+    }
+
+    public MissionDto demanderRenfort(String email, Long missionId, int nbBenevoles) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable : " + missionId));
+        if (!mission.getAssociation().getEmail().equals(email)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
+        }
+        StatutMission s = mission.getStatut();
+        if (s != StatutMission.PUBLIEE && s != StatutMission.SATUREE
+                && s != StatutMission.EN_COURS && s != StatutMission.RENFORT_URGENT) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Le renfort ne peut être demandé que pour une mission publiée, saturée ou en cours.");
+        }
+        if (nbBenevoles < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le renfort doit concerner au moins 1 bénévole.");
+        }
+        // Le renfort ouvre de nouvelles places : la liste d'attente est promue en premier,
+        // le reste est ouvert aux inscriptions (même si la mission a déjà commencé).
+        int dejaDemande = mission.getNbRenfortDemande() != null ? mission.getNbRenfortDemande() : 0;
+        mission.setNbRenfortDemande(dejaDemande + nbBenevoles);
+        mission.setNbPlaces(missionPlacesService.placesRestantes(mission) + nbBenevoles);
+        mission.setStatut(StatutMission.RENFORT_URGENT);
+        missionPlacesService.recalculer(mission);
+        Mission saved = missionRepository.save(mission);
+        return toMissionDto(saved);
+    }
+
+    public ImageEvenementDto ajouterImageMission(String email, Long missionId,
+                                                  String url, String titre, String description) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable : " + missionId));
+        if (!mission.getAssociation().getEmail().equals(email)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
+        }
+        if (mission.getStatut() != StatutMission.CLOTUREE && mission.getStatut() != StatutMission.TERMINEE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mission non clôturée/terminée.");
+        }
+        ImageEvenement image = new ImageEvenement(url, titre, description, mission);
+        ImageEvenement saved = imageEvenementRepository.save(image);
+        return toImageEvenementDto(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ImageEvenementDto> getImagesMission(String email, Long missionId) {
+        Mission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable : " + missionId));
+        if (!mission.getAssociation().getEmail().equals(email)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
+        }
+        return imageEvenementRepository
+                .findByMission_IdMissionOrderByDatePublicationDesc(missionId)
+                .stream()
+                .map(this::toImageEvenementDto)
+                .collect(Collectors.toList());
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -240,8 +345,10 @@ public class AssociationService {
 
         Association asso = m.getAssociation();
 
-        // nbInscritsConfirmes: 0 until Inscription entity is wired (consistent with MissionService)
-        // nbListeAttente: stored column on Mission
+        // nbPlaces en BDD = places restantes ; le DTO expose la capacité totale dans nbPlaces
+        int nbConfirmes = missionPlacesService.countConfirmes(m.getIdMission());
+        int restantes = missionPlacesService.placesRestantes(m);
+
         return MissionDto.builder()
                 .id(m.getIdMission())
                 .titre(m.getTitre())
@@ -251,9 +358,12 @@ public class AssociationService {
                 .longitude(m.getLongitude())
                 .dateDebut(m.getDateDebut())
                 .dateFin(m.getDateFin())
-                .nbPlaces(m.getNbPlaces())
-                .nbInscritsConfirmes(0)
-                .nbListeAttente(m.getNbPlacesListeAttente())
+                .nbPlaces(nbConfirmes + restantes)
+                .nbPlacesTotal(nbConfirmes + restantes)
+                .nbPlacesRestantes(restantes)
+                .nbInscritsConfirmes(nbConfirmes)
+                .nbListeAttente(missionPlacesService.countAttente(m.getIdMission()))
+                .nbRenfortDemande(m.getNbRenfortDemande())
                 .statut(m.getStatut() != null ? m.getStatut().name() : "BROUILLON")
                 .domaineId(m.getDomaine() != null ? m.getDomaine().getIdDomaine() : null)
                 .domaineNom(m.getDomaine() != null ? m.getDomaine().getNom() : null)
@@ -261,6 +371,38 @@ public class AssociationService {
                 .associationId(asso != null ? asso.getIdUtilisateur() : null)
                 .associationNom(asso != null ? asso.getNom() : null)
                 .associationLogoUrl(asso != null ? asso.getPhotoProfil() : null)
+                .build();
+    }
+
+    private InscritDto toInscritDto(Inscription inscription) {
+        var benevole = inscription.getBenevole();
+        List<String> competenceNoms = benevole.getCompetences().stream()
+                .map(c -> c.getNom())
+                .collect(Collectors.toList());
+        return InscritDto.builder()
+                .inscriptionId(inscription.getIdInscription())
+                .benevoleId(benevole.getIdUtilisateur())
+                .nom(benevole.getNom())
+                .prenom(benevole.getPrenom())
+                .email(benevole.getEmail())
+                .ville(benevole.getVille())
+                .telephone(benevole.getTelephone())
+                .photoUrl(benevole.getPhotoUrl())
+                .competences(competenceNoms)
+                .statut(inscription.getStatut().name())
+                .rang(inscription.getRang())
+                .dateInscription(inscription.getDateInscription())
+                .certificatDelivre(false) // enrichi par CertificatService si besoin
+                .build();
+    }
+
+    private ImageEvenementDto toImageEvenementDto(ImageEvenement image) {
+        return ImageEvenementDto.builder()
+                .id(image.getIdImage())
+                .url(image.getUrl())
+                .titre(image.getTitre())
+                .description(image.getDescription())
+                .datePublication(image.getDatePublication())
                 .build();
     }
 

@@ -10,8 +10,8 @@ const statutConfig: Record<
     label: 'Publiée',
     className: 'bg-green-100 text-green-800 border border-green-300',
   },
-  COMPLETE: {
-    label: 'Complète',
+  SATUREE: {
+    label: 'Saturée',
     className: 'bg-orange-100 text-orange-800 border border-orange-300',
   },
   EN_COURS: {

@@ -15,7 +15,7 @@ export interface MissionCardBackend {
   nbBenevoles?: number;
   placesRestantes: number;
   listeAttenteCount: number;
-  statut: "DISPONIBLE" | "COMPLET" | "BROUILLON" | "ANNULEE";
+  statut: string; // StatutMission backend (PUBLIEE, SATUREE, RENFORT_URGENT, EN_COURS…)
   badge?: string;
   imageUrl?: string;
   associationId?: number;
@@ -76,6 +76,19 @@ export interface BenevoleInscription {
   dateInscription: string;
 }
 
+export interface BenevoleCertificat {
+  certificatId: number;
+  inscriptionId: number;
+  benevoleId: number;
+  benevoleNom: string;
+  benevolePrenom: string;
+  codeVerification: string;
+  urlPdf: string | null;
+  dateDelivrance: string;
+  missionTitre: string | null;
+  associationNom: string | null;
+}
+
 /** Helper pour les requêtes authentifiées (Bearer token). */
 async function authFetch(url: string, token: string, options: RequestInit = {}) {
   return fetch(url, {
@@ -110,6 +123,13 @@ export const inscriptionApi = {
   async getMesInscriptions(token: string): Promise<BenevoleInscription[]> {
     const res = await authFetch(`${API_BASE_URL}/benevoles/mes-inscriptions`, token);
     if (!res.ok) throw new Error("Erreur lors du chargement des inscriptions.");
+    return res.json();
+  },
+
+  /** Liste tous les certificats du bénévole connecté. */
+  async getMesCertificats(token: string): Promise<BenevoleCertificat[]> {
+    const res = await authFetch(`${API_BASE_URL}/benevoles/mes-certificats`, token);
+    if (!res.ok) throw new Error("Erreur lors du chargement des certificats.");
     return res.json();
   },
 

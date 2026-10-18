@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 
 import {
@@ -18,7 +17,6 @@ import { useAuthModal } from "@/context/AuthModalContext";
 export function LoginModal() {
   const { modal, closeModal, openRegisterBenevole, openRegisterAssociation, openForgotPassword } = useAuthModal();
   const { loginUser } = useAuth();
-  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,8 +48,7 @@ export function LoginModal() {
         setTimeout(() => {
           closeModal();
           reset();
-          const role = (res.user?.role ?? "BENEVOLE") as string;
-          navigate({ to: role === "ASSOCIATION" ? "/association" : "/benevole" });
+          // Rester sur la page actuelle — ne pas rediriger vers le dashboard
         }, 800);
       } else {
         setError(res.message || "Identifiants invalides.");

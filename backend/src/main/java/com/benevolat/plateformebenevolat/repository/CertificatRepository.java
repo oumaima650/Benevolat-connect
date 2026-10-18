@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -20,4 +21,10 @@ public interface CertificatRepository extends JpaRepository<Certificat, Long> {
         WHERE UPPER(c.codeVerification) = UPPER(:code)
     """)
     Optional<Certificat> findByCodeVerificationIgnoreCase(@Param("code") String code);
+
+    List<Certificat> findByInscription_Mission_IdMission(Long missionId);
+
+    Optional<Certificat> findByInscription_IdInscription(Long inscriptionId);
+
+    List<Certificat> findByInscription_Benevole_IdUtilisateur(Long benevoleId);
 }

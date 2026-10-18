@@ -5,7 +5,7 @@ import { Sparkles, Handshake, Medal, Trophy } from 'lucide-react';
 
 export type MissionStatut =
   | 'PUBLIEE'
-  | 'COMPLETE'
+  | 'SATUREE'
   | 'EN_COURS'
   | 'RENFORT_URGENT'
   | 'TERMINEE'
