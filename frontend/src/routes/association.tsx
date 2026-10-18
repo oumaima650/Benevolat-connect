@@ -188,7 +188,7 @@ function AssociationLayout() {
           )}
 
           {/* Header */}
-          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b-2 border-ink bg-paper px-4 lg:px-6">
+          <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b-2 border-ink bg-paper px-4 lg:px-6">
             <div className="flex items-center gap-3">
               <button onClick={() => setSidebarOpen(true)}
                 className="rounded-lg border-2 border-ink bg-paper p-1.5 shadow-[2px_2px_0_var(--color-ink)] hover:bg-muted lg:hidden"
