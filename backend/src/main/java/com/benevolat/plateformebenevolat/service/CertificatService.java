@@ -204,23 +204,59 @@ public class CertificatService {
 
     /* ─── Génération du PDF (HTML → PDF via Flying Saucer) ─────────────────── */
 
+    /** Logo CountMeIn embarqué (base64) — chargé une seule fois depuis le classpath. */
+    private static String countMeInLogoDataUri;
+
+    private static synchronized String getCountMeInLogo() {
+        if (countMeInLogoDataUri == null) {
+            try (var in = CertificatService.class.getResourceAsStream("/certificat/countmein-logo.png")) {
+                countMeInLogoDataUri = in == null ? ""
+                        : "data:image/png;base64," + Base64.getEncoder().encodeToString(in.readAllBytes());
+            } catch (Exception e) {
+                countMeInLogoDataUri = "";
+            }
+        }
+        return countMeInLogoDataUri;
+    }
+
     private byte[] genererPdfBytes(Certificat certificat, Association asso) throws Exception {
         Inscription inscription = certificat.getInscription();
         Benevole benevole = inscription.getBenevole();
         Mission mission = inscription.getMission();
 
-        String logoHtml = (asso.getPhotoProfil() != null && !asso.getPhotoProfil().isBlank())
-                ? "<img src='" + asso.getPhotoProfil() + "' alt='Logo' style='height:70px;max-width:200px;object-fit:contain;'/>"
-                : "<div style='font-size:28px;font-weight:900;color:#1a1a1a;'>" + escHtml(asso.getNom()) + "</div>";
+        String nomAsso = escHtml(asso.getNom());
+
+        // Logo CountMeIn (fallback texte si la ressource est absente)
+        String cmiLogo = getCountMeInLogo();
+        String cmiLogoHtml = cmiLogo.isEmpty()
+                ? "<span class='brand'>CountMeIn</span>"
+                : "<img src='" + cmiLogo + "' alt='CountMeIn' class='cmi-logo'/>";
+
+        // Logo association (fallback : initiales dans une pastille)
+        String assoLogoHtml;
+        if (asso.getPhotoProfil() != null && !asso.getPhotoProfil().isBlank()) {
+            assoLogoHtml = "<img src='" + escHtml(asso.getPhotoProfil()) + "' alt='Logo' class='asso-logo'/>";
+        } else {
+            String initiales = Arrays.stream((asso.getNom() != null ? asso.getNom() : "A").trim().split("\\s+"))
+                    .filter(w -> !w.isEmpty()).limit(2)
+                    .map(w -> w.substring(0, 1).toUpperCase())
+                    .collect(Collectors.joining());
+            assoLogoHtml = "<div class='asso-initiales'>" + escHtml(initiales) + "</div>";
+        }
 
         String dateDebutFmt = mission.getDateDebut() != null ? mission.getDateDebut().format(DATE_FMT) : "";
         String dateFinFmt = mission.getDateFin() != null ? mission.getDateFin().format(DATE_FMT) : "";
         String periodeStr = dateDebutFmt.equals(dateFinFmt)
                 ? "le " + dateDebutFmt
                 : "du " + dateDebutFmt + " au " + dateFinFmt;
+        String dateDelivrance = (certificat.getDateDelivrance() != null
+                ? certificat.getDateDelivrance() : LocalDateTime.now()).format(DATE_FMT);
 
         String verifyUrl = frontendUrl + "/certificat?code=" + certificat.getCodeVerification();
 
+        // Charte CountMeIn : ink #0D0D0D, mustard #EEC22A, pink #E96FA3, emerald #00864A,
+        // bordures épaisses + ombre décalée (néobrutalisme). Flying Saucer = CSS 2.1 :
+        // pas de flex ni de box-shadow → tableaux + blocs en position absolue.
         String html = """
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
@@ -230,98 +266,136 @@ public class CertificatService {
               <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
               <title>Certificat de bénévolat</title>
               <style type="text/css">
-                @page { size: A4 landscape; margin: 0; }
-                body {
-                  margin: 0; padding: 0;
-                  font-family: Arial, sans-serif;
-                  background: #f5f0e8;
-                  width: 297mm; height: 210mm;
-                }
-                .page {
-                  width: 297mm; height: 210mm;
-                  background: #f5f0e8;
-                  display: flex; flex-direction: column;
-                  align-items: center; justify-content: center;
-                  padding: 20mm;
-                  box-sizing: border-box;
-                }
-                .card {
-                  width: 100%%;
-                  border: 4px solid #1a1a1a;
-                  border-radius: 12px;
-                  background: #ffffff;
-                  padding: 20px 30px;
-                  box-shadow: 6px 6px 0 #1a1a1a;
-                  text-align: center;
-                }
-                .header { border-bottom: 3px solid #f7c948; padding-bottom: 14px; margin-bottom: 14px; }
-                .logo-area { margin-bottom: 6px; }
-                .cert-title {
-                  font-size: 11pt; font-weight: 900; letter-spacing: 4px;
-                  color: #888888; text-transform: uppercase; margin: 0;
-                }
-                .cert-sub {
-                  font-size: 20pt; font-weight: 900; color: #1a1a1a; margin: 6px 0 0;
-                }
-                .body { padding: 10px 0; }
-                .certifie { font-size: 10pt; color: #555; margin-bottom: 4px; }
-                .benevole-name {
-                  font-size: 26pt; font-weight: 900; color: #f72b7f;
-                  margin: 4px 0;
-                }
-                .mission-label { font-size: 10pt; color: #555; margin-top: 10px; }
-                .mission-name {
-                  font-size: 15pt; font-weight: 700; color: #1a1a1a;
-                  margin: 4px 0;
-                }
-                .period { font-size: 10pt; color: #555; margin: 4px 0 10px; }
-                .asso-name { font-size: 11pt; font-weight: 700; color: #1a1a1a; }
-                .footer {
-                  border-top: 2px solid #e5e7eb; margin-top: 12px;
-                  padding-top: 8px; font-size: 8pt; color: #888;
-                }
-                .code { font-family: 'Courier New', monospace; font-weight: 700; color: #1a1a1a; }
-                .verify-url { color: #6b7280; font-size: 7pt; margin-top: 2px; }
-                .divider {
-                  width: 60px; height: 4px; background: #f7c948;
-                  border: 1px solid #1a1a1a; margin: 8px auto;
-                  border-radius: 2px;
-                }
+                @page { size: 297mm 210mm; margin: 0; }
+                body { margin: 0; padding: 0; font-family: Helvetica, Arial, sans-serif; color: #0D0D0D;
+                       background: #FFF6DC; }
+                .page { position: relative; width: 297mm; height: 210mm; overflow: hidden; }
+
+                /* Formes décoratives derrière la carte */
+                .blob-pink    { position: absolute; width: 70mm; height: 70mm; right: -18mm; top: -22mm; z-index: 0;
+                                background: #E96FA3; border: 0.8mm solid #0D0D0D; border-radius: 35mm; }
+                .blob-emerald { position: absolute; width: 56mm; height: 56mm; left: -24mm; bottom: -26mm; z-index: 0;
+                                background: #00864A; border: 0.8mm solid #0D0D0D; border-radius: 28mm; }
+                .blob-mustard { position: absolute; width: 22mm; height: 22mm; left: 8mm; top: 6mm; z-index: 0;
+                                background: #EEC22A; border: 0.8mm solid #0D0D0D; border-radius: 4mm; }
+
+                /* Carte néobrutaliste : bordure ink + ombre décalée */
+                .shadow { position: absolute; left: 21mm; top: 20mm; width: 259mm; height: 174mm;
+                          background: #0D0D0D; border-radius: 7mm; z-index: 1; }
+                .card   { position: absolute; left: 16mm; top: 15mm; width: 257mm; height: 172mm;
+                          background: #FFFFFF; border: 1mm solid #0D0D0D; border-radius: 7mm; z-index: 2; }
+
+                .header { position: absolute; left: 12mm; right: 12mm; top: 9mm; }
+                .header table { width: 100%%; border-collapse: collapse; }
+                .header td { vertical-align: middle; }
+                .cmi-logo { height: 15mm; }
+                .brand { font-size: 20pt; font-weight: bold; }
+                .asso-box { text-align: right; }
+                .asso-logo { height: 15mm; max-width: 45mm; }
+                .asso-initiales { display: inline-block; width: 15mm; height: 15mm; line-height: 15mm;
+                                  text-align: center; font-size: 15pt; font-weight: bold; color: #FFFFFF;
+                                  background: #00864A; border: 0.6mm solid #0D0D0D; border-radius: 7.5mm; }
+                .asso-caption { font-size: 7pt; color: #57554F; text-transform: uppercase; letter-spacing: 1px;
+                                margin-top: 1.5mm; }
+                .sep { position: absolute; left: 12mm; right: 12mm; top: 30mm; border-top: 0.5mm solid #0D0D0D; }
+
+                .content { position: absolute; left: 12mm; right: 12mm; top: 42mm; text-align: center; }
+                .pill { display: inline-block; padding: 2mm 7mm; background: #EEC22A; border: 0.6mm solid #0D0D0D;
+                        border-radius: 6mm; font-size: 10pt; font-weight: bold; letter-spacing: 3px; }
+                .atteste { margin: 10mm 0 3mm; font-size: 12pt; color: #57554F; }
+                .nom { margin: 0; font-size: 38pt; font-weight: bold; line-height: 1.15; }
+                .nom-trait { width: 60mm; height: 2.2mm; margin: 2.5mm auto 0; background: #E96FA3;
+                             border: 0.5mm solid #0D0D0D; border-radius: 1.5mm; }
+                .participe { margin: 8mm 0 2mm; font-size: 12pt; color: #57554F; }
+                .mission { margin: 0; font-size: 21pt; font-weight: bold; color: #00864A; }
+                .details { margin: 3mm 0 0; font-size: 11pt; color: #0D0D0D; }
+
+                .footer { position: absolute; left: 12mm; right: 12mm; bottom: 12mm; }
+                .footer table { width: 100%%; border-collapse: collapse; }
+                .footer td { vertical-align: bottom; width: 33%%; }
+                .label { font-size: 7pt; color: #57554F; text-transform: uppercase; letter-spacing: 1px; }
+                .valeur { font-size: 11pt; font-weight: bold; margin-top: 1mm; }
+                .signature { text-align: center; }
+                .signature-line { width: 55mm; margin: 0 auto 1.5mm; border-top: 0.5mm solid #0D0D0D; }
+                .code-cell { text-align: right; }
+                .code { display: inline-block; padding: 1.8mm 4mm; background: #0D0D0D; color: #FFFFFF;
+                        font-family: Courier, monospace; font-size: 11pt; font-weight: bold;
+                        border-radius: 2mm; margin-top: 1mm; }
+                .verify { font-size: 6.5pt; color: #57554F; margin-top: 1.5mm; }
+
+                .stripe { position: absolute; left: 12mm; right: 12mm; bottom: 5mm; height: 2.5mm; }
+                .stripe table { width: 100%%; height: 2.5mm; border-collapse: separate; border-spacing: 1.5mm 0; }
+                .stripe td { height: 2.5mm; border: 0.4mm solid #0D0D0D; border-radius: 1.2mm; }
               </style>
             </head>
             <body>
               <div class="page">
+                <div class="blob-pink"></div>
+                <div class="blob-emerald"></div>
+                <div class="blob-mustard"></div>
+                <div class="shadow"></div>
                 <div class="card">
                   <div class="header">
-                    <div class="logo-area">%s</div>
-                    <p class="cert-title">Certificat de bénévolat</p>
-                    <p class="cert-sub">%s</p>
+                    <table><tr>
+                      <td>%s</td>
+                      <td class="asso-box">%s<div class="asso-caption">%s</div></td>
+                    </tr></table>
                   </div>
-                  <div class="body">
-                    <p class="certifie">Certifie que</p>
-                    <p class="benevole-name">%s %s</p>
-                    <div class="divider"/>
-                    <p class="mission-label">a participé à la mission</p>
-                    <p class="mission-name">%s</p>
-                    <p class="period">%s</p>
+                  <div class="sep"></div>
+
+                  <div class="content">
+                    <div class="pill">CERTIFICAT DE BÉNÉVOLAT</div>
+                    <p class="atteste">Ce certificat atteste que</p>
+                    <p class="nom">%s %s</p>
+                    <div class="nom-trait"></div>
+                    <p class="participe">a participé en tant que bénévole à la mission</p>
+                    <p class="mission">%s</p>
+                    <p class="details">organisée par <b>%s</b>, %s</p>
                   </div>
+
                   <div class="footer">
-                    <p>Code de vérification : <span class="code">%s</span></p>
-                    <p class="verify-url">Vérifiable sur : %s</p>
+                    <table><tr>
+                      <td>
+                        <div class="label">Délivré le</div>
+                        <div class="valeur">%s</div>
+                      </td>
+                      <td class="signature">
+                        <div class="signature-line"></div>
+                        <div class="label">Pour l'association</div>
+                        <div class="valeur">%s</div>
+                      </td>
+                      <td class="code-cell">
+                        <div class="label">Code de vérification</div>
+                        <div class="code">%s</div>
+                        <div class="verify">%s</div>
+                      </td>
+                    </tr></table>
+                  </div>
+
+                  <div class="stripe">
+                    <table><tr>
+                      <td style="background:#EEC22A;"></td>
+                      <td style="background:#E96FA3;"></td>
+                      <td style="background:#00864A;"></td>
+                    </tr></table>
                   </div>
                 </div>
               </div>
             </body>
             </html>
             """.formatted(
-                logoHtml,
-                escHtml(asso.getNom()),
+                cmiLogoHtml,
+                assoLogoHtml,
+                nomAsso,
                 escHtml(benevole.getPrenom() != null ? benevole.getPrenom() : ""),
                 escHtml(benevole.getNom() != null ? benevole.getNom() : ""),
                 escHtml(mission.getTitre()),
+                nomAsso,
                 periodeStr,
+                dateDelivrance,
+                nomAsso,
                 certificat.getCodeVerification(),
-                verifyUrl
+                escHtml(verifyUrl)
         );
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

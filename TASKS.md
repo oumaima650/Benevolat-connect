@@ -45,6 +45,12 @@
 - ⚠️ Si le fallback échoue aussi : vérifier dans la console Cloudinary que le preset `benevolat_preset`
   est bien *Unsigned* et accepte les fichiers raw/PDF, ou créer une clé API avec droits d'upload.
 
+### 5. Refonte du design du certificat PDF ✅
+- `CertificatService.genererPdfBytes()` : charte CountMeIn (ink / mustard / pink / emerald, bordures
+  épaisses, ombre décalée, formes décoratives), logo CountMeIn + logo association (initiales si absent).
+- Logo CountMeIn embarqué en base64 depuis `backend/src/main/resources/certificat/countmein-logo.png`.
+- Flying Saucer = CSS 2.1 : pas de flex/box-shadow → tableaux + `position: absolute` + `z-index`.
+
 ### ⏳ Reste à faire
 - [ ] Notifier par email les bénévoles promus de la liste d'attente (actuellement promotion silencieuse)
 - [ ] Tests manuels des 4 points ci-dessus
