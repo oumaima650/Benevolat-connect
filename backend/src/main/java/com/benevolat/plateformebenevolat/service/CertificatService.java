@@ -39,6 +39,7 @@ public class CertificatService {
     private final CertificatRepository certificatRepository;
     private final InscriptionRepository inscriptionRepository;
     private final AssociationRepository associationRepository;
+    private final EmailService emailService;
 
     @Value("${cloudinary.cloud-name:}")
     private String cloudName;
@@ -106,6 +107,21 @@ public class CertificatService {
             } catch (Exception e) {
                 log.error("Erreur génération/upload PDF pour certificat {} : {}", certificat.getIdCertificat(), e.getMessage());
                 // Le certificat existe en base même sans PDF
+            }
+
+            // Envoyer email de notification au bénévole
+            try {
+                emailService.sendCertificatDelivre(
+                    inscription.getBenevole().getEmail(),
+                    inscription.getBenevole().getPrenom(),
+                    inscription.getMission().getTitre(),
+                    asso.getNom(),
+                    certificat.getCodeVerification(),
+                    certificat.getUrlPdf()
+                );
+            } catch (Exception e) {
+                log.warn("Impossible d'envoyer l'email certificat à {} : {}",
+                    inscription.getBenevole().getEmail(), e.getMessage());
             }
 
             results.add(toCertificatResultDto(certificat));

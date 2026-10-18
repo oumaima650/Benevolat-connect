@@ -317,8 +317,10 @@ public class AssociationService {
 
         Association asso = m.getAssociation();
 
-        // nbInscritsConfirmes: 0 until Inscription entity is wired (consistent with MissionService)
-        // nbListeAttente: stored column on Mission
+        // Compter les inscrits confirmés depuis la BDD
+        int nbConfirmes = (int) inscriptionRepository
+                .countByMission_IdMissionAndStatut(m.getIdMission(), StatutInscription.CONFIRMEE);
+
         return MissionDto.builder()
                 .id(m.getIdMission())
                 .titre(m.getTitre())
@@ -329,7 +331,7 @@ public class AssociationService {
                 .dateDebut(m.getDateDebut())
                 .dateFin(m.getDateFin())
                 .nbPlaces(m.getNbPlaces())
-                .nbInscritsConfirmes(0)
+                .nbInscritsConfirmes(nbConfirmes)
                 .nbListeAttente(m.getNbPlacesListeAttente())
                 .statut(m.getStatut() != null ? m.getStatut().name() : "BROUILLON")
                 .domaineId(m.getDomaine() != null ? m.getDomaine().getIdDomaine() : null)

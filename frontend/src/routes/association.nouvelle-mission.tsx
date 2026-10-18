@@ -81,30 +81,72 @@ function NouvelleMission() {
   const [submitting, setSubmitting] = useState(false);
   const [catalogDomaines, setCatalogDomaines] = useState<DomaineItem[]>([]);
   const [catalogCompetences, setCatalogCompetences] = useState<CompetenceItem[]>([]);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [selectedCompetenceIds, setSelectedCompetenceIds] = useState<number[]>([]);
   const [customCompetences, setCustomCompetences] = useState<string[]>([]);
   const [position, setPosition] = useState<[number, number]>([35.5785, -5.3684]);
+  const [reversingGeo, setReversingGeo] = useState(false);
 
   const [form, setForm] = useState({
     titre: '', description: '', domaineId: 0,
     adresse: '', dateDebut: '', dateFin: '', nbPlaces: '',
   });
 
+  /* ── Reverse geocoding ── */
+  async function reverseGeocode(lat: number, lng: number): Promise<string> {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+      );
+      if (!res.ok) return '';
+      const data = await res.json();
+      const addr = data.address || {};
+      const road = [addr.road, addr.house_number].filter(Boolean).join(' ');
+      const city = addr.city || addr.town || addr.village || addr.municipality || '';
+      return [road, city].filter(Boolean).join(', ') || data.display_name || '';
+    } catch {
+      return '';
+    }
+  }
+
+  /* ── Charger catalogue d'abord, puis mission ── */
   useEffect(() => {
-    fetchDomaines().then(setCatalogDomaines);
-    fetchCompetences().then(setCatalogCompetences);
+    Promise.all([fetchDomaines(), fetchCompetences()]).then(([domaines, competences]) => {
+      setCatalogDomaines(domaines);
+      setCatalogCompetences(competences);
+      setCatalogLoaded(true);
+    });
   }, []);
 
+  /* ── Charger la mission APRÈS que le catalogue soit prêt ── */
   useEffect(() => {
-    if (!isEdit) return;
-    getMyMissions().then(missions => {
+    if (!isEdit || !catalogLoaded) return;
+    getMyMissions().then(async missions => {
       const m = missions.find(x => String(x.id) === editId);
       if (!m) { toast.error('Mission introuvable.'); navigate({ to: '/association/missions' }); return; }
-      setForm({ titre: m.titre, description: m.description ?? '', domaineId: m.domaineId ?? 0, adresse: m.adresse ?? '', dateDebut: m.dateDebut ? m.dateDebut.substring(0, 16) : '', dateFin: m.dateFin ? m.dateFin.substring(0, 16) : '', nbPlaces: String(m.nbPlaces) });
+
+      let adresse = m.adresse ?? '';
+
+      // Si pas d'adresse texte mais des coordonnées → reverse geocoding
+      if (!adresse && m.latitude && m.longitude) {
+        setReversingGeo(true);
+        adresse = await reverseGeocode(m.latitude, m.longitude);
+        setReversingGeo(false);
+      }
+
+      setForm({
+        titre: m.titre,
+        description: m.description ?? '',
+        domaineId: m.domaineId ?? 0,
+        adresse,
+        dateDebut: m.dateDebut ? m.dateDebut.substring(0, 16) : '',
+        dateFin: m.dateFin ? m.dateFin.substring(0, 16) : '',
+        nbPlaces: String(m.nbPlaces),
+      });
       setSelectedCompetenceIds(m.competenceIds ?? []);
       if (m.latitude && m.longitude) setPosition([m.latitude, m.longitude]);
     }).catch(() => toast.error('Impossible de charger la mission.')).finally(() => setLoadingInit(false));
-  }, [editId]);
+  }, [editId, catalogLoaded]);
 
   const toggleComp = (id: number) =>
     setSelectedCompetenceIds(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
@@ -228,16 +270,27 @@ function NouvelleMission() {
             <SectionCard icon={MapPin} title="Lieu & dates" iconColor="text-blue-500">
               <div className="space-y-1.5">
                 <Label htmlFor="adresse" className="text-sm font-bold text-ink">Adresse</Label>
-                <Input id="adresse" value={form.adresse} onChange={set('adresse')}
-                  placeholder="Bd Mohammed V, Tétouan"
-                  className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]" />
+                <div className="relative">
+                  <Input id="adresse" value={form.adresse} onChange={set('adresse')}
+                    placeholder="Bd Mohammed V, Tétouan"
+                    className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]" />
+                  {reversingGeo && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm font-bold text-ink">Position sur la carte</Label>
-                <p className="text-xs text-muted-foreground">Cliquez sur la carte pour placer le marqueur.</p>
+                <p className="text-xs text-muted-foreground">Cliquez sur la carte — l'adresse se met à jour automatiquement.</p>
                 <Suspense fallback={<Skeleton className="h-56 w-full rounded-xl" />}>
                   <div className="rounded-xl overflow-hidden border-2 border-ink shadow-[3px_3px_0_var(--color-ink)]">
-                    <MissionMapPicker value={position} onChange={setPosition} />
+                    <MissionMapPicker value={position} onChange={async (pos) => {
+                      setPosition(pos);
+                      setReversingGeo(true);
+                      const adresse = await reverseGeocode(pos[0], pos[1]);
+                      if (adresse) setForm(f => ({ ...f, adresse }));
+                      setReversingGeo(false);
+                    }} />
                   </div>
                 </Suspense>
                 <p className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">

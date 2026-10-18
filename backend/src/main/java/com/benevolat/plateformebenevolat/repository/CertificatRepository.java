@@ -25,4 +25,6 @@ public interface CertificatRepository extends JpaRepository<Certificat, Long> {
     List<Certificat> findByInscription_Mission_IdMission(Long missionId);
 
     Optional<Certificat> findByInscription_IdInscription(Long inscriptionId);
+
+    List<Certificat> findByInscription_Benevole_IdUtilisateur(Long benevoleId);
 }

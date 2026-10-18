@@ -3,21 +3,18 @@ package com.benevolat.plateformebenevolat.repository;
 import com.benevolat.plateformebenevolat.entity.Mission;
 import com.benevolat.plateformebenevolat.entity.StatutMission;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface MissionRepository extends JpaRepository<Mission, Long> {
 
-    /**
-     * Chargement d'une mission avec verrou pessimiste en écriture (SELECT ... FOR UPDATE).
-     * Requête native car MariaDB ne supporte pas la syntaxe « FOR UPDATE OF alias »
-     * générée par Hibernate avec @Lock(PESSIMISTIC_WRITE) sur une requête JPQL.
-     */
     @Query(value = "SELECT * FROM mission WHERE id_mission = :id FOR UPDATE", nativeQuery = true)
     Optional<Mission> findByIdForUpdate(@Param("id") Long id);
 
@@ -45,4 +42,16 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
     Long sumTotalNbPlaces();
 
     List<Mission> findByAssociationIdUtilisateurOrderByDateDebutDesc(Long associationId);
+
+    /** Passe en EN_COURS toutes les missions dont dateDebut <= now et statut dans la liste. */
+    @Modifying
+    @Query("UPDATE Mission m SET m.statut = com.benevolat.plateformebenevolat.entity.StatutMission.EN_COURS " +
+           "WHERE m.statut IN :statuts AND m.dateDebut <= :now")
+    int passerEnCours(@Param("statuts") List<StatutMission> statuts, @Param("now") LocalDateTime now);
+
+    /** Passe en TERMINEE toutes les missions dont dateFin <= now et statut dans la liste. */
+    @Modifying
+    @Query("UPDATE Mission m SET m.statut = com.benevolat.plateformebenevolat.entity.StatutMission.TERMINEE " +
+           "WHERE m.statut IN :statuts AND m.dateFin <= :now")
+    int passerEnTerminee(@Param("statuts") List<StatutMission> statuts, @Param("now") LocalDateTime now);
 }

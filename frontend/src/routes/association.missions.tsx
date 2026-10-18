@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import {
   Search, ChevronLeft, ChevronRight, Loader2, Plus,
   Eye, Zap, Camera, MapPin, Calendar, Users, CheckCircle,
+  Download, Award, ImageIcon,
 } from 'lucide-react';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
 import { ConfirmDialog } from '@/components/dashboard/ConfirmDialog';
@@ -19,8 +20,8 @@ import {
 import { ImageUpload } from '@/components/common/ImageUpload';
 import {
   getMyMissions, changeMissionStatut, demanderRenfort,
-  addMissionImage, getMissionImages,
-  type MissionDashboard, type ImageEvenementDashboard,
+  addMissionImage, getMissionImages, getCertificats,
+  type MissionDashboard, type ImageEvenementDashboard, type CertificatResult,
 } from '@/services/associationApi';
 import { formaterDate } from '@/components/dashboard/data';
 
@@ -48,14 +49,34 @@ type ConfirmAction = { id: number; action: 'publier' | 'annuler' | 'cloturer' | 
 function MissionDetailDialog({ mission, open, onClose }: {
   mission: MissionDashboard | null; open: boolean; onClose: () => void;
 }) {
+  const [images, setImages] = useState<ImageEvenementDashboard[]>([]);
+  const [certificats, setCertificats] = useState<CertificatResult[]>([]);
+  const [loadingExtra, setLoadingExtra] = useState(false);
+
+  useEffect(() => {
+    if (!open || !mission) { setImages([]); setCertificats([]); return; }
+    setLoadingExtra(true);
+    const promises: Promise<any>[] = [];
+
+    // Photos uniquement pour missions clôturées/terminées
+    if (['CLOTUREE', 'TERMINEE'].includes(mission.statut)) {
+      promises.push(getMissionImages(mission.id).then(setImages).catch(() => {}));
+      promises.push(getCertificats(mission.id).then(setCertificats).catch(() => {}));
+    }
+
+    Promise.all(promises).finally(() => setLoadingExtra(false));
+  }, [open, mission]);
+
   if (!mission) return null;
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-2 border-ink bg-paper shadow-[6px_6px_0_var(--color-ink)] sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-2 border-ink bg-paper shadow-[6px_6px_0_var(--color-ink)] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="font-display text-xl font-black text-ink">{mission.titre}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 mt-2">
+        <div className="space-y-5 mt-2">
+
           {/* Statut + domaine */}
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge statut={mission.statut as any} />
@@ -76,15 +97,16 @@ function MissionDetailDialog({ mission, open, onClose }: {
             {mission.dateDebut && (
               <div className="flex items-center gap-2 text-ink">
                 <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span>{formaterDate(mission.dateDebut)}
+                <span>
+                  {formaterDate(mission.dateDebut)}
                   {mission.dateFin && mission.dateFin !== mission.dateDebut && ` → ${formaterDate(mission.dateFin)}`}
                 </span>
               </div>
             )}
-            {mission.adresse && (
+            {(mission.adresse || mission.ville) && (
               <div className="flex items-center gap-2 text-ink">
                 <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span>{mission.adresse}{mission.ville ? `, ${mission.ville}` : ''}</span>
+                <span>{[mission.adresse, mission.ville].filter(Boolean).join(', ')}</span>
               </div>
             )}
             <div className="flex items-center gap-2 text-ink">
@@ -114,13 +136,83 @@ function MissionDetailDialog({ mission, open, onClose }: {
           )}
 
           {/* Lien inscrits */}
-          <Link
-            to="/association/inscrits"
-            onClick={onClose}
-            className="flex items-center gap-2 rounded-xl border-2 border-ink bg-muted px-4 py-2.5 text-sm font-semibold hover:bg-emerald/10 transition-colors"
-          >
+          <Link to="/association/inscrits" onClick={onClose}
+            className="flex items-center gap-2 rounded-xl border-2 border-ink bg-muted px-4 py-2.5 text-sm font-semibold hover:bg-emerald/10 transition-colors">
             <CheckCircle className="h-4 w-4 text-emerald" /> Voir les inscrits
           </Link>
+
+          {/* ── Photos d'événement ── */}
+          {['CLOTUREE', 'TERMINEE'].includes(mission.statut) && (
+            <div>
+              <div className="flex items-center gap-2 mb-3 border-t-2 border-ink/10 pt-4">
+                <Camera className="h-4 w-4 text-pink" />
+                <p className="text-sm font-bold text-ink">Photos de l'événement</p>
+                {loadingExtra && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              </div>
+              {!loadingExtra && images.length === 0 ? (
+                <div className="flex items-center gap-2 rounded-xl border border-dashed border-ink/30 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+                  <ImageIcon className="h-4 w-4" /> Aucune photo ajoutée pour le moment.
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {images.map(img => (
+                    <div key={img.id} className="rounded-xl border-2 border-ink overflow-hidden shadow-[2px_2px_0_var(--color-ink)] group relative">
+                      <img src={img.url} alt={img.titre ?? ''} className="w-full h-24 object-cover" />
+                      {img.titre && (
+                        <p className="px-1.5 py-1 text-[10px] font-semibold text-ink truncate bg-paper">{img.titre}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Certificats délivrés ── */}
+          {['CLOTUREE', 'TERMINEE'].includes(mission.statut) && (
+            <div>
+              <div className="flex items-center gap-2 mb-3 border-t-2 border-ink/10 pt-4">
+                <Award className="h-4 w-4 text-emerald" />
+                <p className="text-sm font-bold text-ink">Certificats délivrés</p>
+                {loadingExtra && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              </div>
+              {!loadingExtra && certificats.length === 0 ? (
+                <div className="flex items-center gap-2 rounded-xl border border-dashed border-ink/30 bg-muted/20 px-4 py-3 text-xs text-muted-foreground">
+                  <Award className="h-4 w-4" /> Aucun certificat délivré pour le moment.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {certificats.map(cert => (
+                    <div key={cert.certificatId}
+                      className="flex items-center justify-between rounded-xl border-2 border-ink bg-muted/20 px-3 py-2.5">
+                      <div>
+                        <p className="text-sm font-semibold text-ink">
+                          {cert.benevolePrenom} {cert.benevoleNom}
+                        </p>
+                        <code className="text-xs text-muted-foreground font-mono">{cert.codeVerification}</code>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(cert.dateDelivrance).toLocaleDateString('fr-FR')}
+                        </span>
+                        {cert.urlPdf ? (
+                          <a href={cert.urlPdf} target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" size="sm"
+                              className="h-7 px-2 rounded-lg border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] hover:bg-emerald/10">
+                              <Download className="h-3 w-3 mr-1" /> PDF
+                            </Button>
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">En cours…</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </DialogContent>
     </Dialog>

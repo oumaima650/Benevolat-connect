@@ -250,6 +250,103 @@ public class EmailService {
         sendHtml(to, "CountMeIn — Ton code de vérification : " + code, html);
     }
 
+    /** Email de notification de certificat délivré au bénévole. */
+    public void sendCertificatDelivre(String to, String prenom, String missionTitre,
+                                       String associationNom, String code, String urlPdf) {
+        String espaceUrl = frontendUrl + "/benevole";
+        String verifyUrl = frontendUrl + "/certificat?code=" + code;
+
+        String telechargerBtn = (urlPdf != null && !urlPdf.isBlank())
+            ? """
+              <table cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+                <tr>
+                  <td style="background:#f72b7f;border:2px solid #1a1a1a;border-radius:10px;box-shadow:3px 3px 0 #1a1a1a;">
+                    <a href="%s" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:800;color:#fff;text-decoration:none;">
+                      📄 Télécharger mon certificat PDF
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              """.formatted(urlPdf)
+            : "";
+
+        String html = """
+            <!DOCTYPE html>
+            <html lang="fr">
+            <head><meta charset="UTF-8"></head>
+            <body style="margin:0;padding:0;background:#f5f0e8;font-family:'Helvetica Neue',Arial,sans-serif;">
+              <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f5f0e8;padding:40px 20px;">
+                <tr><td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background:#f5f0e8;border:3px solid #1a1a1a;border-radius:16px;overflow:hidden;box-shadow:6px 6px 0 #1a1a1a;">
+                    <tr>
+                      <td style="background:#f7c948;border-bottom:3px solid #1a1a1a;padding:28px 40px;">
+                        <h1 style="margin:0;font-size:28px;font-weight:900;color:#1a1a1a;">CountMeIn</h1>
+                        <p style="margin:4px 0 0;font-size:13px;color:#1a1a1a;opacity:0.7;">Votre certificat de bénévolat est prêt !</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:40px;">
+                        <h2 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#1a1a1a;">
+                          Félicitations, %s ! 🎉
+                        </h2>
+                        <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#444;">
+                          L'association <strong>%s</strong> vous a délivré un certificat de bénévolat
+                          pour votre participation à la mission :
+                        </p>
+                        <div style="background:#f7c948;border:2px solid #1a1a1a;border-radius:10px;padding:16px 20px;margin-bottom:20px;">
+                          <p style="margin:0;font-size:17px;font-weight:900;color:#1a1a1a;">%s</p>
+                        </div>
+                        %s
+                        <table cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+                          <tr>
+                            <td style="background:#f5f0e8;border:2px solid #1a1a1a;border-radius:10px;box-shadow:3px 3px 0 #1a1a1a;">
+                              <a href="%s" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:800;color:#1a1a1a;text-decoration:none;">
+                                🏠 Accéder à mon espace bénévole
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin:16px 0 8px;font-size:13px;color:#555;">
+                          Votre certificat est également disponible dans votre espace bénévole,
+                          rubrique <strong>Certificats</strong>, où vous pouvez le télécharger à tout moment.
+                        </p>
+                        <div style="background:#f5f0e8;border:2px solid #1a1a1a;border-radius:8px;padding:12px 16px;margin-top:16px;">
+                          <p style="margin:0;font-size:12px;color:#555;">
+                            Code de vérification :
+                            <span style="font-family:monospace;font-weight:700;color:#1a1a1a;">%s</span>
+                          </p>
+                          <p style="margin:4px 0 0;font-size:11px;color:#888;">
+                            Vérifiable sur : <a href="%s" style="color:#f72b7f;">%s</a>
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="background:#1a1a1a;padding:20px 40px;">
+                        <p style="margin:0;font-size:12px;color:#aaa;text-align:center;">
+                          © %d CountMeIn — Plateforme de bénévolat au Maroc
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>
+            """.formatted(
+                prenom != null ? prenom : "bénévole",
+                associationNom,
+                missionTitre,
+                telechargerBtn,
+                espaceUrl,
+                code,
+                verifyUrl, verifyUrl,
+                java.time.Year.now().getValue()
+            );
+
+        sendHtml(to, "🏅 Votre certificat de bénévolat CountMeIn est prêt !", html);
+    }
+
     /** Email de réinitialisation de mot de passe avec lien. */
     public void sendPasswordReset(String to, String resetToken) {
         String resetUrl = frontendUrl + "/reset-password?token=" + resetToken;

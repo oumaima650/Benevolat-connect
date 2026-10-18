@@ -20,4 +20,7 @@ public class CertificatResultDto {
     private String codeVerification;
     private String urlPdf;
     private LocalDateTime dateDelivrance;
+    // Infos mission (pour l'espace bénévole)
+    private String missionTitre;
+    private String associationNom;
 }

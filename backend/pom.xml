@@ -88,10 +88,10 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
-        <!-- PDF generation : Flying Saucer (xhtmlrenderer) + iText -->
+        <!-- PDF generation : Flying Saucer avec OpenPDF (compatible Java 21+) -->
         <dependency>
             <groupId>org.xhtmlrenderer</groupId>
-            <artifactId>flying-saucer-pdf</artifactId>
+            <artifactId>flying-saucer-pdf-openpdf</artifactId>
             <version>9.4.0</version>
         </dependency>
 

@@ -1,16 +1,16 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Download, FileText, CalendarDays, Building2, Sparkles, Hourglass, CheckCircle2, XCircle, ArrowRight, MapPin } from 'lucide-react';
+import { Download, FileText, CalendarDays, Building2, Sparkles, Hourglass, CheckCircle2, XCircle, ArrowRight, MapPin, Award, Loader2, ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/dashboard/ConfirmDialog';
 import { EmptyState } from '@/components/dashboard/EmptyState';
-import { certificats, formaterDate } from '@/components/dashboard/data';
+import { formaterDate } from '@/components/dashboard/data';
 import type { InscriptionBenevole } from '@/components/dashboard/data';
 import { useAuth } from '@/context/AuthContext';
-import { inscriptionApi, type BenevoleInscription } from '@/services/missionApi';
+import { inscriptionApi, type BenevoleInscription, type BenevoleCertificat } from '@/services/missionApi';
 import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/benevole/parcours')({
@@ -36,22 +36,29 @@ function mapApiToInscription(b: BenevoleInscription): InscriptionBenevole {
 function MonParcours() {
   const { user, token } = useAuth();
   const [inscriptions, setInscriptions] = useState<InscriptionBenevole[]>([]);
+  const [certificatsList, setCertificatsList] = useState<BenevoleCertificat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingCerts, setLoadingCerts] = useState(false);
   const [filtreStatut, setFiltreStatut] = useState<string>('Tous');
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
-  // Chargement des inscriptions réelles du bénévole
   useEffect(() => {
-    if (!user || !token) {
-      setLoading(false);
-      return;
-    }
+    if (!user || !token) { setLoading(false); return; }
     inscriptionApi
       .getMesInscriptions(token)
       .then((data) => setInscriptions(data.map(mapApiToInscription)))
       .catch(() => toast.error('Erreur lors du chargement des inscriptions.'))
       .finally(() => setLoading(false));
   }, [user, token]);
+
+  function loadCertificats() {
+    if (!token || certificatsList.length > 0) return;
+    setLoadingCerts(true);
+    inscriptionApi.getMesCertificats(token)
+      .then(setCertificatsList)
+      .catch(() => toast.error('Erreur lors du chargement des certificats.'))
+      .finally(() => setLoadingCerts(false));
+  }
 
   const filteredInscriptions =
     filtreStatut === 'Tous' ? inscriptions : inscriptions.filter((i) => i.statut === filtreStatut);
@@ -98,6 +105,7 @@ function MonParcours() {
           <TabsTrigger
             value="certificats"
             className="rounded-lg data-[state=active]:bg-mustard data-[state=active]:font-bold data-[state=active]:text-ink"
+            onClick={loadCertificats}
           >
             Mes certificats
           </TabsTrigger>
@@ -220,63 +228,67 @@ function MonParcours() {
 
         {/* Certificats */}
         <TabsContent value="certificats" className="mt-4 space-y-4">
-          {certificats.length === 0 ? (
+          {loadingCerts ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : certificatsList.length === 0 ? (
             <EmptyState
-              icon={FileText}
+              icon={Award}
               title="Aucun certificat"
-              description="Vous n'avez pas encore de certificats. Réalisez des missions pour en obtenir !"
+              description="Vous n'avez pas encore de certificats. Participez à des missions pour en obtenir !"
             />
           ) : (
-            <div className="overflow-hidden rounded-2xl border-2 border-ink shadow-[4px_4px_0_var(--color-ink)]">
-              <table className="w-full text-sm">
-                <thead className="bg-mustard">
-                  <tr>
-                    <th className="border-b-2 border-ink px-4 py-3 text-left font-bold text-ink">
-                      Mission
-                    </th>
-                    <th className="hidden border-b-2 border-ink px-4 py-3 text-left font-bold text-ink sm:table-cell">
-                      Association
-                    </th>
-                    <th className="hidden border-b-2 border-ink px-4 py-3 text-left font-bold text-ink md:table-cell">
-                      Date
-                    </th>
-                    <th className="border-b-2 border-ink px-4 py-3 text-left font-bold text-ink">
-                      Code
-                    </th>
-                    <th className="border-b-2 border-ink px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {certificats.map((c, idx) => (
-                    <tr key={c.id} className={idx % 2 === 0 ? 'bg-paper' : 'bg-muted'}>
-                      <td className="px-4 py-3 font-medium text-ink">{c.missionTitre}</td>
-                      <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
-                        {c.association}
-                      </td>
-                      <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
-                        {formaterDate(c.dateDelivrance)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <code className="rounded border border-ink/20 bg-muted px-2 py-0.5 font-mono text-xs">
-                          {c.codeVerification}
-                        </code>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toast.info('Téléchargement en cours…')}
-                          className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]"
-                          aria-label={`Télécharger le certificat pour ${c.missionTitre}`}
-                        >
-                          <Download className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-                          PDF
-                        </Button>
-                      </td>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {certificatsList.length} certificat{certificatsList.length > 1 ? 's' : ''} — disponibles dans votre espace et par email.
+              </p>
+              <div className="overflow-hidden rounded-2xl border-2 border-ink shadow-[4px_4px_0_var(--color-ink)]">
+                <table className="w-full text-sm">
+                  <thead className="bg-mustard">
+                    <tr>
+                      <th className="border-b-2 border-ink px-4 py-3 text-left font-bold text-ink">Mission</th>
+                      <th className="hidden border-b-2 border-ink px-4 py-3 text-left font-bold text-ink sm:table-cell">Association</th>
+                      <th className="hidden border-b-2 border-ink px-4 py-3 text-left font-bold text-ink md:table-cell">Date</th>
+                      <th className="border-b-2 border-ink px-4 py-3 text-left font-bold text-ink">Code</th>
+                      <th className="border-b-2 border-ink px-4 py-3" />
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {certificatsList.map((c, idx) => (
+                      <tr key={c.certificatId} className={idx % 2 === 0 ? 'bg-paper' : 'bg-muted'}>
+                        <td className="px-4 py-3 font-medium text-ink max-w-[160px] truncate">
+                          {c.missionTitre ?? '—'}
+                        </td>
+                        <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
+                          {c.associationNom ?? '—'}
+                        </td>
+                        <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
+                          {formaterDate(c.dateDelivrance)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <code className="rounded border border-ink/20 bg-muted px-2 py-0.5 font-mono text-xs">
+                            {c.codeVerification}
+                          </code>
+                        </td>
+                        <td className="px-4 py-3">
+                          {c.urlPdf ? (
+                            <a href={c.urlPdf} target="_blank" rel="noopener noreferrer">
+                              <Button variant="outline" size="sm"
+                                className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] hover:bg-mustard/30"
+                                aria-label={`Télécharger le certificat pour ${c.missionTitre}`}>
+                                <Download className="mr-1 h-3.5 w-3.5" />PDF
+                              </Button>
+                            </a>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">En cours…</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </TabsContent>
