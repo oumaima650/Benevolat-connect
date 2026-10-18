@@ -79,6 +79,17 @@ import { Toaster } from "@/components/ui/sonner";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  // Radix (Dropdown/Sheet/Dialog) pose `pointer-events: none` sur <body> tant qu'il est ouvert.
+  // S'il est démonté ouvert (navigation depuis un menu), la page ne répond plus : on nettoie.
+  useEffect(() => {
+    return router.subscribe("onResolved", () => {
+      document.body.style.pointerEvents = "";
+      document.body.removeAttribute("data-scroll-locked");
+      document.body.style.overflow = "";
+    });
+  }, [router]);
 
   return (
     <QueryClientProvider client={queryClient}>

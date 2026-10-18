@@ -18,7 +18,7 @@ export function MissionDialog({ mission, onClose }: { mission: Mission | null; o
               <div><dt className="text-muted-foreground">Association</dt><dd className="font-semibold">{mission.association}</dd></div>
               <div><dt className="text-muted-foreground">Ville</dt><dd className="font-semibold">{mission.ville}</dd></div>
               <div><dt className="text-muted-foreground">Date</dt><dd className="font-semibold">{formaterDate(mission.date)}</dd></div>
-              <div><dt className="text-muted-foreground">Disponibilité</dt><dd className="font-semibold">{complet ? `Complet · ${mission.listeAttente} en attente` : `${mission.placesRestantes} places`}</dd></div>
+              <div><dt className="text-muted-foreground">Disponibilité</dt><dd className="font-semibold">{complet ? `Complet · ${mission.listeAttente} place(s) en liste d'attente` : `${mission.placesRestantes} places`}</dd></div>
             </dl>
             <Link
               to="/inscription"

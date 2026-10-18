@@ -15,7 +15,7 @@ export interface MissionCardBackend {
   nbBenevoles?: number;
   placesRestantes: number;
   listeAttenteCount: number;
-  statut: "DISPONIBLE" | "COMPLET" | "BROUILLON" | "ANNULEE";
+  statut: string; // StatutMission backend (PUBLIEE, SATUREE, RENFORT_URGENT, EN_COURS…)
   badge?: string;
   imageUrl?: string;
   associationId?: number;

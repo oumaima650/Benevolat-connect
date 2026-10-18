@@ -21,7 +21,7 @@ export function MissionCard({ mission, distance, actif, onHover }: { mission: Mi
         <div className="mt-auto pt-5">
           <p className={`flex items-center gap-2 text-xs font-bold ${complet ? "text-ink" : "text-emerald"}`}>
             {complet ? <Clock3 className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-            {complet ? `Complet · ${mission.listeAttente} en attente` : `${mission.placesRestantes} / ${mission.placesDemandees} places restantes`}
+            {complet ? `Complet · ${mission.listeAttente} place(s) en liste d'attente` : `${mission.placesRestantes} / ${mission.placesDemandees} places restantes`}
           </p>
           <Link to="/missions/$id" params={{ id: mission.id }} className="mt-4 flex w-full items-center justify-between border-t border-ink/20 pt-4 text-sm font-bold hover:text-pink">
             Voir le détail de la mission <ArrowUpRight className="h-4 w-4" />

@@ -13,7 +13,8 @@ import java.util.List;
 
 /**
  * Scheduler qui met à jour automatiquement les statuts des missions selon le temps.
- * - PUBLIEE / SATUREE / RENFORT_URGENT → EN_COURS quand dateDebut est passée
+ * - PUBLIEE / SATUREE                  → EN_COURS quand dateDebut est passée
+ *   (RENFORT_URGENT reste tel quel tant que le renfort n'est pas comblé)
  * - EN_COURS / RENFORT_URGENT          → TERMINEE  quand dateFin est passée
  */
 @Service
@@ -33,11 +34,10 @@ public class MissionSchedulerService {
 
         List<StatutMission> statutsOuverts = List.of(
                 StatutMission.PUBLIEE,
-                StatutMission.SATUREE,
-                StatutMission.RENFORT_URGENT
+                StatutMission.SATUREE
         );
 
-        int updated = missionRepositorycls
+        int updated = missionRepository
                 .passerEnCours(statutsOuverts, now);
         if (updated > 0) {
             log.info("Scheduler : {} mission(s) passée(s) en EN_COURS", updated);

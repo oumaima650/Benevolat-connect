@@ -7,7 +7,51 @@
 
 ## Session actuelle — 18 octobre 2026
 
-### ✅ Tâches terminées
+## ✅ Corrections multiples (18/10/2026) — terminées, à tester manuellement
+
+### 1. Déconnexion / retour accueil bloqués (espaces association + bénévole) ✅
+- Cause : `navigate()` appelé pendant le rendu du layout (`if (!user) navigate('/login')`) en course avec
+  `navigate('/')` au logout ; + Radix (Dropdown/Sheet) laissait `pointer-events: none` sur `<body>` quand
+  il était démonté ouvert → page qui ne répond plus.
+- Fix : `<Navigate>` déclaratif dans `association.tsx` / `benevole.tsx` ; logout = `navigate('/').then(logout)` ;
+  nettoyage de `body.style.pointerEvents` à chaque navigation (`__root.tsx`) ; Toaster dupliqué retiré.
+
+### 2. Après connexion → rester sur la landing page ✅
+- `LoginModal.tsx` : plus de redirection vers /association ou /benevole.
+
+### 3. Places / saturation / renfort / liste d'attente ✅
+- Convention : `Mission.nbPlaces` en BDD = places RESTANTES (0 quand saturée, c'est normal).
+  Capacité totale = confirmés + restantes. Capacité liste d'attente = capacité totale.
+- Nouveau `MissionPlacesService.recalculer()` : promotion liste d'attente, renumérotation des rangs,
+  PUBLIEE ↔ SATUREE, fin du RENFORT_URGENT quand comblé (→ EN_COURS si démarrée, sinon SATUREE).
+- `MissionDto.nbPlaces` = capacité totale (fix « 2/0 »), + `nbPlacesRestantes`, `nbPlacesTotal`,
+  `nbListeAttente` (= nb réel de personnes en attente), `nbRenfortDemande`.
+- Modification : autorisée seulement BROUILLON/PUBLIEE/SATUREE ; nbPlaces du formulaire = total ;
+  refus si total < confirmés ; 2 → 3 sur une mission saturée ⇒ promotion liste d'attente ou PUBLIEE.
+- Renfort : autorisé PUBLIEE/SATUREE/EN_COURS/RENFORT_URGENT ; ajoute N places (liste d'attente promue
+  d'abord) ; bouton Renfort visible pour SATUREE.
+- Inscription : ouverte aussi en RENFORT_URGENT (même après dateDebut, tant que dateFin non passée) ;
+  liste d'attente fonctionnelle même pour les missions existantes (nbPlacesListeAttente = 0 en BDD).
+- Scheduler : RENFORT_URGENT n'est plus écrasé en EN_COURS à dateDebut.
+- Page publique `missions.$id.tsx` : bannière renfort urgent, bouton désactivé si inscriptions fermées.
+
+### 4. Certificat Cloudinary 403 + prévisualisation ✅
+- Cause : la clé API Cloudinary du backend n'a pas la permission `create` (upload signé refusé).
+- Fix : fallback automatique sur le preset non signé `CLOUDINARY_UPLOAD_PRESET` (=benevolat_preset,
+  ajouté au `.env` backend) ; `public_id` avec extension `.pdf` (sinon servi en octet-stream) ;
+  ré-upload des certificats sans PDF (bouton « Réessayer l'upload »).
+- Nouvel endpoint `GET /api/associations/me/certificats/{id}/apercu` (PDF généré à la volée, inline)
+  + bouton « Aperçu » (iframe dans un Dialog) dans `association.certificats.tsx`.
+- ⚠️ Si le fallback échoue aussi : vérifier dans la console Cloudinary que le preset `benevolat_preset`
+  est bien *Unsigned* et accepte les fichiers raw/PDF, ou créer une clé API avec droits d'upload.
+
+### ⏳ Reste à faire
+- [ ] Notifier par email les bénévoles promus de la liste d'attente (actuellement promotion silencieuse)
+- [ ] Tests manuels des 4 points ci-dessus
+
+---
+
+### ✅ Tâches terminées (sessions précédentes)
 
 - [x] Modales auth (login, inscription bénévole 4 étapes, inscription association 4 étapes, mot de passe oublié, reset)
 - [x] AuthModalContext + intégration Header/Hero

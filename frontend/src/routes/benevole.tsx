@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useNavigate, useMatchRoute } from '@tanstack/react-router';
+import { createFileRoute, Outlet, Link, Navigate, useNavigate, useMatchRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import {
   LayoutDashboard, Search, MapPin, Sparkles,
@@ -38,8 +38,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const navigate = useNavigate();
 
   function handleLogout() {
-    logout();
-    navigate({ to: '/' });
+    navigate({ to: '/' }).then(logout);
   }
 
   return (
@@ -115,18 +114,11 @@ function BenevoleLayout() {
   const userInitial = getInitial(user);
 
   // Protection d'accès : redirige si non connecté ou mauvais rôle
-  if (!user) {
-    navigate({ to: '/login' });
-    return null;
-  }
-  if (user.role === 'ASSOCIATION') {
-    navigate({ to: '/association' });
-    return null;
-  }
+  if (!user) return <Navigate to="/login" />;
+  if (user.role === 'ASSOCIATION') return <Navigate to="/association" />;
 
   function handleLogout() {
-    logout();
-    navigate({ to: '/' });
+    navigate({ to: '/' }).then(logout);
   }
 
   return (

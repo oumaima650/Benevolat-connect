@@ -50,6 +50,10 @@ public class CertificatService {
     @Value("${cloudinary.api-secret:}")
     private String apiSecret;
 
+    /** Preset non signé (même que le frontend) — utilisé si la clé API n'a pas le droit d'upload. */
+    @Value("${cloudinary.upload-preset:}")
+    private String uploadPreset;
+
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
@@ -87,7 +91,12 @@ public class CertificatService {
             Optional<Certificat> existing = certificatRepository
                     .findByInscription_IdInscription(inscriptionId);
             if (existing.isPresent()) {
-                results.add(toCertificatResultDto(existing.get()));
+                Certificat c = existing.get();
+                // PDF manquant (upload précédent échoué) → nouvelle tentative
+                if (c.getUrlPdf() == null || c.getUrlPdf().isBlank()) {
+                    genererEtUploader(c, asso);
+                }
+                results.add(toCertificatResultDto(c));
                 continue;
             }
 
@@ -98,16 +107,8 @@ public class CertificatService {
             Certificat certificat = new Certificat(inscription, code, null);
             certificat = certificatRepository.save(certificat);
 
-            // Générer PDF et uploader sur Cloudinary
-            try {
-                byte[] pdfBytes = genererPdfBytes(certificat, asso);
-                String urlPdf = uploaderSurCloudinary(pdfBytes, code);
-                certificat.setUrlPdf(urlPdf);
-                certificatRepository.save(certificat);
-            } catch (Exception e) {
-                log.error("Erreur génération/upload PDF pour certificat {} : {}", certificat.getIdCertificat(), e.getMessage());
-                // Le certificat existe en base même sans PDF
-            }
+            // Générer PDF et uploader sur Cloudinary (le certificat existe en base même sans PDF)
+            genererEtUploader(certificat, asso);
 
             // Envoyer email de notification au bénévole
             try {
@@ -165,6 +166,40 @@ public class CertificatService {
         }
 
         return cert.getUrlPdf();
+    }
+
+    /* ─── PDF généré à la volée (prévisualisation / téléchargement) ────────── */
+
+    /** Génère le PDF d'un certificat de l'association, sans passer par Cloudinary. */
+    @Transactional(readOnly = true)
+    public byte[] getPdfBytes(String emailAssociation, Long certificatId) {
+        Certificat cert = certificatRepository.findById(certificatId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Certificat introuvable."));
+        Association asso = associationRepository.findByEmail(emailAssociation)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Association introuvable."));
+        if (!cert.getInscription().getMission().getAssociation()
+                .getIdUtilisateur().equals(asso.getIdUtilisateur())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé.");
+        }
+        try {
+            return genererPdfBytes(cert, asso);
+        } catch (Exception e) {
+            log.error("Erreur génération PDF certificat {} : {}", certificatId, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Génération du PDF impossible.");
+        }
+    }
+
+    private void genererEtUploader(Certificat certificat, Association asso) {
+        try {
+            byte[] pdfBytes = genererPdfBytes(certificat, asso);
+            String urlPdf = uploaderSurCloudinary(pdfBytes, certificat.getCodeVerification());
+            if (urlPdf != null) {
+                certificat.setUrlPdf(urlPdf);
+                certificatRepository.save(certificat);
+            }
+        } catch (Exception e) {
+            log.error("Erreur génération/upload PDF pour certificat {} : {}", certificat.getIdCertificat(), e.getMessage());
+        }
     }
 
     /* ─── Génération du PDF (HTML → PDF via Flying Saucer) ─────────────────── */
@@ -300,26 +335,59 @@ public class CertificatService {
     /* ─── Upload Cloudinary (resource_type=raw) ─────────────────────────────── */
 
     private String uploaderSurCloudinary(byte[] pdfBytes, String code) throws Exception {
-        if (cloudName.isBlank() || apiKey.isBlank() || apiSecret.isBlank()) {
+        if (cloudName.isBlank()) {
             log.warn("Cloudinary non configuré — PDF non uploadé.");
             return null;
         }
+        // L'extension dans le public_id est indispensable pour un fichier raw :
+        // sans elle Cloudinary le sert en application/octet-stream (pas de prévisualisation).
+        String publicId = "certificats/" + code + ".pdf";
 
+        HttpResponse<String> response = null;
+        if (!apiKey.isBlank() && !apiSecret.isBlank()) {
+            response = envoyerUpload(pdfBytes, publicId, true);
+            if (response.statusCode() == 401 || response.statusCode() == 403) {
+                log.warn("Upload signé refusé ({}) — la clé API Cloudinary n'a pas le droit d'upload. "
+                        + "Nouvelle tentative avec le preset non signé.", response.statusCode());
+                response = null;
+            }
+        }
+        if (response == null) {
+            if (uploadPreset.isBlank()) {
+                throw new RuntimeException("Upload signé impossible et CLOUDINARY_UPLOAD_PRESET non défini.");
+            }
+            response = envoyerUpload(pdfBytes, publicId, false);
+        }
+
+        if (response.statusCode() != 200) {
+            log.error("Cloudinary upload failed {}: {}", response.statusCode(), response.body());
+            throw new RuntimeException("Cloudinary upload failed: " + response.statusCode());
+        }
+
+        // Parse secure_url sans Jackson — extraction simple par regex sur le JSON
+        String secureUrl = extractJsonStringField(response.body(), "secure_url");
+        if (secureUrl == null) {
+            throw new RuntimeException("secure_url absent de la réponse Cloudinary");
+        }
+        return secureUrl.replace("\\/", "/");
+    }
+
+    private HttpResponse<String> envoyerUpload(byte[] pdfBytes, String publicId, boolean signe) throws Exception {
         long timestamp = System.currentTimeMillis() / 1000L;
-        String publicId = "certificats/" + code;
-        String toSign = "public_id=" + publicId + "&timestamp=" + timestamp + apiSecret;
-        String signature = sha1Hex(toSign);
-
-        // Build multipart form data
         String boundary = "----CertificatBoundary" + timestamp;
         ByteArrayOutputStream body = new ByteArrayOutputStream();
 
         appendPart(body, boundary, "file", pdfBytes, "certificat.pdf");
         appendField(body, boundary, "public_id", publicId);
-        appendField(body, boundary, "timestamp", String.valueOf(timestamp));
-        appendField(body, boundary, "api_key", apiKey);
-        appendField(body, boundary, "signature", signature);
-        appendField(body, boundary, "resource_type", "raw");
+        if (signe) {
+            // Paramètres signés triés par ordre alphabétique
+            String signature = sha1Hex("public_id=" + publicId + "&timestamp=" + timestamp + apiSecret);
+            appendField(body, boundary, "timestamp", String.valueOf(timestamp));
+            appendField(body, boundary, "api_key", apiKey);
+            appendField(body, boundary, "signature", signature);
+        } else {
+            appendField(body, boundary, "upload_preset", uploadPreset);
+        }
         body.write(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -328,21 +396,7 @@ public class CertificatService {
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
                 .build();
 
-        HttpResponse<String> response = HttpClient.newHttpClient()
-                .send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() != 200) {
-            log.error("Cloudinary upload failed {}: {}", response.statusCode(), response.body());
-            throw new RuntimeException("Cloudinary upload failed: " + response.statusCode());
-        }
-
-        // Parse secure_url sans Jackson — extraction simple par regex sur le JSON
-        String responseBody = response.body();
-        String secureUrl = extractJsonStringField(responseBody, "secure_url");
-        if (secureUrl == null) {
-            throw new RuntimeException("secure_url absent de la réponse Cloudinary");
-        }
-        return secureUrl;
+        return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     /** Extrait la valeur d'un champ String d'un JSON simple sans dépendance externe. */

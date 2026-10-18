@@ -75,7 +75,7 @@ function Renforts() {
           <p className="text-2xl mb-2">⚡</p>
           <p className="font-bold text-ink">Aucune mission active</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Les renforts sont disponibles pour les missions EN_COURS, PUBLIÉE ou RENFORT_URGENT.
+            Les renforts sont disponibles pour les missions publiées, saturées, en cours ou déjà en renfort.
           </p>
         </div>
       ) : (
@@ -84,8 +84,8 @@ function Renforts() {
             const nbRenfort = m.nbRenfortDemande ?? 0;
             const nbConfirmes = m.nbInscritsConfirmes ?? 0;
             const nbPlaces = m.nbPlaces ?? 0;
-            const pct = nbRenfort > 0
-              ? Math.min(100, Math.round((nbConfirmes / (nbPlaces)) * 100))
+            const pct = nbPlaces > 0
+              ? Math.min(100, Math.round((nbConfirmes / nbPlaces) * 100))
               : 0;
             const isRenfortUrgent = m.statut === 'RENFORT_URGENT';
 

@@ -27,10 +27,12 @@ public class MissionDto {
     private BigDecimal longitude;
     private LocalDateTime dateDebut;
     private LocalDateTime dateFin;
-    private Integer nbPlaces;
+    private Integer nbPlaces;           // capacité totale = confirmés + places restantes
+    private Integer nbPlacesTotal;      // idem nbPlaces (explicite)
     private Integer nbInscritsConfirmes;
-    private Integer nbListeAttente;
-    private Integer nbPlacesRestantes;
+    private Integer nbListeAttente;     // nombre de bénévoles en liste d'attente
+    private Integer nbPlacesRestantes;  // places principales encore libres
+    private Integer nbRenfortDemande;   // bénévoles demandés en renfort
     private String statut;
 
     // Domaine

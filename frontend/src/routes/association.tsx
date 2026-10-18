@@ -1,11 +1,10 @@
-import { createFileRoute, Outlet, Link, useNavigate, useMatchRoute } from '@tanstack/react-router';
+import { createFileRoute, Outlet, Link, Navigate, useNavigate, useMatchRoute } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, ClipboardList, PlusCircle, Users, Zap,
   FileText, Bell, Building2, Menu, LogOut, ChevronDown,
   AlertTriangle, Lock,
 } from 'lucide-react';
-import { Toaster } from '@/components/ui/sonner';
 import { useAuth } from '@/context/AuthContext';
 import { UserAvatar } from '@/components/common/UserAvatar';
 import logoImage from '@/assets/logo.png';
@@ -45,7 +44,12 @@ function SidebarContent({
   const navigate = useNavigate();
   const isValidated = validationStatus === 'VALIDE';
 
-  function handleLogout() { logout(); navigate({ to: '/' }); }
+  function handleLogout() {
+    onClose?.();
+    // Naviguer d'abord vers l'accueil, puis vider la session :
+    // évite que le layout redirige vers /login pendant le rendu
+    navigate({ to: '/' }).then(logout);
+  }
 
   return (
     <div className="flex h-full flex-col bg-paper">
@@ -138,32 +142,19 @@ function AssociationLayout() {
   const [validationStatus, setValidationStatus] = useState<ValidationStatus>(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const matchRoute = useMatchRoute();
 
   useEffect(() => {
+    if (!user) return; // Ne pas appeler l'API si déconnecté
     getMyProfile()
       .then((p) => setValidationStatus(p.statutValidation as ValidationStatus))
-      .catch(() => {});
-  }, []);
+      .catch(() => {}); // Silencieux — ne pas bloquer la navigation
+  }, [user]);
 
-  // Protection d'accès
-  if (!user) { navigate({ to: '/login' }); return null; }
-  if (user.role === 'BENEVOLE') { navigate({ to: '/benevole' }); return null; }
+  // Protection d'accès (redirection déclarative, jamais navigate() pendant le rendu)
+  if (!user) return <Navigate to="/login" />;
+  if (user.role === 'BENEVOLE') return <Navigate to="/benevole" />;
 
-  const isValidated = validationStatus === 'VALIDE';
-
-  // Si EN_ATTENTE et sur une page protégée → rediriger vers profil
-  const currentPath = window.location.pathname;
-  const isProtectedPath = currentPath !== '/association/profil' &&
-    currentPath !== '/association/notifications' &&
-    currentPath.startsWith('/association');
-
-  if (validationStatus !== null && !isValidated && isProtectedPath &&
-    currentPath !== '/association' && currentPath !== '/association/') {
-    // laisser passer : la page index affichera la vue "en attente"
-  }
-
-  function handleLogout() { logout(); navigate({ to: '/' }); }
+  function handleLogout() { navigate({ to: '/' }).then(logout); }
 
   return (
     <ValidationContext.Provider value={validationStatus}>
@@ -238,7 +229,6 @@ function AssociationLayout() {
             <Outlet />
           </main>
         </div>
-        <Toaster richColors position="top-right" />
       </div>
     </ValidationContext.Provider>
   );

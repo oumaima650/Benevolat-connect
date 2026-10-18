@@ -60,10 +60,11 @@ export type MissionDashboard = {
   longitude?: number;
   dateDebut: string;
   dateFin: string;
-  nbPlaces: number;
+  nbPlaces: number;            // capacité totale (confirmés + restantes)
+  nbPlacesTotal?: number;
   nbInscritsConfirmes: number;
-  nbListeAttente: number;
-  nbPlacesRestantes: number;
+  nbListeAttente: number;      // nombre de bénévoles en liste d'attente
+  nbPlacesRestantes: number;   // places principales encore libres
   nbRenfortDemande?: number;
   statut: string;
   domaineId?: number;
@@ -205,6 +206,16 @@ export const getCertificats = (missionId: number) =>
 
 export const getPdfUrl = (certificatId: number) =>
   `${API_BASE}/api/associations/me/certificats/${certificatId}/pdf`;
+
+/** PDF généré à la volée par le backend (indépendant de Cloudinary) → URL blob locale pour aperçu. */
+export async function getCertificatApercuUrl(certificatId: number): Promise<string> {
+  const token = getToken();
+  const res = await fetch(`${API_BASE}/api/associations/me/certificats/${certificatId}/apercu`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  }).catch(() => { throw new Error("Impossible de joindre le serveur backend."); });
+  if (!res.ok) throw new Error(`Aperçu indisponible (erreur ${res.status})`);
+  return URL.createObjectURL(await res.blob());
+}
 
 /* ── Compatibilité avec l'ancien associationApi ── */
 

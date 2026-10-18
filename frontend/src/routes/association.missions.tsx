@@ -245,7 +245,8 @@ function RenfortDialog({ mission, open, onClose, onConfirm }: {
               className="rounded-xl border-2 border-ink w-32 shadow-[2px_2px_0_var(--color-ink)]" />
           </div>
           <p className="text-xs text-muted-foreground">
-            La mission passera au statut <strong>RENFORT URGENT</strong>. Les bénévoles en liste d'attente seront notifiés.
+            De nouvelles places sont ouvertes : les bénévoles en liste d'attente sont confirmés en priorité,
+            puis la mission passe au statut <strong>RENFORT URGENT</strong> et les inscriptions rouvrent jusqu'à ce que le renfort soit comblé.
           </p>
           <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} className="flex-1 border-2 border-ink font-bold rounded-xl">
@@ -401,7 +402,9 @@ function MesMissions() {
     try {
       const updated = await demanderRenfort(missionId, nb);
       setMissions(prev => prev.map(m => m.id === missionId ? updated : m));
-      toast.success(`⚡ Renfort demandé (${nb} bénévoles) !`);
+      toast.success(updated.statut === 'RENFORT_URGENT'
+        ? `⚡ Renfort demandé (${nb} bénévoles) !`
+        : `Renfort comblé directement par la liste d'attente (${nb} bénévoles confirmés).`);
     } catch (err: any) {
       toast.error(err.message ?? 'Erreur lors du renfort.');
     }
@@ -482,7 +485,7 @@ function MesMissions() {
                         <Eye className="h-3 w-3" /> Voir
                       </button>
                       {/* Modifier */}
-                      {!['CLOTUREE', 'ANNULEE', 'TERMINEE'].includes(m.statut) && (
+                      {['BROUILLON', 'PUBLIEE', 'SATUREE'].includes(m.statut) && (
                         <Link to="/association/nouvelle-mission" search={{ id: String(m.id) }}
                           className="rounded-lg border border-ink bg-paper px-2 py-1 text-xs font-semibold hover:bg-muted">
                           Modifier
@@ -503,7 +506,7 @@ function MesMissions() {
                         </button>
                       )}
                       {/* Renfort */}
-                      {['EN_COURS', 'PUBLIEE'].includes(m.statut) && (
+                      {['PUBLIEE', 'SATUREE', 'EN_COURS', 'RENFORT_URGENT'].includes(m.statut) && (
                         <button onClick={() => setRenfortMission(m)}
                           className="rounded-lg border border-orange-400 bg-orange-50 px-2 py-1 text-xs font-semibold text-orange-700 hover:bg-orange-100 flex items-center gap-1">
                           <Zap className="h-3 w-3" /> Renfort

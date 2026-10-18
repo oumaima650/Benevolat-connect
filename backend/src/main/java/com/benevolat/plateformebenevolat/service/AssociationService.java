@@ -43,6 +43,7 @@ public class AssociationService {
     private final CompetenceRepository competenceRepository;
     private final InscriptionRepository inscriptionRepository;
     private final ImageEvenementRepository imageEvenementRepository;
+    private final MissionPlacesService missionPlacesService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 
@@ -136,7 +137,9 @@ public class AssociationService {
         mission.setLongitude(req.getLongitude());
         mission.setDateDebut(dateDebut);
         mission.setDateFin(dateFin);
-        mission.setNbPlaces(req.getNbPlaces() != null ? req.getNbPlaces() : 0);
+        int places = req.getNbPlaces() != null ? req.getNbPlaces() : 0;
+        mission.setNbPlaces(places);
+        mission.setNbPlacesListeAttente(places); // liste d'attente = même capacité que les places
         mission.setStatut(statut);
         mission.setAssociation(asso);
         mission.setDomaine(domaine);
@@ -157,8 +160,12 @@ public class AssociationService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
         }
 
-        if (mission.getStatut() == StatutMission.ANNULEE || mission.getStatut() == StatutMission.CLOTUREE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mission non modifiable.");
+        // Modifiable uniquement tant que la mission n'a pas commencé
+        StatutMission statutActuel = mission.getStatut();
+        if (statutActuel != StatutMission.BROUILLON && statutActuel != StatutMission.PUBLIEE
+                && statutActuel != StatutMission.SATUREE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Mission non modifiable (statut : " + statutActuel + "). Utilisez le renfort pour une mission en cours.");
         }
 
         if (req.getTitre() != null)       mission.setTitre(req.getTitre());
@@ -166,7 +173,15 @@ public class AssociationService {
         if (req.getAdresse() != null)     mission.setAdresse(req.getAdresse());
         if (req.getLatitude() != null)    mission.setLatitude(req.getLatitude());
         if (req.getLongitude() != null)   mission.setLongitude(req.getLongitude());
-        if (req.getNbPlaces() != null)    mission.setNbPlaces(req.getNbPlaces());
+        if (req.getNbPlaces() != null) {
+            // req.nbPlaces = capacité TOTALE souhaitée ; en BDD on stocke les places restantes
+            int confirmes = missionPlacesService.countConfirmes(missionId);
+            if (req.getNbPlaces() < confirmes) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Impossible : " + confirmes + " bénévole(s) déjà confirmé(s), le nombre de places ne peut pas être inférieur.");
+            }
+            mission.setNbPlaces(req.getNbPlaces() - confirmes);
+        }
 
         if (req.getDateDebut() != null) {
             mission.setDateDebut(parseDateTime(req.getDateDebut(), "dateDebut"));
@@ -182,6 +197,9 @@ public class AssociationService {
         if (req.getCompetenceIds() != null) {
             mission.setCompetences(competenceRepository.findAllById(req.getCompetenceIds()));
         }
+
+        // Places libérées → promotion de la liste d'attente, SATUREE ↔ PUBLIEE
+        missionPlacesService.recalculer(mission);
 
         Mission saved = missionRepository.save(mission);
         return toMissionDto(saved);
@@ -239,12 +257,22 @@ public class AssociationService {
         if (!mission.getAssociation().getEmail().equals(email)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé à cette mission.");
         }
-        if (mission.getStatut() != StatutMission.EN_COURS && mission.getStatut() != StatutMission.PUBLIEE) {
+        StatutMission s = mission.getStatut();
+        if (s != StatutMission.PUBLIEE && s != StatutMission.SATUREE
+                && s != StatutMission.EN_COURS && s != StatutMission.RENFORT_URGENT) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Le renfort ne peut être demandé que pour une mission EN_COURS ou PUBLIEE.");
+                    "Le renfort ne peut être demandé que pour une mission publiée, saturée ou en cours.");
         }
-        mission.setNbRenfortDemande(nbBenevoles);
+        if (nbBenevoles < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le renfort doit concerner au moins 1 bénévole.");
+        }
+        // Le renfort ouvre de nouvelles places : la liste d'attente est promue en premier,
+        // le reste est ouvert aux inscriptions (même si la mission a déjà commencé).
+        int dejaDemande = mission.getNbRenfortDemande() != null ? mission.getNbRenfortDemande() : 0;
+        mission.setNbRenfortDemande(dejaDemande + nbBenevoles);
+        mission.setNbPlaces(missionPlacesService.placesRestantes(mission) + nbBenevoles);
         mission.setStatut(StatutMission.RENFORT_URGENT);
+        missionPlacesService.recalculer(mission);
         Mission saved = missionRepository.save(mission);
         return toMissionDto(saved);
     }
@@ -317,9 +345,9 @@ public class AssociationService {
 
         Association asso = m.getAssociation();
 
-        // Compter les inscrits confirmés depuis la BDD
-        int nbConfirmes = (int) inscriptionRepository
-                .countByMission_IdMissionAndStatut(m.getIdMission(), StatutInscription.CONFIRMEE);
+        // nbPlaces en BDD = places restantes ; le DTO expose la capacité totale dans nbPlaces
+        int nbConfirmes = missionPlacesService.countConfirmes(m.getIdMission());
+        int restantes = missionPlacesService.placesRestantes(m);
 
         return MissionDto.builder()
                 .id(m.getIdMission())
@@ -330,9 +358,12 @@ public class AssociationService {
                 .longitude(m.getLongitude())
                 .dateDebut(m.getDateDebut())
                 .dateFin(m.getDateFin())
-                .nbPlaces(m.getNbPlaces())
+                .nbPlaces(nbConfirmes + restantes)
+                .nbPlacesTotal(nbConfirmes + restantes)
+                .nbPlacesRestantes(restantes)
                 .nbInscritsConfirmes(nbConfirmes)
-                .nbListeAttente(m.getNbPlacesListeAttente())
+                .nbListeAttente(missionPlacesService.countAttente(m.getIdMission()))
+                .nbRenfortDemande(m.getNbRenfortDemande())
                 .statut(m.getStatut() != null ? m.getStatut().name() : "BROUILLON")
                 .domaineId(m.getDomaine() != null ? m.getDomaine().getIdDomaine() : null)
                 .domaineNom(m.getDomaine() != null ? m.getDomaine().getNom() : null)

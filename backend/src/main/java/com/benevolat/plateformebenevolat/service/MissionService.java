@@ -83,7 +83,9 @@ public class MissionService {
                 mission.getDateFin(),
                 nbPlacesTotal,
                 placesRestantes,
-                mission.getNbPlacesListeAttente(),
+                // places restantes en liste d'attente (capacité = nombre total de places)
+                Math.max(0, nbPlacesTotal - (int) inscriptionRepository
+                        .countByMission_IdMissionAndStatut(mission.getIdMission(), StatutInscription.EN_LISTE_ATTENTE)),
                 effectiveStatut,
                 img,
                 mission.getAssociation() != null ? mission.getAssociation().getIdUtilisateur() : null,

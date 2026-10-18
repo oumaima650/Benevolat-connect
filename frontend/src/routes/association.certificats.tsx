@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { ChevronDown, ChevronUp, Download, Loader2, Award } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, Loader2, Award, Eye, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-  getMyMissions, getInscrits, getCertificats, delivrerCertificats, getPdfUrl,
+  getMyMissions, getInscrits, getCertificats, delivrerCertificats, getCertificatApercuUrl,
   type MissionDashboard, type InscritDashboard, type CertificatResult,
 } from '@/services/associationApi';
 import { formaterDate } from '@/components/dashboard/data';
@@ -28,6 +29,46 @@ function Certificats() {
   // sélections par missionId : Set des inscriptionIds
   const [selections, setSelections] = useState<Record<number, Set<number>>>({});
   const [delivering, setDelivering] = useState<number | null>(null);
+
+  // Aperçu PDF (blob généré par le backend)
+  const [apercu, setApercu] = useState<{ url: string; cert: CertificatResult } | null>(null);
+  const [loadingApercu, setLoadingApercu] = useState<number | null>(null);
+  const [retrying, setRetrying] = useState<number | null>(null);
+
+  async function ouvrirApercu(cert: CertificatResult) {
+    setLoadingApercu(cert.certificatId);
+    try {
+      const url = await getCertificatApercuUrl(cert.certificatId);
+      setApercu({ url, cert });
+    } catch (err: any) {
+      toast.error(err.message ?? "Impossible d'afficher l'aperçu.");
+    } finally {
+      setLoadingApercu(null);
+    }
+  }
+
+  function fermerApercu() {
+    if (apercu) URL.revokeObjectURL(apercu.url);
+    setApercu(null);
+  }
+
+  // Relance l'upload Cloudinary d'un certificat dont le PDF est manquant
+  async function reessayerUpload(missionId: number, cert: CertificatResult) {
+    setRetrying(cert.certificatId);
+    try {
+      const [updated] = await delivrerCertificats(missionId, [cert.inscriptionId]);
+      setCertsByMission(prev => ({
+        ...prev,
+        [missionId]: (prev[missionId] ?? []).map(c => c.certificatId === cert.certificatId ? (updated ?? c) : c),
+      }));
+      if (updated?.urlPdf) toast.success('PDF uploadé sur Cloudinary.');
+      else toast.error("L'upload a encore échoué — consultez les logs du backend.");
+    } catch (err: any) {
+      toast.error(err.message ?? 'Erreur.');
+    } finally {
+      setRetrying(null);
+    }
+  }
 
   useEffect(() => {
     getMyMissions()
@@ -256,16 +297,32 @@ function Certificats() {
                                         {new Date(c.dateDelivrance).toLocaleDateString('fr-FR')}
                                       </td>
                                       <td className="px-3 py-2">
-                                        {c.urlPdf ? (
-                                          <a href={c.urlPdf} target="_blank" rel="noopener noreferrer">
-                                            <Button variant="outline" size="sm"
-                                              className="rounded-lg border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] h-7 px-2">
-                                              <Download className="h-3 w-3 mr-1" />PDF
+                                        <div className="flex flex-wrap justify-end gap-1">
+                                          <Button variant="outline" size="sm" onClick={() => ouvrirApercu(c)}
+                                            disabled={loadingApercu === c.certificatId}
+                                            className="rounded-lg border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] h-7 px-2">
+                                            {loadingApercu === c.certificatId
+                                              ? <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                              : <Eye className="h-3 w-3 mr-1" />}
+                                            Aperçu
+                                          </Button>
+                                          {c.urlPdf ? (
+                                            <a href={c.urlPdf} target="_blank" rel="noopener noreferrer">
+                                              <Button variant="outline" size="sm"
+                                                className="rounded-lg border-2 border-ink shadow-[2px_2px_0_var(--color-ink)] h-7 px-2">
+                                                <Download className="h-3 w-3 mr-1" />PDF
+                                              </Button>
+                                            </a>
+                                          ) : (
+                                            <Button variant="outline" size="sm" onClick={() => reessayerUpload(mission.id, c)}
+                                              disabled={retrying === c.certificatId}
+                                              title="Le PDF n'a pas pu être envoyé sur Cloudinary"
+                                              className="rounded-lg border-2 border-ink bg-mustard shadow-[2px_2px_0_var(--color-ink)] h-7 px-2">
+                                              <RefreshCw className={`h-3 w-3 mr-1 ${retrying === c.certificatId ? 'animate-spin' : ''}`} />
+                                              Réessayer l'upload
                                             </Button>
-                                          </a>
-                                        ) : (
-                                          <span className="text-xs text-muted-foreground">En cours…</span>
-                                        )}
+                                          )}
+                                        </div>
                                       </td>
                                     </tr>
                                   ))}
@@ -283,6 +340,27 @@ function Certificats() {
           })}
         </div>
       )}
+
+      {/* Aperçu du certificat */}
+      <Dialog open={!!apercu} onOpenChange={(v) => !v && fermerApercu()}>
+        <DialogContent className="rounded-2xl border-2 border-ink bg-paper shadow-[6px_6px_0_var(--color-ink)] sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="font-display font-black text-ink">
+              Certificat — {apercu?.cert.benevolePrenom} {apercu?.cert.benevoleNom}
+            </DialogTitle>
+          </DialogHeader>
+          {apercu && (
+            <>
+              <iframe src={apercu.url} title="Aperçu du certificat"
+                className="h-[70vh] w-full rounded-xl border-2 border-ink bg-white" />
+              <a href={apercu.url} download={`certificat-${apercu.cert.codeVerification}.pdf`}
+                className="inline-flex w-fit items-center gap-2 rounded-xl border-2 border-ink bg-emerald px-4 py-2 text-sm font-bold text-emerald-foreground shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90">
+                <Download className="h-4 w-4" /> Télécharger
+              </a>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
