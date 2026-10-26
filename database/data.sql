@@ -71,6 +71,7 @@ CREATE TABLE Association (
     ville            VARCHAR(100) NULL,
     contact          VARCHAR(255) NULL,
     statutValidation ENUM('EN_ATTENTE','VALIDE','REFUSE') NOT NULL DEFAULT 'EN_ATTENTE',  -- RM06 : seule une association VALIDE peut publier
+    motifRefus       VARCHAR(500) NULL,                      -- F39 : motif saisi par l'administrateur
     latitude         DOUBLE       NULL,
     longitude        DOUBLE       NULL,
     idAdministrateur BIGINT       NULL,                      -- « valide » : administrateur qui a traité la demande (NULL tant qu'en attente)
@@ -134,6 +135,8 @@ CREATE TABLE Mission (
                 'RENFORT_URGENT','TERMINEE','CLOTUREE','ANNULEE')
                                        NOT NULL DEFAULT 'BROUILLON',
     estSignalee           BOOLEAN      NOT NULL DEFAULT FALSE,
+    motifSignalement      VARCHAR(500) NULL,                 -- F41 : motif du dernier signalement
+    estMasquee            BOOLEAN      NOT NULL DEFAULT FALSE, -- F41 : masquée par un administrateur
     createdAt             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updatedAt             DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     idAssociation         BIGINT       NOT NULL,             -- « publie »
@@ -289,6 +292,8 @@ CREATE TABLE Notification (
     message        TEXT         NOT NULL,
     lue            BOOLEAN      NOT NULL DEFAULT FALSE,
     statutEnvoi    ENUM('EN_ATTENTE','ENVOYE','ECHEC') NOT NULL DEFAULT 'EN_ATTENTE',
+    categorie      VARCHAR(30)  NOT NULL DEFAULT 'SYSTEME',      -- événement à l'origine (F28) ; type = canal
+    lien           VARCHAR(255) NULL,                            -- page de l'application concernée
     createdAt      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (idNotification),
     CONSTRAINT fk_notification_utilisateur FOREIGN KEY (idUtilisateur) REFERENCES Utilisateur (idUtilisateur)

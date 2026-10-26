@@ -7,6 +7,7 @@ import com.benevolat.plateformebenevolat.dto.MissionDto;
 import com.benevolat.plateformebenevolat.dto.MissionRequest;
 import com.benevolat.plateformebenevolat.dto.UpdateAssociationRequest;
 import com.benevolat.plateformebenevolat.entity.Association;
+import com.benevolat.plateformebenevolat.entity.CategorieNotif;
 import com.benevolat.plateformebenevolat.entity.Domaine;
 import com.benevolat.plateformebenevolat.entity.ImageEvenement;
 import com.benevolat.plateformebenevolat.entity.Inscription;
@@ -14,6 +15,7 @@ import com.benevolat.plateformebenevolat.entity.Mission;
 import com.benevolat.plateformebenevolat.entity.StatutInscription;
 import com.benevolat.plateformebenevolat.entity.StatutMission;
 import com.benevolat.plateformebenevolat.entity.StatutUtilisateur;
+import com.benevolat.plateformebenevolat.entity.StatutValidation;
 import com.benevolat.plateformebenevolat.repository.AssociationRepository;
 import com.benevolat.plateformebenevolat.repository.CompetenceRepository;
 import com.benevolat.plateformebenevolat.repository.DomaineRepository;
@@ -44,6 +46,8 @@ public class AssociationService {
     private final InscriptionRepository inscriptionRepository;
     private final ImageEvenementRepository imageEvenementRepository;
     private final MissionPlacesService missionPlacesService;
+    private final NotificationService notificationService;
+    private final N8nService n8nService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 
@@ -128,6 +132,7 @@ public class AssociationService {
         StatutMission statut = ("PUBLIEE".equalsIgnoreCase(req.getStatut()))
                 ? StatutMission.PUBLIEE
                 : StatutMission.BROUILLON;
+        if (statut == StatutMission.PUBLIEE) verifierAssociationValidee(asso);
 
         Mission mission = new Mission();
         mission.setTitre(req.getTitre());
@@ -168,6 +173,11 @@ public class AssociationService {
                     "Mission non modifiable (statut : " + statutActuel + "). Utilisez le renfort pour une mission en cours.");
         }
 
+        // F08 : mémoriser date et lieu pour prévenir les inscrits en cas de changement
+        LocalDateTime ancienDebut = mission.getDateDebut();
+        LocalDateTime ancienneFin = mission.getDateFin();
+        String ancienneAdresse = mission.getAdresse();
+
         if (req.getTitre() != null)       mission.setTitre(req.getTitre());
         if (req.getDescription() != null) mission.setDescription(req.getDescription());
         if (req.getAdresse() != null)     mission.setAdresse(req.getAdresse());
@@ -201,6 +211,17 @@ public class AssociationService {
         // Places libérées → promotion de la liste d'attente, SATUREE ↔ PUBLIEE
         missionPlacesService.recalculer(mission);
 
+        boolean dateChangee = !java.util.Objects.equals(ancienDebut, mission.getDateDebut())
+                || !java.util.Objects.equals(ancienneFin, mission.getDateFin());
+        boolean lieuChange = !java.util.Objects.equals(ancienneAdresse, mission.getAdresse());
+        if (dateChangee || lieuChange) {
+            notifierInscrits(mission, CategorieNotif.MISSION_MODIFIEE,
+                    "Mission modifiée : " + mission.getTitre(),
+                    "L'association a modifié " + (dateChangee && lieuChange ? "la date et le lieu"
+                            : dateChangee ? "la date" : "le lieu")
+                            + " de la mission « " + mission.getTitre() + " ». Vérifiez les nouvelles informations.");
+        }
+
         Mission saved = missionRepository.save(mission);
         return toMissionDto(saved);
     }
@@ -222,6 +243,23 @@ public class AssociationService {
             parsed = StatutMission.valueOf(newStatut);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Statut invalide : " + newStatut);
+        }
+
+        if (parsed == StatutMission.PUBLIEE) {
+            verifierAssociationValidee(mission.getAssociation());
+        }
+        if (parsed == StatutMission.ANNULEE) {
+            // Une mission ne peut être annulée qu'avant son début (cahier des charges, cycle de vie)
+            StatutMission s = mission.getStatut();
+            if (s != StatutMission.BROUILLON && s != StatutMission.PUBLIEE && s != StatutMission.SATUREE) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Seule une mission non commencée (brouillon, publiée ou saturée) peut être annulée.");
+            }
+            // RM10 : tous les confirmés et la liste d'attente sont prévenus
+            notifierInscrits(mission, CategorieNotif.MISSION_ANNULEE,
+                    "Mission annulée : " + mission.getTitre(),
+                    "Nous sommes désolés : l'association " + mission.getAssociation().getNom()
+                            + " a annulé la mission « " + mission.getTitre() + " ».");
         }
 
         mission.setStatut(parsed);
@@ -273,6 +311,14 @@ public class AssociationService {
         mission.setNbPlaces(missionPlacesService.placesRestantes(mission) + nbBenevoles);
         mission.setStatut(StatutMission.RENFORT_URGENT);
         missionPlacesService.recalculer(mission);
+
+        // Places encore libres après la liste d'attente : n8n sollicite les bénévoles proches (IA)
+        if (mission.getStatut() == StatutMission.RENFORT_URGENT) {
+            n8nService.declencher("renfort", java.util.Map.of(
+                    "missionId", mission.getIdMission(),
+                    "titre", mission.getTitre(),
+                    "placesRestantes", missionPlacesService.placesRestantes(mission)));
+        }
         Mission saved = missionRepository.save(mission);
         return toMissionDto(saved);
     }
@@ -308,6 +354,24 @@ public class AssociationService {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
+    /** RM06 : une association non validée par l'administrateur ne peut pas publier. */
+    private void verifierAssociationValidee(Association asso) {
+        if (asso.getStatutValidation() != StatutValidation.VALIDE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Votre association doit être validée par un administrateur avant de publier une mission.");
+        }
+    }
+
+    /** Notifie les inscrits confirmés et la liste d'attente d'une mission (avec l'encadré récapitulatif). */
+    private void notifierInscrits(Mission mission, CategorieNotif categorie, String titre, String message) {
+        var details = NotificationService.detailsMission(mission);
+        for (StatutInscription s : List.of(StatutInscription.CONFIRMEE, StatutInscription.EN_LISTE_ATTENTE)) {
+            inscriptionRepository.findByMission_IdMissionAndStatutOrderByRangAsc(mission.getIdMission(), s)
+                    .forEach(i -> notificationService.notifier(i.getBenevole(), categorie, titre, message,
+                            "/missions/" + mission.getIdMission(), details));
+        }
+    }
+
     private Association loadByEmail(String email) {
         return associationRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Association introuvable pour : " + email));
@@ -330,6 +394,7 @@ public class AssociationService {
                 .contact(asso.getContact())
                 .logoUrl(asso.getPhotoProfil())
                 .statutValidation(asso.getStatutValidation() != null ? asso.getStatutValidation().name() : "EN_ATTENTE")
+                .motifRefus(asso.getMotifRefus())
                 .statutCompte(asso.getStatut() != null ? asso.getStatut().name() : "ACTIF")
                 .latitude(asso.getLatitude())
                 .longitude(asso.getLongitude())

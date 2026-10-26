@@ -5,6 +5,7 @@ import {
   BookOpen, Award, Bell, UserCircle, Menu, LogOut, ChevronDown,
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
+import { useUnreadNotifications } from '@/hooks/use-unread-notifications';
 import { useAuth, getInitial } from '@/context/AuthContext';
 import { UserAvatar } from '@/components/common/UserAvatar';
 import logoImage from '@/assets/logo.png';
@@ -28,11 +29,11 @@ const navItems = [
   { label: 'Recommandations', to: '/benevole/recommandations' as const, icon: Sparkles, exact: false },
   { label: 'Mon parcours', to: '/benevole/parcours' as const, icon: BookOpen, exact: false },
   { label: 'Badges & niveau', to: '/benevole/badges' as const, icon: Award, exact: false },
-  { label: 'Notifications', to: '/benevole/notifications' as const, icon: Bell, exact: false, badge: 3 },
+  { label: 'Notifications', to: '/benevole/notifications' as const, icon: Bell, exact: false, badge: 'notifications' },
   { label: 'Mon profil', to: '/benevole/profil' as const, icon: UserCircle, exact: false },
 ] as const;
 
-function SidebarContent({ onClose }: { onClose?: () => void }) {
+function SidebarContent({ onClose, nonLues }: { onClose?: () => void; nonLues: number }) {
   const matchRoute = useMatchRoute();
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       <nav className="flex-1 overflow-y-auto py-4" aria-label="Navigation bénévole">
         <ul className="space-y-1 px-2">
           {navItems.map(({ label, to, icon: Icon, exact, ...rest }) => {
-            const badge = 'badge' in rest ? rest.badge : undefined;
+            const badge = 'badge' in rest ? nonLues : undefined;
             const isActive = exact
               ? !!matchRoute({ to, fuzzy: false })
               : !!matchRoute({ to, fuzzy: true });
@@ -73,9 +74,9 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                 >
                   <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   <span className="flex-1">{label}</span>
-                  {badge != null && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                      {badge}
+                  {badge != null && badge > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full border border-ink bg-pink px-1 text-[10px] font-bold text-ink">
+                      {badge > 99 ? '99+' : badge}
                     </span>
                   )}
                 </Link>
@@ -112,10 +113,12 @@ function BenevoleLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const userInitial = getInitial(user);
+  const nonLues = useUnreadNotifications(user?.role === 'BENEVOLE');
 
   // Protection d'accès : redirige si non connecté ou mauvais rôle
   if (!user) return <Navigate to="/login" />;
   if (user.role === 'ASSOCIATION') return <Navigate to="/association" />;
+  if (user.role === 'ADMIN') return <Navigate to="/admin" />;
 
   function handleLogout() {
     navigate({ to: '/' }).then(logout);
@@ -125,13 +128,13 @@ function BenevoleLayout() {
     <div className="flex h-screen overflow-hidden bg-paper">
       {/* Desktop Sidebar — fixe, ne scroll pas */}
       <aside className="hidden w-64 shrink-0 border-r-2 border-ink bg-paper lg:flex lg:flex-col h-screen sticky top-0">
-        <SidebarContent />
+        <SidebarContent nonLues={nonLues} />
       </aside>
 
       {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-64 p-0 border-r-2 border-ink bg-paper">
-          <SidebarContent onClose={() => setSidebarOpen(false)} />
+          <SidebarContent nonLues={nonLues} onClose={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
 
@@ -155,12 +158,14 @@ function BenevoleLayout() {
             <Link
               to="/benevole/notifications"
               className="relative rounded-lg border-2 border-ink bg-paper p-1.5 shadow-[2px_2px_0_var(--color-ink)] hover:bg-muted"
-              aria-label="Notifications (3 non lues)"
+              aria-label={`Notifications (${nonLues} non lues)`}
             >
               <Bell className="h-5 w-5" aria-hidden="true" />
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
-                3
-              </span>
+              {nonLues > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full border border-ink bg-pink px-0.5 text-[9px] font-bold text-ink">
+                  {nonLues > 9 ? '9+' : nonLues}
+                </span>
+              )}
             </Link>
 
             {/* Avatar dropdown */}

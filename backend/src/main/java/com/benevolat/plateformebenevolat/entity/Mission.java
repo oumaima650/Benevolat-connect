@@ -64,6 +64,14 @@ public class Mission {
     @Column(name = "estSignalee", nullable = false)
     private Boolean estSignalee = false;
 
+    /** Motif du dernier signalement (F41). */
+    @Column(name = "motifSignalement", length = 500)
+    private String motifSignalement;
+
+    /** Masquée par un administrateur : invisible du public (F41). */
+    @Column(name = "estMasquee", nullable = false)
+    private Boolean estMasquee = false;
+
     @Column(name = "createdAt", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 

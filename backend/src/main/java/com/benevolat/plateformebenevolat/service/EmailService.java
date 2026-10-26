@@ -32,9 +32,14 @@ public class EmailService {
 
     /** Envoie un email HTML (synchrone pour capturer les erreurs). */
     public void sendHtml(String to, String subject, String htmlBody) {
+        trySendHtml(to, subject, htmlBody);
+    }
+
+    /** Envoie un email HTML et indique si l'envoi a réussi (utilisé pour Notification.statutEnvoi). */
+    public boolean trySendHtml(String to, String subject, String htmlBody) {
         if (mailFrom == null || mailFrom.isBlank()) {
             log.info("==== EMAIL DEV MODE ==== À: {} | Sujet: {}", to, subject);
-            return;
+            return true;
         }
         try {
             log.info("Tentative d'envoi email à {} depuis {} via {}:{}",
@@ -49,11 +54,13 @@ public class EmailService {
             helper.setText(htmlBody, true);
             mailSender.send(message);
             log.info("Email envoyé avec succès à {} : {}", to, subject);
+            return true;
         } catch (MessagingException e) {
             log.error("Erreur MessagingException envoi email à {} : {}", to, e.getMessage(), e);
         } catch (Exception e) {
             log.error("Erreur inattendue envoi email à {} : {}", to, e.getMessage(), e);
         }
+        return false;
     }
 
     /** Email de bienvenue — dispatche selon le rôle. */

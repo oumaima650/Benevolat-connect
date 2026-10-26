@@ -27,6 +27,7 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final com.benevolat.plateformebenevolat.repository.UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -47,6 +48,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             if (jwtService.isTokenValid(jwtToken) && SecurityContextHolder.getContext().getAuthentication() == null) {
                 String email = jwtService.extractEmail(jwtToken);
                 String role = jwtService.extractRole(jwtToken);
+
+                boolean actif = userRepository.findByEmail(email)
+                        .map(u -> u.getStatut() == com.benevolat.plateformebenevolat.entity.StatutUtilisateur.ACTIF)
+                        .orElse(false);
+                if (!actif) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         email,

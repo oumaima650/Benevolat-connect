@@ -1,0 +1,223 @@
+{
+  "name": "CountMeIn — Rappel 24 h (IA)",
+  "nodes": [
+    {
+      "id": "1ebe9d55-b9b2-48d1-8ccc-32cc6a92b02a",
+      "name": "Toutes les heures",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "050522d4-6a20-42e0-9c94-1e28d1c82f90",
+      "name": "Rappels a envoyer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "url": "http://host.docker.internal:8080/api/n8n/rappels",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "notes": "Identifiant : « CountMeIn backend » (Header Auth X-Webhook-Secret)"
+    },
+    {
+      "id": "4be0fdfc-1956-43f2-9ee8-768d13fc4705",
+      "name": "Preparer la requete IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const SYSTEME = \"Tu rédiges des e-mails pour CountMeIn, une plateforme marocaine qui met en relation bénévoles et associations. Écris en français, tutoie le bénévole, avec un ton chaleureux, simple et concret. Utilise uniquement les informations fournies dans les données : n'invente ni date, ni horaire, ni lieu, ni consigne, ni matériel, ni chiffre. Si une information manque, n'en parle pas. Pas de formule de politesse finale ni de signature (elles sont ajoutées par le gabarit). Au plus un émoji dans tout l'e-mail. Le sujet fait moins de 70 caractères. Tâche : rappeler au bénévole que sa mission commence dans moins de 24 heures. Reprends la date, l'heure et le lieu. Si des compétences sont listées, dis en une phrase qu'elles seront utiles, sans inventer de détail. Demande de prévenir l'association en cas d'empêchement.\";\nconst SCHEMA = {\"type\": \"object\", \"properties\": {\"sujet\": {\"type\": \"string\", \"description\": \"Objet de l'e-mail\"}, \"titre\": {\"type\": \"string\", \"description\": \"Titre affiché en haut de l'e-mail (court)\"}, \"paragraphes\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}, \"description\": \"2 ou 3 paragraphes courts\"}}, \"required\": [\"sujet\", \"titre\", \"paragraphes\"], \"additionalProperties\": false};\nfunction requeteIA(donnees) {\n  return {\n    model: 'claude-opus-5-5',\n    max_tokens: 16000,\n    // Si le modèle refuse la demande, l'API la relance automatiquement sur un autre modèle\n    fallbacks: 'default',\n    // E-mail court : effort faible ; sortie JSON imposée par le schéma\n    output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA } },\n    system: SYSTEME,\n    messages: [{ role: 'user', content: 'Données :\\n' + JSON.stringify(donnees, null, 2) }],\n  };\n}\n\n// Une requête IA par inscription à rappeler (seules les données utiles sont envoyées)\nreturn $input.all()\n  .filter(item => item.json.inscriptionId)\n  .map(item => {\n    const r = item.json;\n    const m = r.mission;\n    return { json: { ...r, requeteIA: requeteIA({\n      prenom: r.prenom,\n      mission: m.titre, association: m.association, description: m.description,\n      debut: m.dateDebut, fin: m.dateFin, lieu: m.adresse || m.ville, competences: m.competences,\n    }) } };\n  });\n"
+      }
+    },
+    {
+      "id": "28ac847d-7f8a-42e6-a71d-c421b2b90523",
+      "name": "Rediger avec Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "anthropic-beta",
+              "value": "server-side-fallback-2026-07-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.requeteIA) }}",
+        "options": {
+          "timeout": 120000,
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Identifiant : « Anthropic API » (Header Auth x-api-key). En cas d'erreur, le texte de secours est utilisé."
+    },
+    {
+      "id": "1a292fca-08f2-4872-aaa1-417955672ebd",
+      "name": "Mettre en forme",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Gabarit HTML CountMeIn (même charte que les e-mails envoyés par le backend)\nfunction esc(s) {\n  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n}\nfunction gabarit({ badge, couleur, couleurTexte, prenom, titre, paragraphes, details, blocs, bouton, lien }) {\n  const corps = (paragraphes || []).map(p =>\n    `<p style=\"margin:0 0 14px;font-size:15px;line-height:1.7;color:#444;\">${esc(p)}</p>`).join('');\n  const lignes = Object.entries(details || {}).filter(([, v]) => v).map(([k, v]) =>\n    `<tr><td style=\"padding:7px 0;font-size:13px;color:#777;width:110px;vertical-align:top;\">${esc(k)}</td>` +\n    `<td style=\"padding:7px 0;font-size:14px;font-weight:700;color:#1a1a1a;\">${esc(v)}</td></tr>`).join('');\n  const encadre = lignes ? `<table cellpadding=\"0\" cellspacing=\"0\" style=\"width:100%;margin-top:8px;border:2px solid #1a1a1a;border-left:8px solid ${couleur};border-radius:10px;\"><tr><td style=\"padding:12px 18px;\"><table cellpadding=\"0\" cellspacing=\"0\" style=\"width:100%;\">${lignes}</table></td></tr></table>` : '';\n  const btn = lien ? `<table cellpadding=\"0\" cellspacing=\"0\" style=\"margin:24px 0 8px;\"><tr><td style=\"background:${couleur};border:2px solid #1a1a1a;border-radius:10px;box-shadow:3px 3px 0 #1a1a1a;\"><a href=\"${esc(lien)}\" style=\"display:inline-block;padding:13px 26px;font-size:15px;font-weight:800;color:${couleurTexte};text-decoration:none;\">${esc(bouton)} →</a></td></tr></table>` : '';\n  return `<!DOCTYPE html><html lang=\"fr\"><head><meta charset=\"UTF-8\"></head>\n<body style=\"margin:0;padding:0;background:#f5f0e8;font-family:'Helvetica Neue',Arial,sans-serif;\">\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f5f0e8;padding:40px 20px;\"><tr><td align=\"center\">\n<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background:#fff;border:3px solid #1a1a1a;border-radius:16px;overflow:hidden;box-shadow:6px 6px 0 #1a1a1a;\">\n<tr><td style=\"background:#f7c948;border-bottom:3px solid #1a1a1a;padding:22px 40px;\">\n<h1 style=\"margin:0;font-size:26px;font-weight:900;color:#1a1a1a;\">CountMeIn</h1>\n<p style=\"margin:4px 0 0;font-size:13px;font-weight:600;color:#1a1a1a;opacity:0.7;\">Connecter · Soutenir · Agir</p></td></tr>\n<tr><td style=\"padding:34px 40px 30px;\">\n<span style=\"display:inline-block;padding:5px 12px;background:${couleur};color:${couleurTexte};border:2px solid #1a1a1a;border-radius:999px;font-size:12px;font-weight:800;text-transform:uppercase;\">${esc(badge)}</span>\n<p style=\"margin:20px 0 6px;font-size:14px;color:#777;\">Bonjour ${esc(prenom)},</p>\n<h2 style=\"margin:0 0 14px;font-size:23px;font-weight:900;color:#1a1a1a;line-height:1.25;\">${esc(titre)}</h2>\n${corps}${encadre}${blocs || ''}${btn}\n</td></tr>\n<tr><td style=\"background:#1a1a1a;padding:18px 40px;\"><p style=\"margin:0;font-size:12px;color:#aaa;text-align:center;line-height:1.6;\">\n© ${new Date().getFullYear()} CountMeIn — Plateforme de bénévolat au Maroc<br>Vous pouvez désactiver ces e-mails depuis la page Notifications de votre espace.</p></td></tr>\n</table></td></tr></table></body></html>`;\n}\n\n// Lit la réponse de Claude : JSON conforme au schéma, sinon null (→ texte de secours, F48)\nfunction lireReponseIA(reponse) {\n  if (!reponse || !reponse.stop_reason || reponse.stop_reason === 'refusal') return null;\n  const bloc = (reponse.content || []).find(b => b.type === 'text');\n  if (!bloc) return null;\n  try { return JSON.parse(bloc.text); } catch (e) { return null; }\n}\n\nconst sources = $('Preparer la requete IA').all();\nreturn $input.all().map((item, i) => {\n  const r = sources[i].json;\n  const m = r.mission;\n  const ia = lireReponseIA(item.json) || {\n    // Texte standard si l'IA est indisponible (F48)\n    sujet: `Rappel : ${m.titre} commence bientôt`,\n    titre: 'Ta mission commence bientôt',\n    paragraphes: [\n      `Petit rappel : la mission « ${m.titre} » avec ${m.association} commence ${m.dateDebut.toLowerCase()}.`,\n      \"Si tu ne peux plus venir, préviens l'association au plus vite pour qu'elle puisse s'organiser.\",\n    ],\n  };\n  return { json: {\n    inscriptionId: r.inscriptionId,\n    email: r.email,\n    sujet: ia.sujet,\n    html: gabarit({\n      badge: 'Rappel', couleur: '#EEC22A', couleurTexte: '#1a1a1a', prenom: r.prenom,\n      titre: ia.titre, paragraphes: ia.paragraphes,\n      details: { Mission: m.titre, Association: m.association, Date: m.dateDebut, Lieu: m.adresse || m.ville },\n      bouton: 'Voir la mission', lien: m.lien,\n    }),\n  } };\n});\n"
+      }
+    },
+    {
+      "id": "efe37582-03b3-4799-9155-651141f723f7",
+      "name": "Envoyer l e-mail",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "fromEmail": "CountMeIn <votre.adresse@gmail.com>",
+        "toEmail": "={{ $json.email }}",
+        "subject": "={{ $json.sujet }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "notes": "Identifiant : SMTP (même compte que MAIL_USERNAME). Remplacez l'adresse de l'expéditeur."
+    },
+    {
+      "id": "e53d5883-3750-4597-8ebe-69a4a846399b",
+      "name": "Marquer le rappel envoye",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "url": "=http://host.docker.internal:8080/api/n8n/rappels/{{ $('Mettre en forme').item.json.inscriptionId }}/envoye",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "method": "POST"
+      },
+      "notes": "Identifiant : « CountMeIn backend » (Header Auth X-Webhook-Secret)"
+    }
+  ],
+  "connections": {
+    "Toutes les heures": {
+      "main": [
+        [
+          {
+            "node": "Rappels a envoyer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rappels a envoyer": {
+      "main": [
+        [
+          {
+            "node": "Preparer la requete IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparer la requete IA": {
+      "main": [
+        [
+          {
+            "node": "Rediger avec Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rediger avec Claude": {
+      "main": [
+        [
+          {
+            "node": "Mettre en forme",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mettre en forme": {
+      "main": [
+        [
+          {
+            "node": "Envoyer l e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envoyer l e-mail": {
+      "main": [
+        [
+          {
+            "node": "Marquer le rappel envoye",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Casablanca"
+  },
+  "pinData": {}
+}

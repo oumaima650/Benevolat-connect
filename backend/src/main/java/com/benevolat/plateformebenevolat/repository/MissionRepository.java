@@ -24,7 +24,7 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
     @Query("SELECT DISTINCT d.nom FROM Domaine d ORDER BY d.nom")
     List<String> findDistinctDomaines();
 
-    @Query("SELECT m FROM Mission m WHERE m.statut NOT IN ('BROUILLON', 'ANNULEE') " +
+    @Query("SELECT m FROM Mission m WHERE m.statut NOT IN ('BROUILLON', 'ANNULEE') AND m.estMasquee = false " +
             "AND (:query IS NULL OR :query = '' OR LOWER(m.titre) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(m.description) LIKE LOWER(CONCAT('%', :query, '%'))) " +
             "AND (:ville IS NULL OR :ville = '' OR LOWER(m.association.ville) = LOWER(:ville)) " +
             "AND (:domaine IS NULL OR :domaine = '' OR LOWER(m.domaine.nom) = LOWER(:domaine)) " +
@@ -33,7 +33,7 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
                                       @Param("ville") String ville,
                                       @Param("domaine") String domaine);
 
-    List<Mission> findTop4ByStatutNotInOrderByIdMissionDesc(List<StatutMission> statuts);
+    List<Mission> findTop4ByStatutNotInAndEstMasqueeFalseOrderByIdMissionDesc(List<StatutMission> statuts);
 
     @Query("SELECT m FROM Mission m WHERE m.titre = :titre AND m.idMission <> :excludeId ORDER BY m.dateDebut DESC")
     List<Mission> findEditionsPrecedentes(@Param("titre") String titre, @Param("excludeId") Long excludeId);

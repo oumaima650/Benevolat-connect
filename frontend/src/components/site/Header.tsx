@@ -22,7 +22,7 @@ export function Header() {
 
   function goToDashboard() {
     if (!user) return;
-    navigate({ to: user.role === "ASSOCIATION" ? "/association" : "/benevole" });
+    navigate({ to: user.role === "ADMIN" ? "/admin" : user.role === "ASSOCIATION" ? "/association" : "/benevole" });
   }
 
   return (

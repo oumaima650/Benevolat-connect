@@ -1,0 +1,23 @@
+# n8n pour CountMeIn — workflows rédigés par l'IA (rappel 24 h, renfort urgent, résumé hebdomadaire)
+# Lancement : docker compose up -d   puis   http://localhost:5678
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: countmein-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=Africa/Casablanca
+      - TZ=Africa/Casablanca
+      # Clé qui chiffre les identifiants enregistrés dans n8n : à définir une fois, ne plus changer
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-changez-cette-cle-countmein}
+      - N8N_DIAGNOSTICS_ENABLED=false
+    # Permet à n8n (dans Docker) de joindre le backend Spring Boot lancé sur la machine
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:

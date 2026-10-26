@@ -51,8 +51,64 @@
 - Logo CountMeIn embarqué en base64 depuis `backend/src/main/resources/certificat/countmein-logo.png`.
 - Flying Saucer = CSS 2.1 : pas de flex/box-shadow → tableaux + `position: absolute` + `z-index`.
 
+## 🔄 En cours (26/10/2026) — branche feat/notifs-Admin
+
+### ⚠️ Migration SQL à exécuter AVANT de démarrer le backend
+`database/migrations/2026-10-26-notifications-admin.sql` (colonnes Notification.categorie/lien,
+Association.motifRefus, Mission.motifSignalement/estMasquee).
+
+### 6. Notifications (F28-F31) — backend ✅ / frontend ✅
+- `NotificationService` : notification in-app + e-mail après commit, en arrière-plan ;
+  via webhook n8n si `N8N_WEBHOOK_URL` défini (secret `X-Webhook-Secret`), sinon SMTP ; repli SMTP si n8n KO.
+- Préférences (F31) : tout ou rien via `Utilisateur.notifEstActive` (pas de nouvelle colonne).
+  COMPTE / VALIDATION / MISSION_ANNULEE toujours envoyées.
+- Événements branchés : inscription / liste d'attente / promotion (F17) / désistement / mission modifiée
+  (date ou lieu, F08) / mission annulée (RM10) / renfort comblé (F45) / certificat / validation-refus
+  association / suspension / modération / nouvelle association → admins.
+- `RappelService` (F29) : toutes les 15 min, rappel 24 h avant, une seule fois (`rappelEnvoye`).
+- API : `GET /api/notifications`, `GET /non-lues/count`, `PATCH /{id}/lue`, `PATCH /lire-tout`,
+  `DELETE /{id}`, `GET|PUT /preferences`.
+- Règles ajoutées : RM06 (publication interdite si association non validée), annulation de mission
+  seulement avant le début, annulation d'inscription seulement avant le début (F18).
+
+### 7. Espace administrateur — backend ✅ / frontend ✅
+- `AdminInitializer` : crée l'admin au démarrage (`ADMIN_EMAIL` / `ADMIN_PASSWORD`, défaut
+  admin@countmein.ma / Admin@CountMeIn2026).
+- `/api/admin/**` (rôle ADMIN) : `GET /stats` (F34), `GET /associations?statut=`,
+  `PATCH /associations/{id}/valider|refuser` (F39), `GET /utilisateurs?role=&q=`,
+  `PATCH /utilisateurs/{id}/suspendre|reactiver` (F40), `GET /missions?filtre=signalees|masquees`,
+  `PATCH /missions/{id}/masquer|retablir` (F41).
+- `POST /api/missions/{id}/signaler` (connecté) ; missions masquées exclues de la recherche,
+  des missions en vedette et du détail public.
+- `JwtAuthFilter` : un compte suspendu/désactivé perd l'accès même avec un jeton valide (RM12).
+
+### Frontend (notifications + admin)
+- `components/notifications/NotificationCenter.tsx` : centre partagé (bénévole, association, admin),
+  lu/non lu, suppression, clic → page liée, préférence e-mail tout ou rien.
+- `hooks/use-unread-notifications.ts` : compteur live (30 s + focus + après action) dans les 3 layouts
+  (remplace les badges « 2 » / « 3 » codés en dur).
+- Espace admin : `admin.tsx` (layout), `admin.index.tsx` (KPIs + graphiques F34),
+  `admin.associations.tsx` (F39), `admin.utilisateurs.tsx` (F40), `admin.missions.tsx` (F41),
+  `admin.notifications.tsx`. Services : `services/http.ts`, `notificationApi.ts`, `adminApi.ts`.
+- `components/site/SignalerMission.tsx` sur la page mission publique (utilisateur connecté).
+- Redirections : ADMIN → /admin depuis les espaces bénévole/association et le Header.
+- `server.error.include-message=always` : les messages d'erreur métier s'affichent enfin dans les toasts.
+
 ### ⏳ Reste à faire
-- [ ] Notifier par email les bénévoles promus de la liste d'attente (actuellement promotion silencieuse)
+- [ ] Exécuter la migration SQL puis tester de bout en bout (rien n'a été lancé contre la BDD)
+- [ ] Tester les workflows n8n de bout en bout (voir n8n/README.md)
+
+### 8. E-mails : templates Java + n8n/IA ✅ (choix d'architecture)
+- E-mails liés à une action → **templates Java** (`EmailTemplates.java`, couleur/badge/bouton par catégorie,
+  encadré mission/date/lieu/rang). Ne dépendent plus de n8n.
+- **n8n + Claude** uniquement pour le planifié / non critique : `n8n/workflows/01-rappel-24h.json`,
+  `02-renfort-urgent.json` (bénévoles proches), `03-resume-hebdomadaire.json` (formule pondérée F47).
+- API n8n (secret `X-Webhook-Secret`) : `GET /api/n8n/rappels`, `POST /api/n8n/rappels/{id}/envoye`,
+  `GET /api/n8n/renforts/{missionId}/benevoles`, `GET /api/n8n/digest`.
+- Backend → n8n : webhook `{N8N_BASE_URL}/renfort` si places libres après promotion de la liste d'attente.
+- `RappelService` : sans n8n → envoie tout ; avec n8n → seulement e-mails coupés (in-app) + secours 3 h avant.
+- Config : `N8N_BASE_URL`, `N8N_WEBHOOK_SECRET` (vide = n8n désactivé). Guide : `n8n/README.md`.
+- F43 : la confirmation par lien est abandonnée au profit de la promotion automatique (cahier à mettre à jour).
 - [ ] Tests manuels des 4 points ci-dessus
 
 ---

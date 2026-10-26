@@ -1,5 +1,6 @@
 package com.benevolat.plateformebenevolat.service;
 
+import com.benevolat.plateformebenevolat.entity.CategorieNotif;
 import com.benevolat.plateformebenevolat.entity.Inscription;
 import com.benevolat.plateformebenevolat.entity.Mission;
 import com.benevolat.plateformebenevolat.entity.StatutInscription;
@@ -26,6 +27,7 @@ import java.util.List;
 public class MissionPlacesService {
 
     private final InscriptionRepository inscriptionRepository;
+    private final NotificationService notificationService;
 
     public int countConfirmes(Long missionId) {
         return (int) inscriptionRepository.countByMission_IdMissionAndStatut(missionId, StatutInscription.CONFIRMEE);
@@ -67,6 +69,15 @@ public class MissionPlacesService {
         }
         restantes -= nbPromus;
 
+        // F17 : chaque bénévole promu est prévenu
+        for (Inscription i : promus) {
+            notificationService.notifier(i.getBenevole(), CategorieNotif.PROMOTION,
+                    "Une place s'est libérée : vous êtes confirmé(e) !",
+                    "Bonne nouvelle : vous passez de la liste d'attente à une place confirmée pour la mission « "
+                            + m.getTitre() + " ».",
+                    "/missions/" + m.getIdMission(), NotificationService.detailsMission(m));
+        }
+
         List<Inscription> resteAttente = attente.subList(nbPromus, attente.size());
         for (int r = 0; r < resteAttente.size(); r++) {
             resteAttente.get(r).setRang(r + 1);
@@ -86,6 +97,10 @@ public class MissionPlacesService {
         } else if (s == StatutMission.RENFORT_URGENT && restantes == 0) {
             // Renfort comblé : la mission reprend son cours normal
             m.setNbRenfortDemande(0);
+            notificationService.notifier(m.getAssociation(), CategorieNotif.RENFORT,
+                    "Renfort comblé",
+                    "Le besoin de renfort de la mission « " + m.getTitre() + " » est entièrement comblé.",
+                    "/association/renforts");
             boolean demarree = m.getDateDebut() != null && !m.getDateDebut().isAfter(LocalDateTime.now());
             m.setStatut(demarree ? StatutMission.EN_COURS : StatutMission.SATUREE);
         }

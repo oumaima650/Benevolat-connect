@@ -11,6 +11,7 @@ import { missionPresentation } from "@/components/site/mission-presentation";
 import missionApi, { type MissionDetailBackend } from "@/services/missionApi";
 import { inscriptionApi, type InscriptionStatus } from "@/services/missionApi";
 import { toast } from "sonner";
+import { SignalerMission } from "@/components/site/SignalerMission";
 
 export const Route = createFileRoute("/missions/$id")({
   loader: async ({ params }) => {
@@ -319,6 +320,9 @@ function MissionDetail() {
                   {assoContact && <li className="flex items-center gap-2"><Phone className="h-4 w-4" /><a href={`tel:${assoContact.replace(/\s/g, "")}`}>{assoContact}</a></li>}
                 </ul>
               </div>
+            )}
+            {user && user.role !== "ASSOCIATION" && user.role !== "ADMIN" && missionId && (
+              <div className="flex justify-center"><SignalerMission missionId={missionId} /></div>
             )}
           </aside>
         </div>
