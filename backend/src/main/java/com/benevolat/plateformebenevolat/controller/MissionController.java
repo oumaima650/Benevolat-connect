@@ -3,9 +3,11 @@ package com.benevolat.plateformebenevolat.controller;
 import com.benevolat.plateformebenevolat.dto.MissionCardDto;
 import com.benevolat.plateformebenevolat.dto.MissionDetailDto;
 import com.benevolat.plateformebenevolat.dto.MissionSearchCriteria;
+import com.benevolat.plateformebenevolat.service.MissionExplorerService;
 import com.benevolat.plateformebenevolat.service.MissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.List;
 public class MissionController {
 
     private final MissionService missionService;
+    private final MissionExplorerService missionExplorerService;
 
     @GetMapping("/search")
     public ResponseEntity<List<MissionCardDto>> searchMissions(
@@ -33,7 +36,12 @@ public class MissionController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MissionDetailDto> getMissionById(@PathVariable Long id) {
+    public ResponseEntity<?> getMissionById(@PathVariable Long id, Authentication authentication) {
+        if (authentication != null
+                && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_BENEVOLE".equals(a.getAuthority()))) {
+            return ResponseEntity.ok(missionExplorerService.getDetail(authentication.getName(), id));
+        }
         return missionService.getMissionDetail(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

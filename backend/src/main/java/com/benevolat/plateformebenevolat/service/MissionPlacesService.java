@@ -83,9 +83,9 @@ public class MissionPlacesService {
             m.setStatut(StatutMission.SATUREE);
         } else if (s == StatutMission.SATUREE && restantes > 0) {
             m.setStatut(StatutMission.PUBLIEE);
-        } else if (s == StatutMission.RENFORT_URGENT && restantes == 0) {
-            // Renfort comblé : la mission reprend son cours normal
-            m.setNbRenfortDemande(0);
+        } else if (s == StatutMission.RENFORT_URGENT
+                && (m.getNbRenfortDemande() == null || m.getNbRenfortDemande() <= 0)
+                && restantes == 0) {
             boolean demarree = m.getDateDebut() != null && !m.getDateDebut().isAfter(LocalDateTime.now());
             m.setStatut(demarree ? StatutMission.EN_COURS : StatutMission.SATUREE);
         }

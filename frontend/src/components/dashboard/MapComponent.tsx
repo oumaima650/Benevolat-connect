@@ -23,6 +23,23 @@ export interface MapMarker {
   date: string;
   places: number;
   statut: MissionStatut;
+  /** Couleur du marqueur (selon le statut). Si absente, le pin Leaflet par défaut est utilisé. */
+  color?: string;
+  /** Statut d'inscription du bénévole sur cette mission */
+  inscriptionStatut?: 'CONFIRMEE' | 'EN_LISTE_ATTENTE' | 'ANNULEE' | null;
+}
+
+/** Marqueur rond coloré (aucune image externe requise). */
+function marqueurColore(color: string) {
+  return L.divIcon({
+    className: '',
+    html:
+      `<span style="display:block;width:18px;height:18px;border-radius:50%;` +
+      `background:${color};border:2px solid #1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,.45)"></span>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+    popupAnchor: [0, -10],
+  });
 }
 
 interface MapComponentProps {
@@ -31,6 +48,7 @@ interface MapComponentProps {
   zoom?: number;
   height?: string;
   onViewDetail?: (marker: MapMarker) => void;
+  onVoirCertificat?: (marker: MapMarker) => void;
 }
 
 export default function MapComponent({
@@ -39,6 +57,7 @@ export default function MapComponent({
   zoom = 8,
   height = 'calc(100vh - 12rem)',
   onViewDetail,
+  onVoirCertificat,
 }: MapComponentProps) {
   return (
     <MapContainer
@@ -51,7 +70,11 @@ export default function MapComponent({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {markers.map((m) => (
-        <Marker key={m.id} position={[m.lat, m.lng]}>
+        <Marker
+          key={m.id}
+          position={[m.lat, m.lng]}
+          icon={m.color ? marqueurColore(m.color) : undefined}
+        >
           <Popup>
             <div style={{ minWidth: 180 }}>
               <p style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.3, marginBottom: 6 }}>{m.titre}</p>
@@ -77,6 +100,24 @@ export default function MapComponent({
                   }}
                 >
                   Voir le détail
+                </button>
+              )}
+              {onVoirCertificat && m.statut === 'TERMINEE' && m.inscriptionStatut === 'CONFIRMEE' && (
+                <button
+                  onClick={() => onVoirCertificat(m)}
+                  style={{
+                    marginTop: 4,
+                    width: '100%',
+                    border: '2px solid #1a1a1a',
+                    background: '#fde047',
+                    padding: '4px 8px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Voir certificat
                 </button>
               )}
             </div>

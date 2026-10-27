@@ -86,12 +86,26 @@ public class DataInitializer implements CommandLineRunner {
     private void initNiveaux() {
         if (niveauRepository.count() == 0) {
             niveauRepository.saveAll(List.of(
-                new Niveau("Débutant"),
-                new Niveau("Engagé"),
-                new Niveau("Expert"),
-                new Niveau("Champion")
+                new Niveau("Débutant", 0),
+                new Niveau("Engagé", 5),
+                new Niveau("Expert", 15),
+                new Niveau("Champion", 30)
             ));
             log.info("4 niveaux initiaux insérés avec succès !");
+            return;
+        }
+        for (Niveau n : niveauRepository.findAll()) {
+            if (n.getSeuilMissions() != null) {
+                continue;
+            }
+            switch (n.getNom()) {
+                case "Débutant" -> n.setSeuilMissions(0);
+                case "Engagé" -> n.setSeuilMissions(5);
+                case "Expert" -> n.setSeuilMissions(15);
+                case "Champion" -> n.setSeuilMissions(30);
+                default -> { }
+            }
+            niveauRepository.save(n);
         }
     }
 
