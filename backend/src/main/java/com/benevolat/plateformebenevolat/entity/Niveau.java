@@ -23,7 +23,16 @@ public class Niveau {
     @Column(name = "nom", nullable = false, unique = true, length = 50)
     private String nom;
 
+    /** Seuil de missions réalisées pour atteindre ce niveau. Null → constantes Java. */
+    @Column(name = "seuilMissions")
+    private Integer seuilMissions;
+
     public Niveau(String nom) {
         this.nom = nom;
+    }
+
+    public Niveau(String nom, Integer seuilMissions) {
+        this.nom = nom;
+        this.seuilMissions = seuilMissions;
     }
 }

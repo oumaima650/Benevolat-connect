@@ -287,13 +287,24 @@ function ProfilBenevole() {
   }
 
   /* ── changement mot de passe ── */
-  function handlePwSave(e: React.FormEvent) {
+  async function handlePwSave(e: React.FormEvent) {
     e.preventDefault();
+    if (!token) { toast.error('Vous devez être connecté.'); return; }
     if (pw.nouveau.length < 6) { toast.error('Le nouveau mot de passe doit faire au moins 6 caractères.'); return; }
     if (pw.nouveau !== pw.confirmation) { toast.error('Les mots de passe ne correspondent pas.'); return; }
-    toast.success('Mot de passe modifié !');
-    setPw({ actuel: '', nouveau: '', confirmation: '' });
-    setPwOpen(false);
+    
+    try {
+      const result = await benevoleApi.changePassword(token, pw.actuel, pw.nouveau);
+      if (result.success) {
+        toast.success('Mot de passe modifié !');
+        setPw({ actuel: '', nouveau: '', confirmation: '' });
+        setPwOpen(false);
+      } else {
+        toast.error(result.message || 'Erreur lors du changement de mot de passe');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors du changement de mot de passe');
+    }
   }
 
   /* ── skeleton ── */

@@ -27,4 +27,6 @@ public interface CertificatRepository extends JpaRepository<Certificat, Long> {
     Optional<Certificat> findByInscription_IdInscription(Long inscriptionId);
 
     List<Certificat> findByInscription_Benevole_IdUtilisateur(Long benevoleId);
+
+    long countByInscription_Benevole_IdUtilisateur(Long benevoleId);
 }
