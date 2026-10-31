@@ -3,6 +3,7 @@
 -- À exécuter une fois sur benevolat_db AVANT de démarrer le backend
 -- (spring.jpa.hibernate.ddl-auto=validate).
 -- Idempotent : chaque colonne n'est ajoutée que si elle n'existe pas déjà.
+-- Noms en snake_case : Hibernate convertit @Column(name = "motifRefus") en motif_refus.
 -- =====================================================================
 
 DROP PROCEDURE IF EXISTS add_column_if_missing;
@@ -27,10 +28,10 @@ CALL add_column_if_missing('Notification', 'categorie', "VARCHAR(30) NOT NULL DE
 CALL add_column_if_missing('Notification', 'lien', 'VARCHAR(255) NULL');
 
 -- Association : motif de refus saisi par l'administrateur (F39)
-CALL add_column_if_missing('Association', 'motifRefus', 'VARCHAR(500) NULL');
+CALL add_column_if_missing('Association', 'motif_refus', 'VARCHAR(500) NULL');
 
 -- Mission : modération (F41)
-CALL add_column_if_missing('Mission', 'motifSignalement', 'VARCHAR(500) NULL');
-CALL add_column_if_missing('Mission', 'estMasquee', 'BOOLEAN NOT NULL DEFAULT FALSE');
+CALL add_column_if_missing('Mission', 'motif_signalement', 'VARCHAR(500) NULL');
+CALL add_column_if_missing('Mission', 'est_masquee', 'BOOLEAN NOT NULL DEFAULT FALSE');
 
 DROP PROCEDURE IF EXISTS add_column_if_missing;

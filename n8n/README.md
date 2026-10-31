@@ -1,6 +1,6 @@
 # Workflows n8n — CountMeIn
 
-n8n envoie les e-mails **planifiés et non critiques**, rédigés par l'IA (Claude). Tous les e-mails
+n8n envoie les e-mails **planifiés et non critiques**, rédigés par l'IA (Google Gemini, offre gratuite). Tous les e-mails
 liés à une action (inscription, liste d'attente, promotion, annulation, validation, certificat…)
 partent directement du backend avec les templates Java (`EmailTemplates.java`) : ils ne dépendent pas de n8n.
 
@@ -11,7 +11,7 @@ partent directement du backend avec les templates Java (`EmailTemplates.java`) :
 | `03-resume-hebdomadaire.json` | Chaque lundi à 9 h | Envoie à chaque bénévole 1 à 3 missions recommandées, avec une explication |
 
 ```
-Backend Spring Boot                                   n8n                               Claude / SMTP
+Backend Spring Boot                                   n8n                               Gemini / SMTP
 ───────────────────                                   ───                               ─────────────
 GET  /api/n8n/rappels            ◄── toutes les heures ── Rappel 24 h ──► rédaction IA ──► e-mail
 POST /api/n8n/rappels/{id}/envoye ◄──────────────────────┘
@@ -24,7 +24,7 @@ GET  /api/n8n/digest             ◄── lundi 9 h ─────────
 distance, score, préférences e-mail) ; n8n se contente de rédiger avec l'IA et d'envoyer.
 
 **Résilience (NF07)** :
-- si Claude ne répond pas ou refuse, un texte standard est envoyé à la place (F48) ;
+- si Gemini ne répond pas (quota atteint, clé invalide…), un texte standard est envoyé à la place (F48) ;
 - si n8n est arrêté, le backend envoie lui-même les rappels encore en attente 3 h avant la mission.
 
 ---
@@ -64,8 +64,14 @@ Menu **Overview → Credentials → Create credential**.
 | Nom à donner | Type | Champs |
 |---|---|---|
 | **CountMeIn backend** | Header Auth | Name : `X-Webhook-Secret` — Value : la valeur de `N8N_WEBHOOK_SECRET` |
-| **Anthropic API** | Header Auth | Name : `x-api-key` — Value : votre clé API Anthropic (console.anthropic.com) |
+| **Gemini API** | Header Auth | Name : `x-goog-api-key` — Value : votre clé Gemini gratuite (voir ci-dessous) |
 | **SMTP CountMeIn** | SMTP | Host `smtp.gmail.com`, Port `587`, SSL/TLS désactivé (STARTTLS), User/Password : les mêmes que `MAIL_USERNAME` / `MAIL_PASSWORD` |
+
+### Obtenir la clé Gemini (gratuite, sans carte bancaire)
+
+1. Allez sur https://aistudio.google.com/apikey et connectez-vous avec un compte Google.
+2. **Create API key** (acceptez de créer un projet si c'est demandé), puis copiez la clé (`AIza...`).
+3. Collez-la dans l'identifiant **Gemini API**.
 
 La clé API et le mot de passe restent chiffrés dans n8n : ils ne sont jamais écrits dans les fichiers JSON des workflows (NF01).
 
@@ -76,7 +82,7 @@ Pour chacun des 3 fichiers de `n8n/workflows/` :
 1. **Overview → Create workflow → ⋯ (en haut à droite) → Import from File**.
 2. Ouvrez chaque nœud marqué d'un avertissement et choisissez l'identifiant (la note du nœud indique lequel) :
    - nœuds HTTP vers le backend et nœud Webhook → **CountMeIn backend** ;
-   - nœud **Rediger avec Claude** → **Anthropic API** ;
+   - nœud **Rediger avec Gemini** → **Gemini API** ;
    - nœud **Envoyer l e-mail** → **SMTP CountMeIn**.
 3. Dans **Envoyer l e-mail**, remplacez `votre.adresse@gmail.com` par l'adresse d'expédition (la même que `MAIL_USERNAME`).
 4. **Save**.
@@ -114,16 +120,15 @@ devient `http://localhost:5678/webhook/renfort`, l'URL utilisée par le backend 
 
 ## 7. Modèle d'IA
 
-Les workflows appellent l'API Messages d'Anthropic (`POST https://api.anthropic.com/v1/messages`) :
+Les workflows appellent l'API Gemini de Google (`POST .../v1beta/models/{modèle}:generateContent`) :
 
-- **modèle** `claude-opus-5-5` ;
-- **effort** `low` : les e-mails sont courts, inutile de faire réfléchir longtemps le modèle ;
-- **sortie JSON imposée** (`output_config.format`) : la réponse respecte toujours le schéma attendu
-  (sujet, titre, paragraphes) ;
-- **`fallbacks: "default"`** (en-tête `anthropic-beta: server-side-fallback-2026-07-01`) : si le modèle
-  refuse une demande, l'API la relance automatiquement sur un autre modèle.
+- **modèle** `gemini-flash-latest` (offre gratuite) ;
+- **sortie JSON imposée** (`responseMimeType: application/json`) : la réponse suit le schéma attendu
+  (sujet, titre, paragraphes) ; si elle est invalide, le texte standard est envoyé ;
+- **offre gratuite limitée** (environ une dizaine de requêtes par minute) : le nœud **Rediger avec Gemini**
+  envoie une requête toutes les 7 secondes.
 
-Pour changer de modèle, modifiez `model` dans le nœud **Preparer la requete IA** de chaque workflow.
+Pour changer de modèle, modifiez `MODELE` dans le nœud **Preparer la requete IA** de chaque workflow.
 
 Données envoyées à l'IA : uniquement le prénom, la ville, les centres d'intérêt et les informations
 publiques de la mission (jamais l'e-mail, le nom de famille ou le téléphone).
@@ -135,7 +140,7 @@ publiques de la mission (jamais l'e-mail, le nom de famille ou le téléphone).
 | `401 Secret n8n invalide` | La valeur de l'identifiant **CountMeIn backend** ≠ `N8N_WEBHOOK_SECRET` |
 | `503 Intégration n8n non configurée` | `N8N_WEBHOOK_SECRET` vide dans `backend/.env`, ou backend pas redémarré |
 | `ECONNREFUSED host.docker.internal:8080` | Le backend n'est pas lancé |
-| E-mail reçu avec le texte standard | Erreur de l'IA : ouvrez le nœud **Rediger avec Claude** pour lire la réponse (clé invalide, crédit épuisé…) |
+| E-mail reçu avec le texte standard | Erreur de l'IA : ouvrez le nœud **Rediger avec Gemini** pour lire la réponse (clé invalide, quota gratuit dépassé…) |
 | Le renfort ne déclenche rien | Workflow non activé, `N8N_BASE_URL` vide, ou plus aucune place libre après la promotion de la liste d'attente |
 | Erreur SMTP `535` | Utilisez un **mot de passe d'application** Gmail, pas le mot de passe du compte |
 

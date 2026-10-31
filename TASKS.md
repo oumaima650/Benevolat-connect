@@ -101,7 +101,7 @@ Association.motifRefus, Mission.motifSignalement/estMasquee).
 ### 8. E-mails : templates Java + n8n/IA ✅ (choix d'architecture)
 - E-mails liés à une action → **templates Java** (`EmailTemplates.java`, couleur/badge/bouton par catégorie,
   encadré mission/date/lieu/rang). Ne dépendent plus de n8n.
-- **n8n + Claude** uniquement pour le planifié / non critique : `n8n/workflows/01-rappel-24h.json`,
+- **n8n + IA (Google Gemini, offre gratuite)** uniquement pour le planifié / non critique : `n8n/workflows/01-rappel-24h.json`,
   `02-renfort-urgent.json` (bénévoles proches), `03-resume-hebdomadaire.json` (formule pondérée F47).
 - API n8n (secret `X-Webhook-Secret`) : `GET /api/n8n/rappels`, `POST /api/n8n/rappels/{id}/envoye`,
   `GET /api/n8n/renforts/{missionId}/benevoles`, `GET /api/n8n/digest`.
