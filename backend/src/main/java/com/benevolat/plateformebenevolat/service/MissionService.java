@@ -37,12 +37,14 @@ public class MissionService {
 
     public List<MissionCardDto> getFeaturedMissions() {
         List<StatutMission> excluded = Arrays.asList(StatutMission.BROUILLON, StatutMission.ANNULEE);
-        List<Mission> missions = missionRepository.findTop4ByStatutNotInOrderByIdMissionDesc(excluded);
+        List<Mission> missions = missionRepository.findTop4ByStatutNotInAndEstMasqueeFalseOrderByIdMissionDesc(excluded);
         return missions.stream().map(this::toCardDto).collect(Collectors.toList());
     }
 
     public Optional<MissionDetailDto> getMissionDetail(Long id) {
-        return missionRepository.findById(id).map(this::toDetailDto);
+        return missionRepository.findById(id)
+                .filter(m -> !Boolean.TRUE.equals(m.getEstMasquee()))   // F41 : masquée par la modération
+                .map(this::toDetailDto);
     }
 
     public List<String> getVilles() {

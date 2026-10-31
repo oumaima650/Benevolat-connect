@@ -8,7 +8,6 @@ import com.benevolat.plateformebenevolat.service.InscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +27,6 @@ public class BenevoleController {
     private final BadgeRepository badgeRepository;
     private final ObtentionRepository obtentionRepository;
     private final NiveauRepository niveauRepository;
-    private final PasswordEncoder passwordEncoder;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyProfile(Authentication authentication) {
@@ -45,6 +43,31 @@ public class BenevoleController {
             Authentication authentication,
             @RequestBody BenevoleProfileDto dto) {
         return ResponseEntity.ok(benevoleProfileService.updateProfile(authentication.getName(), dto));
+    }
+
+    /** Changer le mot de passe (PUT ou PATCH) ; un e-mail d'alerte est envoyé. */
+    @RequestMapping(value = "/me/password", method = {RequestMethod.PUT, RequestMethod.PATCH})
+    public ResponseEntity<Map<String, Object>> changePassword(
+            Authentication authentication,
+            @RequestBody Map<String, String> body) {
+        String currentPassword = body.getOrDefault("currentPassword", "");
+        String newPassword = body.getOrDefault("newPassword", "");
+        if (currentPassword.isBlank() || newPassword.isBlank()) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", "Ancien et nouveau mot de passe requis."));
+        }
+        if (newPassword.length() < 6) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", "Le mot de passe doit contenir au moins 6 caractères."));
+        }
+        benevoleProfileService.changePassword(authentication.getName(), currentPassword, newPassword);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Mot de passe mis à jour avec succès."));
+    }
+
+    @PatchMapping("/me/desactiver")
+    public ResponseEntity<Map<String, Object>> desactiver(Authentication authentication) {
+        benevoleProfileService.desactiver(authentication.getName());
+        return ResponseEntity.ok(Map.of("success", true, "message", "Compte désactivé."));
     }
 
     @GetMapping("/mes-inscriptions")
@@ -145,38 +168,5 @@ public class BenevoleController {
             .niveau(niveauInfo)
             .badges(badgeDtos)
             .build());
-    }
-
-    /** PUT /api/benevoles/me/password — changer le mot de passe */
-    @PutMapping("/me/password")
-    public ResponseEntity<?> changePassword(
-            Authentication authentication,
-            @RequestBody Map<String, String> request) {
-        String currentPassword = request.get("currentPassword");
-        String newPassword = request.get("newPassword");
-
-        if (currentPassword == null || newPassword == null) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Mot de passe actuel et nouveau mot de passe requis"));
-        }
-
-        if (newPassword.length() < 6) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Le nouveau mot de passe doit contenir au moins 6 caractères"));
-        }
-
-        var benevole = benevoleRepository.findByEmail(authentication.getName()).orElse(null);
-        if (benevole == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        // Vérifier l'ancien mot de passe
-        if (!passwordEncoder.matches(currentPassword, benevole.getMotDePasseHash())) {
-            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Mot de passe actuel incorrect"));
-        }
-
-        // Mettre à jour le mot de passe
-        benevole.setMotDePasseHash(passwordEncoder.encode(newPassword));
-        benevoleRepository.save(benevole);
-
-        return ResponseEntity.ok(Map.of("success", true, "message", "Mot de passe modifié avec succès"));
     }
 }

@@ -5,6 +5,7 @@ import com.benevolat.plateformebenevolat.entity.*;
 import com.benevolat.plateformebenevolat.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,6 +23,9 @@ public class BenevoleProfileService {
     private final CompetenceRepository competenceRepository;
     private final DomaineRepository domaineRepository;
     private final InscriptionRepository inscriptionRepository;
+    private final InscriptionService inscriptionService;
+    private final NotificationService notificationService;
+    private final PasswordEncoder passwordEncoder;
     private final NotificationRepository notificationRepository;
     private final ObtentionRepository obtentionRepository;
     private final CertificatRepository certificatRepository;
@@ -113,17 +117,12 @@ public class BenevoleProfileService {
                 .collect(Collectors.toList());
 
         // 6. Notifications
-        List<NotificationDto> dernieresNotifications = notificationRepository.findByUtilisateur_IdUtilisateurOrderByCreatedAtDesc(b.getIdUtilisateur())
+        List<NotificationDto> dernieresNotifications = notificationRepository.findTop3ByUtilisateur_IdUtilisateurOrderByCreatedAtDesc(b.getIdUtilisateur())
                 .stream()
-                .map(n -> NotificationDto.builder()
-                        .id(n.getIdNotification())
-                        .type(n.getType())
-                        .titre(n.getTitre())
-                        .message(n.getMessage())
-                        .lu(Boolean.TRUE.equals(n.getLue()))
-                        .createdAt(n.getCreatedAt())
-                        .build())
-                .limit(3)
+                .map(n -> new NotificationDto(n.getIdNotification(),
+                        n.getCategorie() != null ? n.getCategorie().name() : "SYSTEME",
+                        n.getTitre(), n.getMessage(), n.getLien(),
+                        Boolean.TRUE.equals(n.getLue()), n.getCreatedAt()))
                 .collect(Collectors.toList());
 
         // 7. Activité mensuelle (6 derniers mois)
@@ -273,5 +272,50 @@ public class BenevoleProfileService {
 
         benevoleRepository.save(b);
         return getProfile(email);
+    }
+
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        Benevole b = charger(email);
+        if (!passwordEncoder.matches(currentPassword, b.getMotDePasseHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mot de passe actuel incorrect.");
+        }
+        b.setMotDePasseHash(passwordEncoder.encode(newPassword));
+        benevoleRepository.save(b);
+        notificationService.notifierMotDePasseModifie(b);
+    }
+
+    /**
+     * Désactivation volontaire : annule les inscriptions aux missions pas encore commencées
+     * (sauf venue confirmée en renfort urgent ; promotion de la liste d'attente et association prévenue), puis envoie une confirmation.
+     */
+    public void desactiver(String email) {
+        Benevole b = charger(email);
+        LocalDateTime now = LocalDateTime.now();
+        List<String> annulees = new ArrayList<>();
+        inscriptionRepository.findByBenevole_IdUtilisateurOrderByDateInscriptionDesc(b.getIdUtilisateur()).stream()
+                .filter(i -> i.getStatut() != StatutInscription.ANNULEE)
+                .filter(i -> i.getMission().getDateDebut() == null || i.getMission().getDateDebut().isAfter(now))
+                // Une venue confirmée en renfort urgent ne peut pas être annulée (règle d'InscriptionService)
+                .filter(i -> !(i.getStatut() == StatutInscription.CONFIRMEE
+                        && i.getMission().getStatut() == StatutMission.RENFORT_URGENT))
+                .forEach(i -> {
+                    inscriptionService.annuler(email, i.getMission().getIdMission());
+                    annulees.add(i.getMission().getTitre());
+                });
+        b.setStatut(StatutUtilisateur.DESACTIVE);
+        benevoleRepository.save(b);
+        notificationService.notifier(b, CategorieNotif.COMPTE,
+                "Votre compte a été désactivé",
+                "Votre compte CountMeIn a bien été désactivé à votre demande."
+                        + (annulees.isEmpty() ? "" : "\n" + annulees.size() + " inscription(s) annulée(s) : "
+                                + String.join(", ", annulees) + ".")
+                        + "\nVotre historique et vos certificats sont conservés. Pour réactiver votre compte,"
+                        + " contactez l'équipe CountMeIn.",
+                null);
+    }
+
+    private Benevole charger(String email) {
+        return benevoleRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bénévole introuvable."));
     }
 }

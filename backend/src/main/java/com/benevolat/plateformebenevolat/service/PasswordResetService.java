@@ -28,6 +28,7 @@ public class PasswordResetService {
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     /**
      * Traite la demande de réinitialisation de mot de passe (génère un token).
@@ -89,6 +90,7 @@ public class PasswordResetService {
         userRepository.save(user);
 
         tokenRepository.delete(resetToken);
+        notificationService.notifierMotDePasseModifie(user);
 
         log.info("Mot de passe réinitialisé pour l'utilisateur : {}", user.getEmail());
         return true;

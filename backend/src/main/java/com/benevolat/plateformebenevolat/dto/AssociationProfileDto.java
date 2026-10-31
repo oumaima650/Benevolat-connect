@@ -25,6 +25,7 @@ public class AssociationProfileDto {
     private String contact;
     private String logoUrl;
     private String statutValidation; // EN_ATTENTE / VALIDE / REFUSE
+    private String motifRefus;       // F39 : motif saisi par l'administrateur en cas de refus
     private String statutCompte;     // ACTIF / DESACTIVE / SUSPENDUE
     private Double latitude;
     private Double longitude;

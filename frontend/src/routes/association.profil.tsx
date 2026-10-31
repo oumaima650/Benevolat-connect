@@ -42,7 +42,7 @@ function StatutCard({ statut }: { statut?: string }) {
       <ShieldAlert className="h-6 w-6 text-red-600 shrink-0 mt-0.5" />
       <div>
         <p className="font-bold text-red-800">Demande refusée</p>
-        <p className="text-xs text-red-700 mt-0.5">Contactez l'équipe CountMeIn pour plus d'informations.</p>
+        <p className="text-xs text-red-700 mt-0.5">Corrigez votre profil puis enregistrez : votre dossier sera renvoyé en validation.</p>
       </div>
     </div>
   );
@@ -179,9 +179,10 @@ function ProfilAssociation() {
         longitude: position[1],
         domaineIds: selectedDomaineIds,
       });
+      const renvoye = profile?.statutValidation === 'REFUSE' && updated.statutValidation === 'EN_ATTENTE';
       setProfile(updated);
       if (user) loginUser({ ...user, nomAssociation: updated.nomAssociation, photoUrl: updated.logoUrl ?? '' }, token);
-      toast.success('Profil mis à jour !');
+      toast.success(renvoye ? 'Profil mis à jour : votre dossier a été renvoyé en validation.' : 'Profil mis à jour !');
     } catch (err: any) {
       toast.error(err.message ?? 'Erreur lors de la mise à jour.');
     } finally { setSaving(false); }

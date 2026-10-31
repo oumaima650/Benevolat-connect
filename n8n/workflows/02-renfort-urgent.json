@@ -1,0 +1,182 @@
+{
+  "name": "CountMeIn — Renfort urgent (IA)",
+  "nodes": [
+    {
+      "id": "9efba387-ae14-4f74-ae41-89ea13e74462",
+      "name": "Renfort declare",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "renfort",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "93def34f-8020-449b-97e4-e0514b2c8119",
+      "notes": "Appelé par le backend quand une association demande un renfort. Identifiant : « CountMeIn backend »."
+    },
+    {
+      "id": "211ed444-5146-4650-ac0e-ed52f719cf02",
+      "name": "Benevoles proches",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "url": "=http://host.docker.internal:8080/api/n8n/renforts/{{ $json.body.missionId }}/benevoles",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "notes": "Identifiant : « CountMeIn backend » (Header Auth X-Webhook-Secret)"
+    },
+    {
+      "id": "ee03bd97-d436-4eb9-9188-1b4f0dae76ea",
+      "name": "Preparer la requete IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const SYSTEME = \"Tu rédiges des e-mails pour CountMeIn, une plateforme marocaine qui met en relation bénévoles et associations. Écris en français, tutoie le bénévole, avec un ton chaleureux, simple et concret. Utilise uniquement les informations fournies dans les données : n'invente ni date, ni horaire, ni lieu, ni consigne, ni matériel, ni chiffre. Si une information manque, n'en parle pas. Pas de formule de politesse finale ni de signature (elles sont ajoutées par le gabarit). Au plus un émoji dans tout l'e-mail. Le sujet fait moins de 70 caractères. Tâche : l'association a un besoin urgent de bénévoles supplémentaires pour une mission. Invite la personne à venir aider. Indique le nombre de places restantes et la date. Explique pourquoi on la contacte (proximité si une distance est fournie, domaine qui l'intéresse, compétences utiles) uniquement à partir des champs fournis. Précise que l'inscription se fait directement sur la page de la mission, premier arrivé premier servi.\";\nconst SCHEMA = {\"type\": \"object\", \"properties\": {\"sujet\": {\"type\": \"string\", \"description\": \"Objet de l'e-mail\"}, \"titre\": {\"type\": \"string\", \"description\": \"Titre affiché en haut de l'e-mail (court)\"}, \"paragraphes\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}, \"description\": \"2 ou 3 paragraphes courts\"}}, \"required\": [\"sujet\", \"titre\", \"paragraphes\"], \"additionalProperties\": false};\n// Modèle gratuit Google Gemini (clé AI Studio). Pour en changer, modifiez MODELE.\nconst MODELE = 'gemini-flash-latest';\nfunction requeteIA(donnees) {\n  return {\n    url: `https://generativelanguage.googleapis.com/v1beta/models/${MODELE}:generateContent`,\n    corps: {\n      systemInstruction: { parts: [{ text: SYSTEME +\n        ' Réponds uniquement avec un objet JSON valide respectant ce schéma : ' + JSON.stringify(SCHEMA) }] },\n      contents: [{ role: 'user', parts: [{ text: 'Données :\\n' + JSON.stringify(donnees, null, 2) }] }],\n      // Sortie JSON imposée ; température modérée pour un ton naturel sans inventer\n      generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },\n    },\n  };\n}\n\n// Le backend renvoie { mission, benevoles[] } : une requête IA par bénévole proche\nconst { mission, benevoles } = $input.first().json;\nreturn (benevoles || []).map(b => ({ json: {\n  email: b.email, prenom: b.prenom, mission,\n  requeteIA: requeteIA({\n    prenom: b.prenom,\n    distanceKm: b.distanceKm, domaineQuiInteresse: b.domaineCorrespond, competencesUtiles: b.competencesUtiles,\n    mission: mission.titre, association: mission.association, domaine: mission.domaine,\n    description: mission.description, debut: mission.dateDebut, lieu: mission.adresse || mission.ville,\n    placesRestantes: mission.placesRestantes,\n  }),\n} }));\n"
+      }
+    },
+    {
+      "id": "b2de1ea1-e679-43fd-8d6c-a0618109eab6",
+      "name": "Rediger avec Gemini",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.requeteIA.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": false,
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.requeteIA.corps) }}",
+        "options": {
+          "timeout": 120000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 7000
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Identifiant : « Gemini API » (Header Auth x-goog-api-key, clé gratuite aistudio.google.com). En cas d'erreur, le texte de secours est utilisé."
+    },
+    {
+      "id": "a08cc473-2ea9-4817-9136-d9353bd068ab",
+      "name": "Mettre en forme",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Gabarit HTML CountMeIn (même charte que les e-mails envoyés par le backend)\nfunction esc(s) {\n  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n}\nfunction gabarit({ badge, couleur, couleurTexte, prenom, titre, paragraphes, details, blocs, bouton, lien }) {\n  const corps = (paragraphes || []).map(p =>\n    `<p style=\"margin:0 0 14px;font-size:15px;line-height:1.7;color:#444;\">${esc(p)}</p>`).join('');\n  const lignes = Object.entries(details || {}).filter(([, v]) => v).map(([k, v]) =>\n    `<tr><td style=\"padding:7px 0;font-size:13px;color:#777;width:110px;vertical-align:top;\">${esc(k)}</td>` +\n    `<td style=\"padding:7px 0;font-size:14px;font-weight:700;color:#1a1a1a;\">${esc(v)}</td></tr>`).join('');\n  const encadre = lignes ? `<table cellpadding=\"0\" cellspacing=\"0\" style=\"width:100%;margin-top:8px;border:2px solid #1a1a1a;border-left:8px solid ${couleur};border-radius:10px;\"><tr><td style=\"padding:12px 18px;\"><table cellpadding=\"0\" cellspacing=\"0\" style=\"width:100%;\">${lignes}</table></td></tr></table>` : '';\n  const btn = lien ? `<table cellpadding=\"0\" cellspacing=\"0\" style=\"margin:24px 0 8px;\"><tr><td style=\"background:${couleur};border:2px solid #1a1a1a;border-radius:10px;box-shadow:3px 3px 0 #1a1a1a;\"><a href=\"${esc(lien)}\" style=\"display:inline-block;padding:13px 26px;font-size:15px;font-weight:800;color:${couleurTexte};text-decoration:none;\">${esc(bouton)} →</a></td></tr></table>` : '';\n  return `<!DOCTYPE html><html lang=\"fr\"><head><meta charset=\"UTF-8\"></head>\n<body style=\"margin:0;padding:0;background:#f5f0e8;font-family:'Helvetica Neue',Arial,sans-serif;\">\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f5f0e8;padding:40px 20px;\"><tr><td align=\"center\">\n<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background:#fff;border:3px solid #1a1a1a;border-radius:16px;overflow:hidden;box-shadow:6px 6px 0 #1a1a1a;\">\n<tr><td style=\"background:#f7c948;border-bottom:3px solid #1a1a1a;padding:22px 40px;\">\n<h1 style=\"margin:0;font-size:26px;font-weight:900;color:#1a1a1a;\">CountMeIn</h1>\n<p style=\"margin:4px 0 0;font-size:13px;font-weight:600;color:#1a1a1a;opacity:0.7;\">Connecter · Soutenir · Agir</p></td></tr>\n<tr><td style=\"padding:34px 40px 30px;\">\n<span style=\"display:inline-block;padding:5px 12px;background:${couleur};color:${couleurTexte};border:2px solid #1a1a1a;border-radius:999px;font-size:12px;font-weight:800;text-transform:uppercase;\">${esc(badge)}</span>\n<p style=\"margin:20px 0 6px;font-size:14px;color:#777;\">Bonjour ${esc(prenom)},</p>\n<h2 style=\"margin:0 0 14px;font-size:23px;font-weight:900;color:#1a1a1a;line-height:1.25;\">${esc(titre)}</h2>\n${corps}${encadre}${blocs || ''}${btn}\n</td></tr>\n<tr><td style=\"background:#1a1a1a;padding:18px 40px;\"><p style=\"margin:0;font-size:12px;color:#aaa;text-align:center;line-height:1.6;\">\n© ${new Date().getFullYear()} CountMeIn — Plateforme de bénévolat au Maroc<br>Vous pouvez désactiver ces e-mails depuis la page Notifications de votre espace.</p></td></tr>\n</table></td></tr></table></body></html>`;\n}\n\n// Lit la réponse de Gemini : JSON conforme au schéma, sinon null (→ texte de secours, F48)\nfunction lireReponseIA(reponse) {\n  const candidat = reponse && (reponse.candidates || [])[0];\n  if (!candidat || candidat.finishReason !== 'STOP') return null;\n  const texte = ((candidat.content || {}).parts || []).map(p => p.text || '').join('');\n  try {\n    const json = JSON.parse(texte.replace(/^```(?:json)?\\s*|\\s*```$/g, ''));\n    return json && json.sujet ? json : null;\n  } catch (e) { return null; }\n}\n\nconst sources = $('Preparer la requete IA').all();\nreturn $input.all().map((item, i) => {\n  const r = sources[i].json;\n  const m = r.mission;\n  const ia = lireReponseIA(item.json) || {\n    sujet: `Renfort urgent : ${m.association} a besoin de toi`,\n    titre: `${m.placesRestantes} bénévole(s) recherché(s) en urgence`,\n    paragraphes: [\n      `L'association ${m.association} cherche en urgence des bénévoles pour la mission « ${m.titre} » (${m.dateDebut.toLowerCase()}).`,\n      \"Si tu es disponible, inscris-toi directement sur la page de la mission : premier arrivé, premier servi.\",\n    ],\n  };\n  return { json: {\n    email: r.email,\n    sujet: ia.sujet,\n    html: gabarit({\n      badge: 'Renfort urgent', couleur: '#E96FA3', couleurTexte: '#1a1a1a', prenom: r.prenom,\n      titre: ia.titre, paragraphes: ia.paragraphes,\n      details: { Mission: m.titre, Association: m.association, Date: m.dateDebut,\n                 Lieu: m.adresse || m.ville, 'Places libres': String(m.placesRestantes) },\n      bouton: 'Je viens aider', lien: m.lien,\n    }),\n  } };\n});\n"
+      }
+    },
+    {
+      "id": "5d19fccf-1977-429b-a43e-6a8e8966c55c",
+      "name": "Envoyer l e-mail",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "fromEmail": "CountMeIn <votre.adresse@gmail.com>",
+        "toEmail": "={{ $json.email }}",
+        "subject": "={{ $json.sujet }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "notes": "Identifiant : SMTP (même compte que MAIL_USERNAME). Remplacez l'adresse de l'expéditeur."
+    }
+  ],
+  "connections": {
+    "Renfort declare": {
+      "main": [
+        [
+          {
+            "node": "Benevoles proches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Benevoles proches": {
+      "main": [
+        [
+          {
+            "node": "Preparer la requete IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparer la requete IA": {
+      "main": [
+        [
+          {
+            "node": "Rediger avec Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mettre en forme": {
+      "main": [
+        [
+          {
+            "node": "Envoyer l e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rediger avec Gemini": {
+      "main": [
+        [
+          {
+            "node": "Mettre en forme",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Africa/Casablanca"
+  },
+  "pinData": {}
+}

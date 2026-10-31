@@ -40,6 +40,7 @@ public class CertificatService {
     private final InscriptionRepository inscriptionRepository;
     private final AssociationRepository associationRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     @Value("${cloudinary.cloud-name:}")
     private String cloudName;
@@ -109,6 +110,13 @@ public class CertificatService {
 
             // Générer PDF et uploader sur Cloudinary (le certificat existe en base même sans PDF)
             genererEtUploader(certificat, asso);
+
+            // Notification dans l'application (l'e-mail dédié est envoyé ci-dessous)
+            notificationService.notifier(inscription.getBenevole(), CategorieNotif.CERTIFICAT,
+                    "Nouveau certificat de bénévolat",
+                    asso.getNom() + " vous a délivré un certificat pour la mission « "
+                            + inscription.getMission().getTitre() + " ».",
+                    "/benevole/parcours", false);
 
             // Envoyer email de notification au bénévole
             try {

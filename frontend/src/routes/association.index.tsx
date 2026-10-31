@@ -84,7 +84,7 @@ function AssociationDashboard() {
             </h1>
             <p className="mt-3 text-base text-muted-foreground max-w-sm mx-auto">
               {validationStatus === 'REFUSE'
-                ? "Votre demande a été refusée par l'équipe CountMeIn. Contactez-nous pour plus d'informations."
+                ? "Votre demande a été refusée par l'équipe CountMeIn. Corrigez votre profil et enregistrez-le : votre dossier sera automatiquement renvoyé en validation."
                 : "Votre association est en cours d'examen. Vous serez notifié(e) par email dès qu'elle sera validée."}
             </p>
           </div>

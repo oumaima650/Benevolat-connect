@@ -19,7 +19,18 @@ import java.util.List;
 public class MissionController {
 
     private final MissionService missionService;
+    private final com.benevolat.plateformebenevolat.service.AdminService adminService;
     private final MissionExplorerService missionExplorerService;
+
+    /** F41 : signaler une mission à la modération. Body : { "motif": "..." } */
+    @PostMapping("/{id}/signaler")
+    public ResponseEntity<java.util.Map<String, String>> signaler(
+            org.springframework.security.core.Authentication auth,
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body) {
+        adminService.signalerMission(auth.getName(), id, body.get("motif"));
+        return ResponseEntity.ok(java.util.Map.of("message", "Merci, la mission a été signalée à l'équipe de modération."));
+    }
 
     @GetMapping("/search")
     public ResponseEntity<List<MissionCardDto>> searchMissions(

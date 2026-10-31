@@ -3,6 +3,7 @@ package com.benevolat.plateformebenevolat.service;
 import com.benevolat.plateformebenevolat.dto.BenevoleInscriptionDto;
 import com.benevolat.plateformebenevolat.dto.InscriptionResponseDto;
 import com.benevolat.plateformebenevolat.entity.Benevole;
+import com.benevolat.plateformebenevolat.entity.CategorieNotif;
 import com.benevolat.plateformebenevolat.entity.Inscription;
 import com.benevolat.plateformebenevolat.entity.Mission;
 import com.benevolat.plateformebenevolat.entity.StatutInscription;
@@ -35,6 +36,7 @@ public class InscriptionService {
     private final InscriptionRepository inscriptionRepository;
     private final BenevoleRepository benevoleRepository;
     private final MissionPlacesService missionPlacesService;
+    private final NotificationService notificationService;
 
     /**
      * Inscrire le bénévole connecté à une mission.
@@ -43,10 +45,10 @@ public class InscriptionService {
      * 1. La mission doit être PUBLIEE / SATUREE (avant la date de début)
      *    ou RENFORT_URGENT (tant que la mission n'est pas terminée).
      * 2. Pas de double inscription active (CONFIRMEE ou EN_LISTE_ATTENTE).
-     * 3. Cas A : places restantes > 0 → CONFIRMEE.
-     * 4. Cas B : sinon, place en liste d'attente disponible → EN_LISTE_ATTENTE (rang = dernier + 1).
-     * 5. Cas C : sinon refus (mission pleine).
-     * 6. Le statut de la mission est recalculé (SATUREE, fin de renfort…).
+     * 3. Pas de chevauchement avec une autre mission confirmée (RM04).
+     * 4. RENFORT_URGENT → CONFIRMEE immédiatement ; sinon places restantes > 0 → CONFIRMEE,
+     *    sinon EN_LISTE_ATTENTE (rang = dernier + 1).
+     * 5. Le statut de la mission est recalculé (SATUREE, fin de renfort…).
      */
     @Transactional
     public InscriptionResponseDto inscrire(String email, Long missionId) {
@@ -115,6 +117,29 @@ public class InscriptionService {
         // Règle 6 — recalcul des compteurs et du statut
         missionPlacesService.recalculer(mission);
 
+        // F28 : confirmation au bénévole + information de l'association
+        String lien = "/missions/" + missionId;
+        var details = NotificationService.detailsMission(mission);
+        if (nouveauStatut == StatutInscription.CONFIRMEE) {
+            notificationService.notifier(benevole, CategorieNotif.INSCRIPTION,
+                    "Inscription confirmée",
+                    "Votre inscription à la mission « " + mission.getTitre() + " » est confirmée. Merci pour votre engagement !",
+                    lien, details);
+        } else {
+            details.put("Rang", "n°" + rang + " sur la liste d'attente");
+            notificationService.notifier(benevole, CategorieNotif.LISTE_ATTENTE,
+                    "Vous êtes en liste d'attente (rang " + rang + ")",
+                    "La mission « " + mission.getTitre() + " » est complète. Vous êtes n°" + rang
+                            + " sur la liste d'attente : vous serez prévenu(e) dès qu'une place se libère.",
+                    lien, details);
+        }
+        notificationService.notifier(mission.getAssociation(), CategorieNotif.INSCRIPTION,
+                nouveauStatut == StatutInscription.CONFIRMEE ? "Nouvel inscrit" : "Nouvelle inscription en liste d'attente",
+                NotificationService.nomAffiche(benevole) + " " + (benevole.getNom() != null ? benevole.getNom() : "")
+                        + (nouveauStatut == StatutInscription.CONFIRMEE ? " s'est inscrit(e) à « " : " a rejoint la liste d'attente de « ")
+                        + mission.getTitre() + " ».",
+                "/association/inscrits", false);
+
         return new InscriptionResponseDto(nouveauStatut, rang, mission.getNbPlaces(),
                 mission.getNbPlacesListeAttente(), mission.getStatut());
     }
@@ -143,16 +168,16 @@ public class InscriptionService {
         if (inscription.getStatut() == StatutInscription.ANNULEE) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "L'inscription est déjà annulée.");
         }
+        // F18 : annulation possible uniquement avant le début de la mission
+        if (mission.getDateDebut() != null && mission.getDateDebut().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La mission a déjà commencé : l'inscription ne peut plus être annulée.");
+        }
 
-        LocalDateTime now = LocalDateTime.now();
         if (inscription.getStatut() == StatutInscription.CONFIRMEE) {
             if (mission.getStatut() == StatutMission.RENFORT_URGENT) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
                         "L'inscription à une mission en renfort urgent ne peut pas être annulée.");
-            }
-            if (mission.getDateDebut() != null && !mission.getDateDebut().isAfter(now)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT,
-                        "L'annulation n'est plus possible après le début de la mission.");
             }
             mission.setNbPlaces(missionPlacesService.placesRestantes(mission) + 1);
         }
@@ -163,6 +188,12 @@ public class InscriptionService {
 
         // Promotion de la liste d'attente + renumérotation + statut
         missionPlacesService.recalculer(mission);
+
+        notificationService.notifier(mission.getAssociation(), CategorieNotif.ANNULATION,
+                "Désistement d'un bénévole",
+                NotificationService.nomAffiche(benevole) + " " + (benevole.getNom() != null ? benevole.getNom() : "")
+                        + " a annulé son inscription à « " + mission.getTitre() + " ».",
+                "/association/inscrits");
 
         return new InscriptionResponseDto(StatutInscription.ANNULEE, null, mission.getNbPlaces(),
                 mission.getNbPlacesListeAttente(), mission.getStatut());
@@ -263,6 +294,16 @@ public class InscriptionService {
         inscriptionRepository.save(inscription);
 
         missionPlacesService.recalculer(mission);
+
+        notificationService.notifier(benevole, CategorieNotif.PROMOTION,
+                "Votre venue en renfort est confirmée",
+                "Merci ! Votre place sur la mission « " + mission.getTitre() + " » est confirmée.",
+                "/missions/" + missionId, NotificationService.detailsMission(mission));
+        notificationService.notifier(mission.getAssociation(), CategorieNotif.RENFORT,
+                "Renfort confirmé",
+                NotificationService.nomAffiche(benevole) + " " + (benevole.getNom() != null ? benevole.getNom() : "")
+                        + " a confirmé sa venue en renfort sur « " + mission.getTitre() + " ».",
+                "/association/inscrits", false);
 
         return new InscriptionResponseDto(StatutInscription.CONFIRMEE, null, mission.getNbPlaces(),
                 mission.getNbPlacesListeAttente(), mission.getStatut());

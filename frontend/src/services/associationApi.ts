@@ -43,6 +43,7 @@ export type AssociationProfile = {
   contact: string;
   logoUrl?: string;
   statutValidation: "EN_ATTENTE" | "VALIDE" | "REFUSE";
+  motifRefus?: string | null;
   statutCompte?: "ACTIF" | "DESACTIVE" | "SUSPENDUE";
   latitude?: number;
   longitude?: number;

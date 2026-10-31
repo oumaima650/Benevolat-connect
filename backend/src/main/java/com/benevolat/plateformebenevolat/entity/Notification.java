@@ -43,6 +43,14 @@ public class Notification {
     @Column(name = "statutEnvoi", nullable = false, length = 20)
     private StatutEnvoi statutEnvoi = StatutEnvoi.EN_ATTENTE;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "categorie", nullable = false, length = 30)
+    private CategorieNotif categorie = CategorieNotif.SYSTEME;
+
+    /** Lien relatif vers la page concernée (ex. /missions/12). */
+    @Column(name = "lien", length = 255)
+    private String lien;
+
     @Column(name = "createdAt", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 

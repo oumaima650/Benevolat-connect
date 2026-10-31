@@ -308,16 +308,19 @@ function BenevoleDashboard() {
           <ul className="space-y-2">
             {data.dernieresNotifications.map((n) => {
               const colors: Record<string, string> = {
-                CONFIRMATION:   'bg-green-100 text-green-700 border-green-300',
-                PROMOTION:      'bg-blue-100 text-blue-700 border-blue-300',
-                ANNULATION:     'bg-red-100 text-red-700 border-red-300',
-                RAPPEL:         'bg-yellow-100 text-yellow-700 border-yellow-300',
-                RENFORT_URGENT: 'bg-red-200 text-red-800 border-red-400',
+                INSCRIPTION:     'bg-green-100 text-green-700 border-green-300',
+                LISTE_ATTENTE:   'bg-yellow-100 text-yellow-700 border-yellow-300',
+                PROMOTION:       'bg-blue-100 text-blue-700 border-blue-300',
+                ANNULATION:      'bg-red-100 text-red-700 border-red-300',
+                MISSION_ANNULEE: 'bg-red-100 text-red-700 border-red-300',
+                RAPPEL:          'bg-yellow-100 text-yellow-700 border-yellow-300',
+                RENFORT:         'bg-red-200 text-red-800 border-red-400',
+                CERTIFICAT:      'bg-green-100 text-green-700 border-green-300',
               };
               return (
-                <li key={n.id} className={`rounded-xl border p-3 text-xs ${n.lu ? 'bg-muted border-border' : 'bg-mustard/15 border-mustard'}`}>
-                  <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold mb-1 ${colors[n.type] || 'bg-gray-100 text-gray-700 border-gray-300'}`}>
-                    {(n.type || n.titre || 'INFO').replaceAll('_', ' ')}
+                <li key={n.id} className={`rounded-xl border p-3 text-xs ${n.lue ? 'bg-muted border-border' : 'bg-mustard/15 border-mustard'}`}>
+                  <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold mb-1 ${colors[n.categorie] || 'bg-gray-100 text-gray-700 border-gray-300'}`}>
+                    {(n.categorie || 'INFO').replaceAll('_', ' ')}
                   </span>
                   <p className="font-semibold text-ink line-clamp-2">{n.message}</p>
                 </li>

@@ -54,6 +54,10 @@ public class Association extends Utilisateur {
         this.statutValidation = validee ? StatutValidation.VALIDE : StatutValidation.EN_ATTENTE;
     }
 
+    /** Motif saisi par l'administrateur lors d'un refus (F39). */
+    @Column(name = "motifRefus", length = 500)
+    private String motifRefus;
+
     @Column(name = "latitude")
     private Double latitude;
 

@@ -27,7 +27,7 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
     @Query("SELECT DISTINCT d.nom FROM Domaine d ORDER BY d.nom")
     List<String> findDistinctDomaines();
 
-    @Query("SELECT m FROM Mission m WHERE m.statut NOT IN ('BROUILLON', 'ANNULEE') " +
+    @Query("SELECT m FROM Mission m WHERE m.statut NOT IN ('BROUILLON', 'ANNULEE') AND m.estMasquee = false " +
             "AND (:query IS NULL OR :query = '' OR LOWER(m.titre) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(m.description) LIKE LOWER(CONCAT('%', :query, '%'))) " +
             "AND (:ville IS NULL OR :ville = '' OR LOWER(m.association.ville) = LOWER(:ville)) " +
             "AND (:domaine IS NULL OR :domaine = '' OR LOWER(m.domaine.nom) = LOWER(:domaine)) " +
@@ -36,7 +36,7 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
                                       @Param("ville") String ville,
                                       @Param("domaine") String domaine);
 
-    List<Mission> findTop4ByStatutNotInOrderByIdMissionDesc(List<StatutMission> statuts);
+    List<Mission> findTop4ByStatutNotInAndEstMasqueeFalseOrderByIdMissionDesc(List<StatutMission> statuts);
 
     boolean existsByTitre(String titre);
 
@@ -53,6 +53,9 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
     @Query("UPDATE Mission m SET m.statut = com.benevolat.plateformebenevolat.entity.StatutMission.EN_COURS " +
            "WHERE m.statut IN :statuts AND m.dateDebut <= :now")
     int passerEnCours(@Param("statuts") List<StatutMission> statuts, @Param("now") LocalDateTime now);
+
+    /** Missions qui vont passer en TERMINEE (pour prévenir les associations). */
+    List<Mission> findByStatutInAndDateFinLessThanEqual(List<StatutMission> statuts, LocalDateTime now);
 
     /** Passe en TERMINEE toutes les missions dont dateFin <= now et statut dans la liste. */
     @Modifying

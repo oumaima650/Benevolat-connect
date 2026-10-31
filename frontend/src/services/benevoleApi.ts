@@ -55,11 +55,12 @@ export interface BenevoleDashboardData {
   listeAttente: BenevoleInscription[];
   dernieresNotifications: {
     id: number;
-    type: string;
+    categorie: string;
     titre: string;
     message: string;
-    lu: boolean;
-    createdAt: string;
+    lien: string | null;
+    lue: boolean;
+    date: string;
   }[];
   activiteMensuelle: {
     mois: string;
@@ -142,12 +143,21 @@ export const benevoleApi = {
     return res.json();
   },
 
-  async changePassword(token: string, currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  async changePassword(token: string, currentPassword: string, newPassword: string): Promise<void> {
     const res = await authFetch(`${API_BASE}/api/benevoles/me/password`, token, {
       method: 'PUT',
       body: JSON.stringify({ currentPassword, newPassword }),
     });
-    if (!res.ok) throw new ApiHttpError('Erreur lors du changement de mot de passe.', res.status);
-    return res.json();
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new ApiHttpError(
+        (data as { message?: string }).message || 'Erreur lors du changement de mot de passe.', res.status);
+    }
+  },
+
+  /** Désactivation volontaire : annule les inscriptions à venir, e-mail de confirmation. */
+  async desactiver(token: string): Promise<void> {
+    const res = await authFetch(`${API_BASE}/api/benevoles/me/desactiver`, token, { method: 'PATCH' });
+    if (!res.ok) throw new Error('Impossible de désactiver le compte.');
   },
 };

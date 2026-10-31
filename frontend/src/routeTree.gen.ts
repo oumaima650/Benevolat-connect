@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AssociationRouteImport } from './routes/association'
 import { Route as AssociationsRouteImport } from './routes/associations'
 import { Route as BenevoleRouteImport } from './routes/benevole'
@@ -21,6 +22,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as MissionsRouteImport } from './routes/missions'
 import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAssociationsRouteImport } from './routes/admin.associations'
+import { Route as AdminMissionsRouteImport } from './routes/admin.missions'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminUtilisateursRouteImport } from './routes/admin.utilisateurs'
 import { Route as AssociationIndexRouteImport } from './routes/association.index'
 import { Route as AssociationCertificatsRouteImport } from './routes/association.certificats'
 import { Route as AssociationInscritsRouteImport } from './routes/association.inscrits'
@@ -43,6 +49,11 @@ import { Route as MissionsIdRouteImport } from './routes/missions.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AssociationRoute = AssociationRouteImport.update({
@@ -99,6 +110,31 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAssociationsRoute = AdminAssociationsRouteImport.update({
+  id: '/associations',
+  path: '/associations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMissionsRoute = AdminMissionsRouteImport.update({
+  id: '/missions',
+  path: '/missions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUtilisateursRoute = AdminUtilisateursRouteImport.update({
+  id: '/utilisateurs',
+  path: '/utilisateurs',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AssociationIndexRoute = AssociationIndexRouteImport.update({
   id: '/',
@@ -195,6 +231,7 @@ const MissionsIdRoute = MissionsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/association': typeof AssociationRouteWithChildren
   '/associations': typeof AssociationsRoute
   '/benevole': typeof BenevoleRouteWithChildren
@@ -206,6 +243,10 @@ export interface FileRoutesByFullPath {
   '/missions': typeof MissionsRouteWithChildren
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin/associations': typeof AdminAssociationsRoute
+  '/admin/missions': typeof AdminMissionsRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/utilisateurs': typeof AdminUtilisateursRoute
   '/association/certificats': typeof AssociationCertificatsRoute
   '/association/inscrits': typeof AssociationInscritsRoute
   '/association/missions': typeof AssociationMissionsRoute
@@ -221,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/benevole/profil': typeof BenevoleProfilRoute
   '/benevole/recommandations': typeof BenevoleRecommandationsRoute
   '/missions/$id': typeof MissionsIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/association/': typeof AssociationIndexRoute
   '/benevole/': typeof BenevoleIndexRoute
   '/missions/': typeof MissionsIndexRoute
@@ -235,6 +277,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin/associations': typeof AdminAssociationsRoute
+  '/admin/missions': typeof AdminMissionsRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/utilisateurs': typeof AdminUtilisateursRoute
   '/association/certificats': typeof AssociationCertificatsRoute
   '/association/inscrits': typeof AssociationInscritsRoute
   '/association/missions': typeof AssociationMissionsRoute
@@ -250,6 +296,7 @@ export interface FileRoutesByTo {
   '/benevole/profil': typeof BenevoleProfilRoute
   '/benevole/recommandations': typeof BenevoleRecommandationsRoute
   '/missions/$id': typeof MissionsIdRoute
+  '/admin': typeof AdminIndexRoute
   '/association': typeof AssociationIndexRoute
   '/benevole': typeof BenevoleIndexRoute
   '/missions': typeof MissionsIndexRoute
@@ -257,6 +304,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/association': typeof AssociationRouteWithChildren
   '/associations': typeof AssociationsRoute
   '/benevole': typeof BenevoleRouteWithChildren
@@ -268,6 +316,10 @@ export interface FileRoutesById {
   '/missions': typeof MissionsRouteWithChildren
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin/associations': typeof AdminAssociationsRoute
+  '/admin/missions': typeof AdminMissionsRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
+  '/admin/utilisateurs': typeof AdminUtilisateursRoute
   '/association/certificats': typeof AssociationCertificatsRoute
   '/association/inscrits': typeof AssociationInscritsRoute
   '/association/missions': typeof AssociationMissionsRoute
@@ -283,6 +335,7 @@ export interface FileRoutesById {
   '/benevole/profil': typeof BenevoleProfilRoute
   '/benevole/recommandations': typeof BenevoleRecommandationsRoute
   '/missions/$id': typeof MissionsIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/association/': typeof AssociationIndexRoute
   '/benevole/': typeof BenevoleIndexRoute
   '/missions/': typeof MissionsIndexRoute
@@ -291,6 +344,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/association'
     | '/associations'
     | '/benevole'
@@ -302,6 +356,10 @@ export interface FileRouteTypes {
     | '/missions'
     | '/mot-de-passe-oublie'
     | '/reset-password'
+    | '/admin/associations'
+    | '/admin/missions'
+    | '/admin/notifications'
+    | '/admin/utilisateurs'
     | '/association/certificats'
     | '/association/inscrits'
     | '/association/missions'
@@ -317,6 +375,7 @@ export interface FileRouteTypes {
     | '/benevole/profil'
     | '/benevole/recommandations'
     | '/missions/$id'
+    | '/admin/'
     | '/association/'
     | '/benevole/'
     | '/missions/'
@@ -331,6 +390,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/mot-de-passe-oublie'
     | '/reset-password'
+    | '/admin/associations'
+    | '/admin/missions'
+    | '/admin/notifications'
+    | '/admin/utilisateurs'
     | '/association/certificats'
     | '/association/inscrits'
     | '/association/missions'
@@ -346,12 +409,14 @@ export interface FileRouteTypes {
     | '/benevole/profil'
     | '/benevole/recommandations'
     | '/missions/$id'
+    | '/admin'
     | '/association'
     | '/benevole'
     | '/missions'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/association'
     | '/associations'
     | '/benevole'
@@ -363,6 +428,10 @@ export interface FileRouteTypes {
     | '/missions'
     | '/mot-de-passe-oublie'
     | '/reset-password'
+    | '/admin/associations'
+    | '/admin/missions'
+    | '/admin/notifications'
+    | '/admin/utilisateurs'
     | '/association/certificats'
     | '/association/inscrits'
     | '/association/missions'
@@ -378,6 +447,7 @@ export interface FileRouteTypes {
     | '/benevole/profil'
     | '/benevole/recommandations'
     | '/missions/$id'
+    | '/admin/'
     | '/association/'
     | '/benevole/'
     | '/missions/'
@@ -385,6 +455,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AssociationRoute: typeof AssociationRouteWithChildren
   AssociationsRoute: typeof AssociationsRoute
   BenevoleRoute: typeof BenevoleRouteWithChildren
@@ -405,6 +476,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/association': {
@@ -483,6 +561,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/associations': {
+      id: '/admin/associations'
+      path: '/associations'
+      fullPath: '/admin/associations'
+      preLoaderRoute: typeof AdminAssociationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/missions': {
+      id: '/admin/missions'
+      path: '/missions'
+      fullPath: '/admin/missions'
+      preLoaderRoute: typeof AdminMissionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/utilisateurs': {
+      id: '/admin/utilisateurs'
+      path: '/utilisateurs'
+      fullPath: '/admin/utilisateurs'
+      preLoaderRoute: typeof AdminUtilisateursRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/association/': {
       id: '/association/'
@@ -613,6 +726,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminAssociationsRoute: typeof AdminAssociationsRoute
+  AdminMissionsRoute: typeof AdminMissionsRoute
+  AdminNotificationsRoute: typeof AdminNotificationsRoute
+  AdminUtilisateursRoute: typeof AdminUtilisateursRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAssociationsRoute: AdminAssociationsRoute,
+  AdminMissionsRoute: AdminMissionsRoute,
+  AdminNotificationsRoute: AdminNotificationsRoute,
+  AdminUtilisateursRoute: AdminUtilisateursRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface AssociationRouteChildren {
   AssociationCertificatsRoute: typeof AssociationCertificatsRoute
   AssociationInscritsRoute: typeof AssociationInscritsRoute
@@ -681,6 +812,7 @@ const MissionsRouteWithChildren = MissionsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AssociationRoute: AssociationRouteWithChildren,
   AssociationsRoute: AssociationsRoute,
   BenevoleRoute: BenevoleRouteWithChildren,

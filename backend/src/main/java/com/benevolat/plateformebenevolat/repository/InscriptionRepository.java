@@ -39,6 +39,15 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
            "WHERE i.mission.idMission = :missionId ORDER BY i.statut ASC, i.rang ASC NULLS LAST")
     List<Inscription> findByMission_IdMissionWithBenevole(@Param("missionId") Long missionId);
 
+    /** F29 : inscriptions confirmées à rappeler (mission qui commence dans la fenêtre, rappel non envoyé). */
+    @Query("SELECT i FROM Inscription i JOIN FETCH i.mission m JOIN FETCH i.benevole " +
+           "WHERE i.statut = com.benevolat.plateformebenevolat.entity.StatutInscription.CONFIRMEE " +
+           "AND i.rappelEnvoye = false AND m.dateDebut > :debut AND m.dateDebut <= :fin " +
+           "AND m.statut NOT IN (com.benevolat.plateformebenevolat.entity.StatutMission.ANNULEE, " +
+           "com.benevolat.plateformebenevolat.entity.StatutMission.BROUILLON)")
+    List<Inscription> findARappeler(@Param("debut") java.time.LocalDateTime debut,
+                                    @Param("fin") java.time.LocalDateTime fin);
+
     /** Compte les inscriptions CONFIRMEE pour une mission. */
     long countByMission_IdMissionAndStatut(Long missionId, StatutInscription statut);
     @Query("SELECT COUNT(i) > 0 FROM Inscription i " +

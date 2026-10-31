@@ -56,6 +56,12 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Appels des workflows n8n : authentifiés par le secret partagé X-Webhook-Secret (N8nController)
+                .requestMatchers("/api/n8n/**").permitAll()
+                // Espace administrateur (F39-F41, F34)
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Signaler une mission : utilisateur connecté (avant le permitAll de /api/missions/**)
+                .requestMatchers(HttpMethod.POST, "/api/missions/*/signaler").authenticated()
                 // Explorer / inscriptions : bénévoles uniquement (avant le permitAll /api/missions/**)
                 .requestMatchers(HttpMethod.GET,
                         "/api/missions/explorer",

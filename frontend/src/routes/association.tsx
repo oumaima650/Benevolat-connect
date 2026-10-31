@@ -14,6 +14,7 @@ import {
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { getMyProfile } from '@/services/associationApi';
+import { useUnreadNotifications } from '@/hooks/use-unread-notifications';
 import { ValidationContext, type ValidationStatus } from '@/context/ValidationContext';
 export { useValidation } from '@/context/ValidationContext';
 
@@ -29,15 +30,16 @@ const NAV_ITEMS = [
   { label: 'Inscrits & attente',to: '/association/inscrits',          icon: Users,           exact: false, needsValidation: true  },
   { label: 'Renforts',         to: '/association/renforts',           icon: Zap,             exact: false, needsValidation: true  },
   { label: 'Certificats',      to: '/association/certificats',        icon: FileText,        exact: false, needsValidation: true  },
-  { label: 'Notifications',    to: '/association/notifications',      icon: Bell,            exact: false, needsValidation: false, badge: 2 },
+  { label: 'Notifications',    to: '/association/notifications',      icon: Bell,            exact: false, needsValidation: false, badge: 'notifications' },
   { label: 'Profil',           to: '/association/profil',             icon: Building2,       exact: false, needsValidation: false },
 ] as const;
 
 function SidebarContent({
-  onClose, validationStatus,
+  onClose, validationStatus, nonLues,
 }: {
   onClose?: () => void;
   validationStatus: ValidationStatus;
+  nonLues: number;
 }) {
   const matchRoute = useMatchRoute();
   const { logout } = useAuth();
@@ -77,7 +79,7 @@ function SidebarContent({
       <nav className="flex-1 overflow-y-auto py-3" aria-label="Navigation association">
         <ul className="space-y-0.5 px-2">
           {NAV_ITEMS.map(({ label, to, icon: Icon, exact, needsValidation, ...rest }) => {
-            const badge = 'badge' in rest ? rest.badge : undefined;
+            const badge = 'badge' in rest ? nonLues : undefined;
             const locked = needsValidation && !isValidated;
             const isActive = exact
               ? !!matchRoute({ to, fuzzy: false })
@@ -110,9 +112,9 @@ function SidebarContent({
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1">{label}</span>
-                  {badge != null && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                      {badge}
+                  {badge != null && badge > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full border border-ink bg-pink px-1 text-[10px] font-bold text-ink">
+                      {badge > 99 ? '99+' : badge}
                     </span>
                   )}
                 </Link>
@@ -140,19 +142,25 @@ function SidebarContent({
 function AssociationLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [validationStatus, setValidationStatus] = useState<ValidationStatus>(null);
+  const [motifRefus, setMotifRefus] = useState<string | null>(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const nonLues = useUnreadNotifications(user?.role === 'ASSOCIATION');
 
   useEffect(() => {
     if (!user) return; // Ne pas appeler l'API si déconnecté
     getMyProfile()
-      .then((p) => setValidationStatus(p.statutValidation as ValidationStatus))
+      .then((p) => {
+        setValidationStatus(p.statutValidation as ValidationStatus);
+        setMotifRefus(p.motifRefus ?? null);
+      })
       .catch(() => {}); // Silencieux — ne pas bloquer la navigation
   }, [user]);
 
   // Protection d'accès (redirection déclarative, jamais navigate() pendant le rendu)
   if (!user) return <Navigate to="/login" />;
   if (user.role === 'BENEVOLE') return <Navigate to="/benevole" />;
+  if (user.role === 'ADMIN') return <Navigate to="/admin" />;
 
   function handleLogout() { navigate({ to: '/' }).then(logout); }
 
@@ -161,13 +169,13 @@ function AssociationLayout() {
       <div className="flex h-screen overflow-hidden bg-paper">
         {/* Desktop Sidebar */}
         <aside className="hidden w-60 shrink-0 border-r-2 border-ink bg-paper lg:flex lg:flex-col h-screen sticky top-0">
-          <SidebarContent validationStatus={validationStatus} />
+          <SidebarContent validationStatus={validationStatus} nonLues={nonLues} />
         </aside>
 
         {/* Mobile Sidebar */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent side="left" className="w-60 p-0 border-r-2 border-ink bg-paper">
-            <SidebarContent validationStatus={validationStatus} onClose={() => setSidebarOpen(false)} />
+            <SidebarContent validationStatus={validationStatus} nonLues={nonLues} onClose={() => setSidebarOpen(false)} />
           </SheetContent>
         </Sheet>
 
@@ -183,7 +191,7 @@ function AssociationLayout() {
           {validationStatus === 'REFUSE' && (
             <div className="flex items-center gap-2 border-b-2 border-red-400 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800">
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              Votre demande a été refusée. Contactez l'équipe CountMeIn.
+              Votre demande a été refusée{motifRefus ? ` — motif : ${motifRefus}` : ''}. Corrigez votre profil pour renvoyer votre dossier.
             </div>
           )}
 
@@ -201,7 +209,11 @@ function AssociationLayout() {
               <Link to="/association/notifications"
                 className="relative rounded-lg border-2 border-ink bg-paper p-1.5 shadow-[2px_2px_0_var(--color-ink)] hover:bg-muted">
                 <Bell className="h-5 w-5" />
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">2</span>
+                {nonLues > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full border border-ink bg-pink px-0.5 text-[9px] font-bold text-ink">
+                    {nonLues > 9 ? '9+' : nonLues}
+                  </span>
+                )}
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

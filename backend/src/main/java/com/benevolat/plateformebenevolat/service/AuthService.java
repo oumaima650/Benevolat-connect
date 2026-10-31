@@ -37,6 +37,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final OtpService otpService;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -72,6 +73,12 @@ public class AuthService {
             asso.setStatut(StatutUtilisateur.ACTIF);
             asso.getDomaines().addAll(domainesToLink);
             savedUser = associationRepository.save(asso);
+            // F39 : les administrateurs sont prévenus qu'une association attend sa validation
+            notificationService.notifierAdmins(com.benevolat.plateformebenevolat.entity.CategorieNotif.VALIDATION,
+                    "Nouvelle association à valider",
+                    "L'association « " + asso.getNom() + " » (" + (asso.getVille() != null ? asso.getVille() : "ville non renseignée")
+                            + ") vient de s'inscrire et attend votre validation.",
+                    "/admin/associations");
         } else {
             Benevole benevole = new Benevole();
             benevole.setEmail(emailClean);
