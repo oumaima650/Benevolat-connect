@@ -95,11 +95,22 @@ public class NotificationService {
         }
     }
 
-    /** Notifie tous les administrateurs (dans l'application uniquement). */
+    /** Notifie tous les administrateurs (application + e-mail : association à valider, signalement…). */
     @Transactional
     public void notifierAdmins(CategorieNotif categorie, String titre, String message, String lien) {
         administrateurRepository.findAll()
-                .forEach(admin -> notifier(admin, categorie, titre, message, lien, false));
+                .forEach(admin -> notifier(admin, categorie, titre, message, lien));
+    }
+
+    /** Alerte de sécurité après un changement de mot de passe (e-mail toujours envoyé). */
+    @Transactional
+    public void notifierMotDePasseModifie(Utilisateur u) {
+        notifier(u, CategorieNotif.COMPTE,
+                "Votre mot de passe a été modifié",
+                "Le mot de passe de votre compte CountMeIn vient d'être modifié."
+                        + "\nSi vous n'êtes pas à l'origine de ce changement, réinitialisez-le immédiatement"
+                        + " depuis la page de connexion (« Mot de passe oublié »).",
+                null);
     }
 
     private void envoyer(Long notificationId, String to, String titre, String html) {

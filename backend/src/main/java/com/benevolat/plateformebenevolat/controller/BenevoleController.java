@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -39,6 +40,30 @@ public class BenevoleController {
             Authentication authentication,
             @RequestBody BenevoleProfileDto dto) {
         return ResponseEntity.ok(benevoleProfileService.updateProfile(authentication.getName(), dto));
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Map<String, Object>> changePassword(
+            Authentication authentication,
+            @RequestBody Map<String, String> body) {
+        String currentPassword = body.getOrDefault("currentPassword", "");
+        String newPassword = body.getOrDefault("newPassword", "");
+        if (currentPassword.isBlank() || newPassword.isBlank()) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", "Ancien et nouveau mot de passe requis."));
+        }
+        if (newPassword.length() < 6) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", "Le mot de passe doit contenir au moins 6 caractères."));
+        }
+        benevoleProfileService.changePassword(authentication.getName(), currentPassword, newPassword);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Mot de passe mis à jour avec succès."));
+    }
+
+    @PatchMapping("/me/desactiver")
+    public ResponseEntity<Map<String, Object>> desactiver(Authentication authentication) {
+        benevoleProfileService.desactiver(authentication.getName());
+        return ResponseEntity.ok(Map.of("success", true, "message", "Compte désactivé."));
     }
 
     @GetMapping("/mes-inscriptions")

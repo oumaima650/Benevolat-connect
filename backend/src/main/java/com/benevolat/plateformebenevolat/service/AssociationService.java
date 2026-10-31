@@ -83,6 +83,22 @@ public class AssociationService {
             asso.setDomaines(domaineRepository.findAllById(req.getDomaineIds()));
         }
 
+        // Après un refus, la mise à jour du profil renvoie le dossier en validation
+        if (asso.getStatutValidation() == StatutValidation.REFUSE) {
+            asso.setStatutValidation(StatutValidation.EN_ATTENTE);
+            asso.setMotifRefus(null);
+            notificationService.notifier(asso, CategorieNotif.VALIDATION,
+                    "Votre dossier a été renvoyé en validation",
+                    "Merci d'avoir mis à jour le profil de « " + asso.getNom() + " ». L'équipe CountMeIn va réexaminer"
+                            + " votre dossier : vous serez prévenu(e) par e-mail de sa décision.",
+                    "/association");
+            notificationService.notifierAdmins(CategorieNotif.VALIDATION,
+                    "Association à revalider",
+                    "L'association « " + asso.getNom() + " », refusée précédemment, a mis à jour son profil"
+                            + " et attend une nouvelle validation.",
+                    "/admin/associations");
+        }
+
         associationRepository.save(asso);
         return toProfileDto(asso);
     }
@@ -94,6 +110,7 @@ public class AssociationService {
         }
         asso.setMotDePasseHash(passwordEncoder.encode(newPassword));
         associationRepository.save(asso);
+        notificationService.notifierMotDePasseModifie(asso);
     }
 
     public String toggleStatut(String email) {
@@ -104,6 +121,14 @@ public class AssociationService {
             : StatutUtilisateur.ACTIF;
         asso.setStatut(next);
         associationRepository.save(asso);
+        if (next == StatutUtilisateur.DESACTIVE) {
+            notificationService.notifier(asso, CategorieNotif.COMPTE,
+                    "Votre compte a été désactivé",
+                    "Le compte de « " + asso.getNom() + " » a bien été désactivé à votre demande."
+                            + "\nVos missions et votre historique sont conservés. Pour réactiver votre compte,"
+                            + " contactez l'équipe CountMeIn.",
+                    null);
+        }
         return next.name();
     }
 

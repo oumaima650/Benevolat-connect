@@ -49,6 +49,9 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
            "WHERE m.statut IN :statuts AND m.dateDebut <= :now")
     int passerEnCours(@Param("statuts") List<StatutMission> statuts, @Param("now") LocalDateTime now);
 
+    /** Missions qui vont passer en TERMINEE (pour prévenir les associations). */
+    List<Mission> findByStatutInAndDateFinLessThanEqual(List<StatutMission> statuts, LocalDateTime now);
+
     /** Passe en TERMINEE toutes les missions dont dateFin <= now et statut dans la liste. */
     @Modifying
     @Query("UPDATE Mission m SET m.statut = com.benevolat.plateformebenevolat.entity.StatutMission.TERMINEE " +

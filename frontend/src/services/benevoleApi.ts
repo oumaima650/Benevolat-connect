@@ -46,4 +46,21 @@ export const benevoleApi = {
     if (!res.ok) throw new Error('Erreur lors de la mise à jour du profil.');
     return res.json();
   },
+
+  async changePassword(token: string, currentPassword: string, newPassword: string): Promise<void> {
+    const res = await authFetch(`${API_BASE}/api/benevoles/me/password`, token, {
+      method: 'PATCH',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { message?: string }).message || 'Impossible de modifier le mot de passe.');
+    }
+  },
+
+  /** Désactivation volontaire : annule les inscriptions à venir, e-mail de confirmation. */
+  async desactiver(token: string): Promise<void> {
+    const res = await authFetch(`${API_BASE}/api/benevoles/me/desactiver`, token, { method: 'PATCH' });
+    if (!res.ok) throw new Error('Impossible de désactiver le compte.');
+  },
 };

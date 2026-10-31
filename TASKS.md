@@ -111,6 +111,18 @@ Association.motifRefus, Mission.motifSignalement/estMasquee).
 - F43 : la confirmation par lien est abandonnée au profit de la promotion automatique (cahier à mettre à jour).
 - [ ] Tests manuels des 4 points ci-dessus
 
+### 9. E-mails manquants ✅
+- Administrateurs : e-mail en plus de l'in-app (nouvelle association à valider, mission signalée, association à revalider).
+- Association refusée : enregistrer le profil la renvoie en `EN_ATTENTE` (motif effacé), e-mail à l'association + aux admins.
+- Alerte de sécurité « mot de passe modifié » (catégorie COMPTE, toujours envoyée) : changement depuis le profil
+  association et réinitialisation par lien.
+- Mission terminée (scheduler) → e-mail à l'association : valider les présences et délivrer les certificats.
+- Bénévole : vrai changement de mot de passe (`PATCH /api/benevoles/me/password`, e-mail d'alerte) et
+  désactivation volontaire (`PATCH /api/benevoles/me/desactiver` : annule les inscriptions à venir, e-mail de confirmation,
+  déconnexion). Le profil bénévole n'affichait qu'un faux message auparavant.
+- Association : e-mail de confirmation quand elle désactive son compte.
+- [ ] Mettre un vrai `ADMIN_EMAIL` dans `backend/.env` pour recevoir les e-mails admin
+
 ---
 
 ### ✅ Tâches terminées (sessions précédentes)

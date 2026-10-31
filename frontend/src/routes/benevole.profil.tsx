@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Check, Plus, X, ChevronDown, ChevronUp, MapPin, Phone, User, Eye, EyeOff, Sparkles } from 'lucide-react';
@@ -183,11 +183,13 @@ function PwField({ id, label, value, onChange, accent = false }: { id: string; l
 
 /* ═══════════════════════ COMPOSANT PRINCIPAL ═══════════════════════ */
 function ProfilBenevole() {
-  const { user, token, updateUser } = useAuth();
+  const { user, token, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
   const [pwOpen, setPwOpen]     = useState(false);
+  const [savingPw, setSavingPw] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   /* catalogues depuis l'API */
@@ -287,13 +289,35 @@ function ProfilBenevole() {
   }
 
   /* ── changement mot de passe ── */
-  function handlePwSave(e: React.FormEvent) {
+  async function handlePwSave(e: React.FormEvent) {
     e.preventDefault();
+    if (!token) { toast.error('Vous devez être connecté.'); return; }
+    if (!pw.actuel) { toast.error('Saisissez votre mot de passe actuel.'); return; }
     if (pw.nouveau.length < 6) { toast.error('Le nouveau mot de passe doit faire au moins 6 caractères.'); return; }
     if (pw.nouveau !== pw.confirmation) { toast.error('Les mots de passe ne correspondent pas.'); return; }
-    toast.success('Mot de passe modifié !');
-    setPw({ actuel: '', nouveau: '', confirmation: '' });
-    setPwOpen(false);
+    setSavingPw(true);
+    try {
+      await benevoleApi.changePassword(token, pw.actuel, pw.nouveau);
+      toast.success('Mot de passe modifié ! Un e-mail de confirmation vous a été envoyé.');
+      setPw({ actuel: '', nouveau: '', confirmation: '' });
+      setPwOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Impossible de modifier le mot de passe.');
+    } finally {
+      setSavingPw(false);
+    }
+  }
+
+  /* ── désactivation du compte ── */
+  async function handleDesactiver() {
+    if (!token) return;
+    try {
+      await benevoleApi.desactiver(token);
+      toast.success('Compte désactivé. Un e-mail de confirmation vous a été envoyé.');
+      navigate({ to: '/' }).then(logout);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Impossible de désactiver le compte.');
+    }
   }
 
   /* ── skeleton ── */
@@ -458,11 +482,12 @@ function ProfilBenevole() {
                   <button
                     type="button"
                     onClick={handlePwSave}
+                    disabled={savingPw}
                     className="press w-full rounded-xl border-2 border-ink bg-mustard py-3 text-sm font-black text-ink shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90 transition-colors"
                   >
                     <span className="inline-flex items-center justify-center gap-2">
                       <Check className="h-4 w-4" />
-                      Valider le nouveau mot de passe
+                      {savingPw ? 'Enregistrement…' : 'Valider le nouveau mot de passe'}
                     </span>
                   </button>
                 </div>
@@ -473,7 +498,7 @@ function ProfilBenevole() {
             <div className="rounded-2xl border-2 border-red-300 bg-red-50/70 p-5 space-y-3">
               <h3 className="font-display font-bold text-red-800 text-sm">Zone sensible</h3>
               <p className="text-xs text-red-700 leading-relaxed">
-                Désactiver le compte annule vos inscriptions aux missions en cours.
+                Désactiver le compte annule vos inscriptions aux missions à venir.
               </p>
               <button
                 type="button"
@@ -675,10 +700,10 @@ function ProfilBenevole() {
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         title="Désactiver votre compte"
-        description="Êtes-vous sûr(e) ? Vos inscriptions actives seront annulées. Cette action est irréversible."
+        description="Êtes-vous sûr(e) ? Vos inscriptions aux missions à venir seront annulées et vous serez déconnecté(e). Pour réactiver le compte, il faudra contacter l'équipe CountMeIn."
         confirmLabel="Désactiver mon compte"
         variant="destructive"
-        onConfirm={() => { toast.error('Compte désactivé.'); }}
+        onConfirm={handleDesactiver}
       />
 
       <AddressMapModal
