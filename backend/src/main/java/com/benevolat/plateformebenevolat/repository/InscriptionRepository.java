@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +23,16 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
 
     /** Liste toutes les inscriptions d'un bénévole, triées par date d'inscription décroissante. */
     List<Inscription> findByBenevole_IdUtilisateurOrderByDateInscriptionDesc(Long benevoleId);
+
+    @Query("""
+        SELECT DISTINCT i FROM Inscription i
+        JOIN FETCH i.mission m
+        LEFT JOIN FETCH m.domaine
+        LEFT JOIN FETCH m.association
+        WHERE i.benevole.idUtilisateur = :benevoleId
+        ORDER BY i.dateInscription DESC
+        """)
+    List<Inscription> findDashboardInscriptions(@Param("benevoleId") Long benevoleId);
 
     /** Liste toutes les inscriptions d'une mission, triées par dateInscription. */
     @Query("SELECT i FROM Inscription i JOIN FETCH i.benevole b LEFT JOIN FETCH b.competences " +
@@ -44,4 +56,64 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
     boolean existsActive(@Param("benevoleId") Long benevoleId,
                          @Param("missionId") Long missionId,
                          @Param("statuts") List<StatutInscription> statuts);
+
+    List<Inscription> findByBenevole_IdUtilisateurAndMission_IdMissionIn(Long benevoleId, Collection<Long> missionIds);
+
+    @Query("""
+            SELECT COUNT(i) > 0 FROM Inscription i
+            JOIN i.mission m
+            WHERE i.benevole.idUtilisateur = :benevoleId
+              AND i.statut = com.benevolat.plateformebenevolat.entity.StatutInscription.CONFIRMEE
+              AND m.idMission <> :missionId
+              AND m.dateDebut < :dateFin
+              AND m.dateFin > :dateDebut
+            """)
+    boolean existsChevauchement(@Param("benevoleId") Long benevoleId,
+                                @Param("missionId") Long missionId,
+                                @Param("dateDebut") LocalDateTime dateDebut,
+                                @Param("dateFin") LocalDateTime dateFin);
+
+    @Query("""
+            SELECT COUNT(i) FROM Inscription i
+            WHERE i.benevole.idUtilisateur = :benevoleId
+              AND i.statut = com.benevolat.plateformebenevolat.entity.StatutInscription.CONFIRMEE
+              AND i.mission.statut IN (
+                    com.benevolat.plateformebenevolat.entity.StatutMission.PUBLIEE,
+                    com.benevolat.plateformebenevolat.entity.StatutMission.SATUREE
+              )
+              AND i.mission.dateDebut > :now
+            """)
+    long countInscriptionsAVenir(@Param("benevoleId") Long benevoleId, @Param("now") LocalDateTime now);
+
+    @Query("""
+            SELECT COUNT(i) FROM Inscription i
+            WHERE i.benevole.idUtilisateur = :benevoleId
+              AND i.statut = com.benevolat.plateformebenevolat.entity.StatutInscription.EN_LISTE_ATTENTE
+              AND i.mission.statut IN (
+                    com.benevolat.plateformebenevolat.entity.StatutMission.PUBLIEE,
+                    com.benevolat.plateformebenevolat.entity.StatutMission.SATUREE,
+                    com.benevolat.plateformebenevolat.entity.StatutMission.RENFORT_URGENT
+              )
+            """)
+    long countEnListeAttenteExplorer(@Param("benevoleId") Long benevoleId);
+
+    @Query("""
+            SELECT COUNT(i) > 0 FROM Inscription i
+            WHERE i.benevole.idUtilisateur = :benevoleId
+              AND i.statut = com.benevolat.plateformebenevolat.entity.StatutInscription.EN_LISTE_ATTENTE
+              AND i.mission.statut = com.benevolat.plateformebenevolat.entity.StatutMission.RENFORT_URGENT
+            """)
+    boolean existsRenfortEnListeAttente(@Param("benevoleId") Long benevoleId);
+
+    @Query("""
+            SELECT i FROM Inscription i
+            JOIN FETCH i.mission m
+            LEFT JOIN FETCH m.association
+            WHERE i.benevole.idUtilisateur = :benevoleId
+              AND i.statut = com.benevolat.plateformebenevolat.entity.StatutInscription.CONFIRMEE
+              AND m.dateDebut > :now
+            ORDER BY m.dateDebut ASC
+            """)
+    List<Inscription> findProchainesConfirmees(@Param("benevoleId") Long benevoleId,
+                                               @Param("now") LocalDateTime now);
 }

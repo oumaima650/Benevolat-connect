@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
 import { Building2, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { login } from '@/services/authApi';
 import logoImage from '@/assets/logo.png';
 
 export const Route = createFileRoute('/dashboard-login')({
@@ -13,33 +15,43 @@ export const Route = createFileRoute('/dashboard-login')({
   component: DashboardLoginPage,
 });
 
+/* Comptes de démonstration créés par DataSeeder côté backend. */
+const DEMO_ACCOUNTS = {
+  BENEVOLE: { email: 'yasmine@example.ma', password: 'secret123' },
+  ASSOCIATION: { email: 'banque.alimentaire@email.com', password: 'secret123' },
+} as const;
+
 function DashboardLoginPage() {
   const { loginUser } = useAuth();
   const navigate = useNavigate();
+  const [busy, setBusy] = useState<'BENEVOLE' | 'ASSOCIATION' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function access(role: 'BENEVOLE' | 'ASSOCIATION') {
+    setError(null);
+    setBusy(role);
+    try {
+      const { email, password } = DEMO_ACCOUNTS[role];
+      const res = await login(email, password);
+      if (!res.success || !res.token || !res.user) {
+        setError(res.message || 'Connexion démo impossible.');
+        return;
+      }
+      loginUser(res.user, res.token);
+      navigate({ to: role === 'BENEVOLE' ? '/benevole' : '/association' });
+    } catch (e: any) {
+      setError(e?.message ?? 'Serveur backend indisponible.');
+    } finally {
+      setBusy(null);
+    }
+  }
 
   function accessBenevole() {
-    loginUser(
-      {
-        email: 'yasmine@example.ma',
-        prenom: 'Yasmine',
-        nom: 'El Idrissi',
-        role: 'BENEVOLE',
-      },
-      'demo-benevole-token',
-    );
-    navigate({ to: '/benevole' });
+    void access('BENEVOLE');
   }
 
   function accessAssociation() {
-    loginUser(
-      {
-        email: 'contact@nour-asso.ma',
-        nomAssociation: 'Association Nour',
-        role: 'ASSOCIATION',
-      },
-      'demo-association-token',
-    );
-    navigate({ to: '/association' });
+    void access('ASSOCIATION');
   }
 
   return (
@@ -53,16 +65,24 @@ function DashboardLoginPage() {
       <div className="mb-10 text-center">
         <h1 className="font-display text-4xl font-black text-ink">Accès démo</h1>
         <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-          Choisissez un rôle pour explorer l'espace correspondant. Aucun mot de passe requis — c'est une démonstration avec des données fictives.
+          Choisissez un rôle pour explorer l'espace correspondant. La connexion utilise un compte de
+          démonstration réel enregistré en base — aucune saisie de mot de passe n'est nécessaire.
         </p>
       </div>
+
+      {error && (
+        <div className="mb-6 w-full max-w-2xl rounded-2xl border-2 border-ink bg-pink/20 px-4 py-3 text-sm font-semibold text-ink shadow-[3px_3px_0_var(--color-ink)]">
+          {error}
+        </div>
+      )}
 
       {/* Role cards */}
       <div className="grid w-full max-w-2xl gap-6 sm:grid-cols-2">
         {/* Bénévole */}
         <button
           onClick={accessBenevole}
-          className="group flex flex-col items-center gap-5 rounded-2xl border-2 border-ink bg-mustard p-8 shadow-[4px_4px_0_var(--color-ink)] transition-transform duration-150 hover:-translate-y-1 hover:shadow-[6px_6px_0_var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring press"
+          disabled={busy !== null}
+          className="group flex flex-col items-center gap-5 rounded-2xl border-2 border-ink bg-mustard p-8 shadow-[4px_4px_0_var(--color-ink)] transition-transform duration-150 hover:-translate-y-1 hover:shadow-[6px_6px_0_var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring press disabled:opacity-60 disabled:hover:translate-y-0"
           aria-label="Accéder en tant que bénévole"
         >
           <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-paper">
@@ -75,14 +95,15 @@ function DashboardLoginPage() {
             </p>
           </div>
           <span className="mt-2 inline-flex items-center rounded-full border-2 border-ink bg-paper px-4 py-1 text-sm font-bold text-ink">
-            Accéder →
+            {busy === 'BENEVOLE' ? 'Connexion…' : 'Accéder →'}
           </span>
         </button>
 
         {/* Association */}
         <button
           onClick={accessAssociation}
-          className="group flex flex-col items-center gap-5 rounded-2xl border-2 border-ink bg-emerald p-8 shadow-[4px_4px_0_var(--color-ink)] transition-transform duration-150 hover:-translate-y-1 hover:shadow-[6px_6px_0_var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring press"
+          disabled={busy !== null}
+          className="group flex flex-col items-center gap-5 rounded-2xl border-2 border-ink bg-emerald p-8 shadow-[4px_4px_0_var(--color-ink)] transition-transform duration-150 hover:-translate-y-1 hover:shadow-[6px_6px_0_var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring press disabled:opacity-60 disabled:hover:translate-y-0"
           aria-label="Accéder en tant qu'association"
         >
           <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-paper">
@@ -95,7 +116,7 @@ function DashboardLoginPage() {
             </p>
           </div>
           <span className="mt-2 inline-flex items-center rounded-full border-2 border-ink bg-paper px-4 py-1 text-sm font-bold text-ink">
-            Accéder →
+            {busy === 'ASSOCIATION' ? 'Connexion…' : 'Accéder →'}
           </span>
         </button>
       </div>

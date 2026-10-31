@@ -1,12 +1,8 @@
 package com.benevolat.plateformebenevolat.controller;
 
-import com.benevolat.plateformebenevolat.dto.BenevoleInscriptionDto;
-import com.benevolat.plateformebenevolat.dto.BenevoleProfileDto;
-import com.benevolat.plateformebenevolat.dto.CertificatResultDto;
-import com.benevolat.plateformebenevolat.entity.Certificat;
-import com.benevolat.plateformebenevolat.entity.Inscription;
-import com.benevolat.plateformebenevolat.repository.BenevoleRepository;
-import com.benevolat.plateformebenevolat.repository.CertificatRepository;
+import com.benevolat.plateformebenevolat.dto.*;
+import com.benevolat.plateformebenevolat.entity.*;
+import com.benevolat.plateformebenevolat.repository.*;
 import com.benevolat.plateformebenevolat.service.BenevoleProfileService;
 import com.benevolat.plateformebenevolat.service.InscriptionService;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,10 +24,18 @@ public class BenevoleController {
     private final InscriptionService inscriptionService;
     private final BenevoleRepository benevoleRepository;
     private final CertificatRepository certificatRepository;
+    private final BadgeRepository badgeRepository;
+    private final ObtentionRepository obtentionRepository;
+    private final NiveauRepository niveauRepository;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyProfile(Authentication authentication) {
         return ResponseEntity.ok(benevoleProfileService.getProfile(authentication.getName()));
+    }
+
+    @GetMapping("/me/dashboard")
+    public ResponseEntity<?> getMyDashboard(Authentication authentication) {
+        return ResponseEntity.ok(benevoleProfileService.getDashboardData(authentication.getName()));
     }
 
     @PutMapping("/me")
@@ -42,7 +45,8 @@ public class BenevoleController {
         return ResponseEntity.ok(benevoleProfileService.updateProfile(authentication.getName(), dto));
     }
 
-    @PatchMapping("/me/password")
+    /** Changer le mot de passe (PUT ou PATCH) ; un e-mail d'alerte est envoyé. */
+    @RequestMapping(value = "/me/password", method = {RequestMethod.PUT, RequestMethod.PATCH})
     public ResponseEntity<Map<String, Object>> changePassword(
             Authentication authentication,
             @RequestBody Map<String, String> body) {
@@ -100,5 +104,69 @@ public class BenevoleController {
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(certs);
+    }
+
+    /** GET /api/benevoles/badges-niveau — badges et niveau du bénévole */
+    @GetMapping("/badges-niveau")
+    @Transactional(readOnly = true)
+    public ResponseEntity<BadgesNiveauResponse> getBadgesNiveau(Authentication authentication) {
+        var benevole = benevoleRepository.findByEmail(authentication.getName()).orElse(null);
+        if (benevole == null) return ResponseEntity.notFound().build();
+
+        // Calculer le nombre de missions réalisées (certificats)
+        long missionsRealisees = certificatRepository.countByInscription_Benevole_IdUtilisateur(benevole.getIdUtilisateur());
+
+        // Récupérer le niveau actuel
+        final Niveau niveauActuel;
+        Niveau tempNiveau = benevole.getNiveau();
+        if (tempNiveau == null) {
+            tempNiveau = niveauRepository.findAll().stream()
+                .min(Comparator.comparing(Niveau::getSeuilMissions))
+                .orElse(null);
+        }
+        niveauActuel = tempNiveau;
+
+        final long seuilActuel = niveauActuel != null ? niveauActuel.getSeuilMissions() : 0;
+
+        // Trouver le niveau suivant
+        Niveau niveauSuivant = niveauRepository.findAll().stream()
+            .filter(n -> n.getSeuilMissions() != null && n.getSeuilMissions() > seuilActuel)
+            .min(Comparator.comparing(Niveau::getSeuilMissions))
+            .orElse(null);
+
+        // Construire les infos de niveau
+        NiveauInfoDto niveauInfo = NiveauInfoDto.builder()
+            .nom(niveauActuel != null ? niveauActuel.getNom() : "Débutant")
+            .missionsActuelles((int) missionsRealisees)
+            .seuilSuivant(niveauSuivant != null ? niveauSuivant.getSeuilMissions() : null)
+            .niveauSuivant(niveauSuivant != null ? niveauSuivant.getNom() : null)
+            .build();
+
+        // Récupérer tous les badges avec leur statut d'obtention
+        List<Badge> allBadges = badgeRepository.findAll();
+        List<Obtention> obtentions = obtentionRepository.findByBenevole_IdUtilisateur(benevole.getIdUtilisateur());
+
+        List<BadgeNiveauDto> badgeDtos = allBadges.stream()
+            .map(badge -> {
+                Optional<Obtention> obtention = obtentions.stream()
+                    .filter(o -> o.getBadge().getIdBadge().equals(badge.getIdBadge()))
+                    .findFirst();
+
+                return BadgeNiveauDto.builder()
+                    .id(badge.getIdBadge())
+                    .code(badge.getCode())
+                    .nom(badge.getNom())
+                    .description("Badge " + badge.getNom())
+                    .niveau(badge.getNiveau() != null ? badge.getNiveau().getNom() : "")
+                    .obtenu(obtention.isPresent())
+                    .dateObtention(obtention.isPresent() ? obtention.get().getDateAttribution().toString() : null)
+                    .build();
+            })
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(BadgesNiveauResponse.builder()
+            .niveau(niveauInfo)
+            .badges(badgeDtos)
+            .build());
     }
 }

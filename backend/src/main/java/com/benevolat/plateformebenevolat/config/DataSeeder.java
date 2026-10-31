@@ -22,17 +22,31 @@ import java.time.LocalDateTime;
 public class DataSeeder implements CommandLineRunner {
 
     private final AssociationRepository associationRepository;
+    private final BenevoleRepository benevoleRepository;
     private final DomaineRepository domaineRepository;
     private final ImageEvenementRepository imageEvenementRepository;
     private final MissionRepository missionRepository;
+    private final CompetenceRepository competenceRepository;
+    private final ScoreMatchingRepository scoreMatchingRepository;
     private final PasswordEncoder passwordEncoder;
+
+    /** Identifiants du compte bénévole de démonstration (page /dashboard-login). */
+    public static final String DEMO_BENEVOLE_EMAIL = "yasmine@example.ma";
+    public static final String DEMO_PASSWORD = "secret123";
 
     @Override
     @Transactional
     public void run(String... args) {
-        if (associationRepository.count() > 0) {
-            return; // Données déjà présentes
+        // Compte de démonstration toujours vérifié (indépendamment des associations)
+        seedBenevoleDemo();
+
+        if (associationRepository.count() == 0) {
+            seedAssociationsEtMissions();
         }
+        seedExplorerDemo();
+    }
+
+    private void seedAssociationsEtMissions() {
 
         // 1. Domaines (créés par DataInitializer)
         Domaine dPauvrete = domaine("Lutte contre la Pauvreté");
@@ -99,6 +113,32 @@ public class DataSeeder implements CommandLineRunner {
                 new IllegalStateException("Domaine introuvable : " + nom + " (DataInitializer doit s'exécuter avant)"));
     }
 
+    /**
+     * Crée le compte bénévole de démonstration utilisé par la page /dashboard-login.
+     * Sans ce compte, la connexion démo ne peut pas produire de JWT valide.
+     */
+    private void seedBenevoleDemo() {
+        if (benevoleRepository.findByEmail(DEMO_BENEVOLE_EMAIL).isPresent()) {
+            return;
+        }
+
+        Benevole benevole = new Benevole(DEMO_BENEVOLE_EMAIL, passwordEncoder.encode(DEMO_PASSWORD), null);
+        benevole.setNom("El Idrissi");
+        benevole.setPrenom("Yasmine");
+        benevole.setTelephone("+212 6 61 22 33 44");
+        benevole.setVille("Casablanca");
+        benevole.setBiographie("Étudiante en informatique, engagée pour l'écologie et l'éducation.");
+        benevole.setRayonDeplacementKm(25.0);
+        benevole.setLatitude(33.5731);
+        benevole.setLongitude(-7.5898);
+        benevole.setStatut(StatutUtilisateur.ACTIF);
+        benevole.getDomaines().add(domaine("Écologie & Environnement"));
+        benevole.getDomaines().add(domaine("Éducation pour tous"));
+
+        benevoleRepository.save(benevole);
+        System.out.println(">>> [DataSeeder] Compte bénévole de démonstration créé : " + DEMO_BENEVOLE_EMAIL);
+    }
+
     private Association creerAssociation(String email, String nom, String description, String ville, String contact, Domaine domaine) {
         Association a = new Association(email, passwordEncoder.encode("secret123"), "/assets/associations.jpg",
                 nom, description, ville, contact);
@@ -110,5 +150,84 @@ public class DataSeeder implements CommandLineRunner {
     private void creerMission(Mission mission, String urlImage, String titreImage, String descriptionImage) {
         Mission saved = missionRepository.save(mission);
         imageEvenementRepository.save(new ImageEvenement(urlImage, titreImage, descriptionImage, saved));
+    }
+
+    /** Missions saturée / renfort + scores de matching pour l'espace Explorer. */
+    private void seedExplorerDemo() {
+        Benevole yasmine = benevoleRepository.findByEmail(DEMO_BENEVOLE_EMAIL).orElse(null);
+        if (yasmine == null || associationRepository.count() == 0) {
+            return;
+        }
+
+        Association asso1 = associationRepository.findAll().stream()
+                .filter(a -> "Casablanca".equals(a.getVille()))
+                .findFirst()
+                .orElse(associationRepository.findAll().get(0));
+        Association asso3 = associationRepository.findAll().stream()
+                .filter(a -> "Tanger".equals(a.getVille()))
+                .findFirst()
+                .orElse(asso1);
+
+        Domaine dPauvrete = domaine("Lutte contre la Pauvreté");
+        Domaine dEcologie = domaine("Écologie & Environnement");
+        Competence cuisine = competenceRepository.findByNom("Cuisine & Restauration").orElse(null);
+        Competence jardinage = competenceRepository.findByNom("Bricolage & Jardinage").orElse(null);
+        Competence logistique = competenceRepository.findByNom("Logistique & Transport").orElse(null);
+
+        if (!missionRepository.existsByTitre("Collecte alimentaire d'urgence")) {
+            Mission saturee = new Mission(
+                    "Collecte alimentaire d'urgence",
+                    "Collecte de denrées non périssables. Toutes les places sont prises, liste d'attente ouverte.",
+                    "Marché Central, Casablanca",
+                    new BigDecimal("33.5950"), new BigDecimal("-7.6180"),
+                    LocalDateTime.now().plusDays(4), LocalDateTime.now().plusDays(4).plusHours(5),
+                    0, StatutMission.SATUREE, asso1, dPauvrete);
+            saturee.setNbPlacesListeAttente(8);
+            if (cuisine != null) saturee.getCompetences().add(cuisine);
+            if (logistique != null) saturee.getCompetences().add(logistique);
+            creerMission(saturee, "/assets/hero-benevoles.jpg", "Collecte alimentaire", "Collecte d'urgence");
+        }
+
+        if (!missionRepository.existsByTitre("Renfort nettoyage après tempête")) {
+            Mission renfort = new Mission(
+                    "Renfort nettoyage après tempête",
+                    "Appel à renfort immédiat pour sécuriser le littoral après la tempête.",
+                    "Plage Malabata, Tanger",
+                    new BigDecimal("35.7882"), new BigDecimal("-5.7200"),
+                    LocalDateTime.now().minusHours(2), LocalDateTime.now().plusDays(1),
+                    0, StatutMission.RENFORT_URGENT, asso3, dEcologie);
+            renfort.setNbRenfortDemande(5);
+            if (jardinage != null) renfort.getCompetences().add(jardinage);
+            creerMission(renfort, "/assets/hero-benevoles.jpg", "Renfort littoral", "Nettoyage d'urgence");
+        }
+
+        if (!missionRepository.existsByTitre("Atelier numérique à distance")) {
+            Mission remote = new Mission(
+                    "Atelier numérique à distance",
+                    "Initiation visio aux outils collaboratifs pour les bénévoles des associations partenaires.",
+                    null,
+                    null, null,
+                    LocalDateTime.now().plusDays(12), LocalDateTime.now().plusDays(12).plusHours(3),
+                    15, StatutMission.PUBLIEE, asso1, domaine("Éducation pour tous"));
+            Competence info = competenceRepository.findByNom("Informatique & Web").orElse(null);
+            if (info != null) remote.getCompetences().add(info);
+            creerMission(remote, "/assets/associations.jpg", "Atelier distant", "Formation en ligne");
+        }
+
+        if (scoreMatchingRepository.count() == 0) {
+            missionRepository.findAll().stream()
+                    .filter(m -> m.getStatut() == StatutMission.PUBLIEE)
+                    .limit(4)
+                    .forEach(m -> {
+                        int score = 62 + (int) (m.getIdMission() % 30);
+                        String explication = "Profil proche du domaine « "
+                                + (m.getDomaine() != null ? m.getDomaine().getNom() : "solidarité")
+                                + " » et disponibilités compatibles.";
+                        scoreMatchingRepository.save(new ScoreMatching(
+                                yasmine, m, Math.min(score, 98), explication,
+                                score % 2 == 0 ? MethodeScore.IA : MethodeScore.FORMULE));
+                    });
+            System.out.println(">>> [DataSeeder] Scores de matching de démonstration créés.");
+        }
     }
 }

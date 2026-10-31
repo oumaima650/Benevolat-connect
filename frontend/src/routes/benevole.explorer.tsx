@@ -1,5 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { useState, useEffect } from 'react';
+
+type ExplorerSearch = {
+  tab?: 'missions' | 'recommandations' | 'carte';
+};
 import {
   Search,
   LayoutList,
@@ -11,6 +15,12 @@ import {
   ChevronRight,
   Zap,
   Check,
+  X,
+  AlertCircle,
+  Trophy,
+  Clock,
+  Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
@@ -24,162 +34,383 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { formaterDate, type MissionDash } from '@/components/dashboard/data';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
-export const Route = createFileRoute('/benevole/explorer')({
-  component: ExplorerMissions,
-});
-
-const MISSIONS_FICTIVES: MissionDash[] = [
-  {
-    id: 'e1', titre: 'Distribution de repas solidaires', association: 'Banque Alimentaire Tanger',
-    domaine: 'Solidarité', ville: 'Tanger', adresse: 'Bd Mohammed V, Tanger',
-    lat: 35.7595, lng: -5.834, dateDebut: '2026-09-15', dateFin: '2026-09-15',
-    placesTotal: 15, placesConfirmees: 12, listeAttente: 3, statut: 'EN_COURS',
-    competences: ['Logistique', 'Cuisine'],
-    description: 'Aidez-nous à distribuer des repas chauds aux familles dans le besoin chaque weekend à Tanger.',
-  },
-  {
-    id: 'e2', titre: "Plantation d'arbres en forêt de Bouhachem", association: 'Vert Maroc',
-    domaine: 'Environnement', ville: 'Tétouan', adresse: 'Forêt Bouhachem, route de Chefchaouen',
-    lat: 35.5704, lng: -5.3786, dateDebut: '2026-10-03', dateFin: '2026-10-03',
-    placesTotal: 30, placesConfirmees: 14, listeAttente: 0, statut: 'PUBLIEE',
-    competences: ['Jardinage'],
-    description: 'Rejoignez-nous pour planter 500 arbres dans la forêt de Bouhachem. Matériel fourni.',
-  },
-  {
-    id: 'e3', titre: 'Soutien scolaire pour lycéens', association: 'Association Avenir Rabat',
-    domaine: 'Éducation', ville: 'Rabat', adresse: 'Lycée Ibn Rochd, Agdal',
-    lat: 33.9716, lng: -6.8498, dateDebut: '2026-09-20', dateFin: '2026-12-20',
-    placesTotal: 10, placesConfirmees: 10, listeAttente: 5, statut: 'COMPLETE',
-    competences: ['Enseignement'],
-    description: 'Accompagnez des lycéens en difficulté pour les préparer au baccalauréat.',
-  },
-  {
-    id: 'e4', titre: "Collecte de vêtements d'hiver", association: 'Solidarité Nord',
-    domaine: 'Solidarité', ville: 'Tétouan', adresse: 'Centre communautaire Martil',
-    lat: 35.6138, lng: -5.3646, dateDebut: '2026-11-01', dateFin: '2026-11-30',
-    placesTotal: 8, placesConfirmees: 3, listeAttente: 12, statut: 'RENFORT_URGENT',
-    competences: ['Logistique'],
-    description: "Collecte urgente de vêtements chauds avant l'hiver pour les familles vulnérables.",
-  },
-  {
-    id: 'e5', titre: 'Atelier numérique pour seniors', association: 'Association Nour',
-    domaine: 'Éducation', ville: 'Tétouan', adresse: 'Maison des associations, rue Sania',
-    lat: 35.5714, lng: -5.3749, dateDebut: '2026-10-15', dateFin: '2026-12-15',
-    placesTotal: 6, placesConfirmees: 0, listeAttente: 0, statut: 'PUBLIEE',
-    competences: ['Informatique', 'Pédagogie'],
-    description: 'Initiation aux outils numériques pour les personnes âgées du quartier.',
-  },
-  {
-    id: 'e6', titre: 'Nettoyage de la plage Malabata', association: 'Éco Tanger',
-    domaine: 'Environnement', ville: 'Tanger', adresse: 'Plage Malabata, Tanger',
-    lat: 35.7882, lng: -5.7200, dateDebut: '2026-10-20', dateFin: '2026-10-20',
-    placesTotal: 40, placesConfirmees: 28, listeAttente: 0, statut: 'PUBLIEE',
-    competences: [],
-    description: 'Grande journée de nettoyage de la plage Malabata avec tous les volontaires de la région.',
-  },
-  {
-    id: 'e7', titre: 'Animation centre de jour personnes âgées', association: 'Bien-Être Rabat',
-    domaine: 'Social', ville: 'Rabat', adresse: 'Centre de jour Hay Riad, Rabat',
-    lat: 33.9900, lng: -6.8600, dateDebut: '2026-10-01', dateFin: '2027-03-31',
-    placesTotal: 5, placesConfirmees: 3, listeAttente: 0, statut: 'PUBLIEE',
-    competences: ['Animation', 'Communication'],
-    description: 'Animez des ateliers créatifs et des sorties pour les résidents du centre de jour.',
-  },
-  {
-    id: 'e8', titre: 'Tournoi sportif caritatif', association: 'Sport & Solidarité Tétouan',
-    domaine: 'Sport', ville: 'Tétouan', adresse: 'Stade municipal de Tétouan',
-    lat: 35.5750, lng: -5.3600, dateDebut: '2026-11-15', dateFin: '2026-11-15',
-    placesTotal: 20, placesConfirmees: 15, listeAttente: 2, statut: 'PUBLIEE',
-    competences: ['Organisation', 'Sport'],
-    description: 'Organisation du tournoi sportif annuel au profit des familles défavorisées.',
-  },
-  {
-    id: 'e9', titre: "Aide aux devoirs — quartier Azla", association: 'Jeunesse Active Tétouan',
-    domaine: 'Éducation', ville: 'Tétouan', adresse: "École primaire Azla, Tétouan",
-    lat: 35.5680, lng: -5.3800, dateDebut: '2026-09-22', dateFin: '2026-12-22',
-    placesTotal: 8, placesConfirmees: 6, listeAttente: 1, statut: 'PUBLIEE',
-    competences: ['Enseignement'],
-    description: 'Appui scolaire pour les enfants du quartier Azla, 2 fois par semaine.',
-  },
-  {
-    id: 'e10', titre: 'Campagne de sensibilisation au don de sang', association: 'Croissant-Rouge Maroc',
-    domaine: 'Santé', ville: 'Tanger', adresse: 'Centre hospitalier Ibn Battuta, Tanger',
-    lat: 35.7720, lng: -5.8100, dateDebut: '2026-10-10', dateFin: '2026-10-10',
-    placesTotal: 12, placesConfirmees: 7, listeAttente: 0, statut: 'PUBLIEE',
-    competences: ['Communication', 'Santé'],
-    description: 'Sensibilisation au don de sang auprès du grand public lors d\'une journée nationale.',
-  },
-  {
-    id: 'e11', titre: 'Jardin partagé — Médina Chefchaouen', association: 'Vertes Initiatives',
-    domaine: 'Environnement', ville: 'Chefchaouen', adresse: 'Jardin communautaire Bab El Ain, Chefchaouen',
-    lat: 35.1710, lng: -5.2635, dateDebut: '2026-10-25', dateFin: '2026-10-25',
-    placesTotal: 15, placesConfirmees: 15, listeAttente: 4, statut: 'COMPLETE',
-    competences: ['Jardinage'],
-    description: 'Entretien collectif du jardin partagé de la médina et ateliers plantation.',
-  },
-  {
-    id: 'e12', titre: 'Bibliothèque mobile rurale', association: 'Lecture Pour Tous',
-    domaine: 'Éducation', ville: 'Tétouan', adresse: 'Douars environs de Tétouan',
-    lat: 35.5200, lng: -5.4000, dateDebut: '2026-11-05', dateFin: '2026-11-05',
-    placesTotal: 10, placesConfirmees: 4, listeAttente: 0, statut: 'PUBLIEE',
-    competences: ['Communication'],
-    description: "Amener des livres et des ateliers lecture dans les villages ruraux autour de Tétouan.",
-  },
-  {
-    id: 'e13', titre: 'Soutien psychologique post-séisme', association: 'Santé Mentale Maroc',
-    domaine: 'Santé', ville: 'Marrakech', adresse: 'Centre communautaire Gueliz, Marrakech',
-    lat: 31.6295, lng: -7.9811, dateDebut: '2026-10-12', dateFin: '2026-12-12',
-    placesTotal: 8, placesConfirmees: 2, listeAttente: 6, statut: 'RENFORT_URGENT',
-    competences: ['Psychologie', 'Écoute'],
-    description: 'Accompagnement des populations affectées. Formation préalable assurée.',
-  },
-  {
-    id: 'e14', titre: 'Restauration façades médina Salé', association: 'Patrimoine Salé',
-    domaine: 'Culture', ville: 'Salé', adresse: 'Médina de Salé, bab El Mrissa',
-    lat: 34.0360, lng: -6.8200, dateDebut: '2026-11-20', dateFin: '2026-11-22',
-    placesTotal: 25, placesConfirmees: 10, listeAttente: 0, statut: 'PUBLIEE',
-    competences: ['Artisanat'],
-    description: 'Rénovation participative des façades de la médina de Salé, encadrée par des artisans.',
-  },
-  {
-    id: 'e15', titre: "Cours d'alphabétisation femmes rurales", association: 'Femmes & Avenir',
-    domaine: 'Éducation', ville: 'Tétouan', adresse: 'Association Femmes & Avenir, rue Semia Bensouda',
-    lat: 35.5740, lng: -5.3710, dateDebut: '2026-09-28', dateFin: '2026-12-28',
-    placesTotal: 6, placesConfirmees: 4, listeAttente: 0, statut: 'PUBLIEE',
-    competences: ['Enseignement'],
-    description: "Cours d'alphabétisation et de calcul pour les femmes rurales en partenariat avec le ministère.",
-  },
-];
-
-const DOMAINES = ['Tous', 'Solidarité', 'Environnement', 'Éducation', 'Sport', 'Santé', 'Culture', 'Social'];
-const VILLES = ['Toutes', 'Tanger', 'Tétouan', 'Rabat', 'Chefchaouen', 'Salé', 'Marrakech'];
-const STATUTS = [
-  { value: 'Tous', label: 'Tous les statuts' },
-  { value: 'PUBLIEE', label: 'Publiée' },
-  { value: 'COMPLETE', label: 'Complète' },
-  { value: 'EN_COURS', label: 'En cours' },
-  { value: 'RENFORT_URGENT', label: 'Renfort urgent' },
-];
+import { useAuth } from '@/context/AuthContext';
+import explorerApi, {
+  type ExplorerMission,
+  type ExplorerStats,
+  type ExplorerFilters,
+  type StatutInscription,
+  type MissionCarte,
+} from '@/services/explorerApi';
+import { MissionMap } from '@/components/site/MissionMap';
 
 const PAGE_SIZE = 10;
 
-function MissionCard({ mission, onDetail }: { mission: MissionDash; onDetail: () => void }) {
-  const [inscrit, setInscrit] = useState(false);
-  const placesRestantes = mission.placesTotal - mission.placesConfirmees;
-  const isComplete = placesRestantes === 0 || mission.statut === 'COMPLETE';
-  const isUrgent = mission.statut === 'RENFORT_URGENT';
+function DashboardStats({ stats, loading }: { stats: ExplorerStats | null; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-28 rounded-2xl border-2 border-ink" />
+        ))}
+      </div>
+    );
+  }
 
-  function handleInscription(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (isComplete) {
-      toast.info("Ajouté à la liste d'attente");
-    } else {
-      setInscrit(true);
-      toast.success('Inscription confirmée !');
+  if (!stats) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+            <Skeleton className="h-4 w-24 mb-2" />
+            <Skeleton className="h-8 w-16" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Missions réalisées */}
+      <div className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+          <Trophy className="h-4 w-4" />
+          Missions réalisées
+        </div>
+        <p className="text-2xl font-black text-ink">{stats.missionsRealisees}</p>
+      </div>
+
+      {/* Inscriptions à venir */}
+      <div className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+          <CalendarDays className="h-4 w-4" />
+          Inscriptions à venir
+        </div>
+        <p className="text-2xl font-black text-ink">{stats.inscriptionsAVenir}</p>
+      </div>
+
+      {/* En liste d'attente */}
+      <div className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+          <Clock className="h-4 w-4" />
+          En liste d'attente
+        </div>
+        <div className="flex items-center gap-2">
+          <p className="text-2xl font-black text-ink">{stats.enListeAttente}</p>
+          {stats.renfortDisponiblePourMoi && (
+            <span className="h-2 w-2 rounded-full bg-red-500" title="Renfort urgent disponible" />
+          )}
+        </div>
+      </div>
+
+      {/* Recommandations */}
+      <button
+        onClick={() => router.navigate({ to: '/benevole/explorer', search: { tab: 'recommandations' } })}
+        className="rounded-2xl border-2 border-ink bg-mustard/20 p-4 shadow-[4px_4px_0_var(--color-ink)] hover:bg-mustard/30 transition-colors text-left"
+      >
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+          <Sparkles className="h-4 w-4" />
+          Missions qui me correspondent
+        </div>
+        <p className="text-2xl font-black text-ink">{stats.recommandations.nombre}</p>
+        {stats.recommandations.meilleurScore && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Meilleur score : {stats.recommandations.meilleurScore}%
+          </p>
+        )}
+      </button>
+    </div>
+  );
+}
+
+function NiveauBadge({ stats, loading }: { stats: ExplorerStats | null; loading: boolean }) {
+  if (loading || !stats) {
+    return (
+      <div className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+        <Skeleton className="h-20 w-full" />
+      </div>
+    );
+  }
+
+  const progress = stats.niveau.seuilSuivant
+    ? (stats.niveau.missionsActuelles / stats.niveau.seuilSuivant) * 100
+    : 100;
+
+  return (
+    <div className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="h-5 w-5 text-mustard" />
+            <div>
+              <p className="text-lg font-bold text-ink">{stats.niveau.nom}</p>
+              {stats.dernierBadge && (
+                <p className="text-xs text-muted-foreground">{stats.dernierBadge.nom}</p>
+              )}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{stats.niveau.missionsActuelles} missions</span>
+              {stats.niveau.seuilSuivant ? (
+                <span>{stats.niveau.seuilSuivant} pour {stats.niveau.niveauSuivant}</span>
+              ) : (
+                <span>Niveau maximum atteint</span>
+              )}
+            </div>
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-mustard transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProchaineMission({ stats, loading, onExplore }: { stats: ExplorerStats | null; loading: boolean; onExplore: () => void }) {
+  if (loading || !stats?.prochaineMission) {
+    return (
+      <div className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+        <Skeleton className="h-20 w-full" />
+      </div>
+    );
+  }
+
+  if (!stats.prochaineMission) {
+    return (
+      <div className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)] text-center">
+        <CalendarDays className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+        <p className="text-sm font-semibold text-ink mb-2">Aucune mission prévue</p>
+        <Button
+          size="sm"
+          onClick={onExplore}
+          className="rounded-xl border-2 border-ink bg-pink font-bold text-pink-foreground shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90"
+        >
+          Explorer les missions
+        </Button>
+      </div>
+    );
+  }
+
+  const dateDebut = new Date(stats.prochaineMission.dateDebut);
+  const now = new Date();
+  const diff = dateDebut.getTime() - now.getTime();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+  return (
+    <div className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+        <CalendarDays className="h-4 w-4" />
+        Prochaine mission
+      </div>
+      <p className="font-bold text-ink mb-1">{stats.prochaineMission.titre}</p>
+      <p className="text-xs text-muted-foreground mb-2">
+        {stats.prochaineMission.ville} • {formaterDate(stats.prochaineMission.dateDebut)}
+      </p>
+      <div className="flex items-center gap-1.5 text-xs">
+        <Clock className="h-3.5 w-3.5" />
+        <span className="font-semibold text-ink">
+          {days > 0 ? `Dans ${days} jour${days > 1 ? 's' : ''}` : 'Aujourd\'hui'}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MissionCard({
+  mission,
+  onDetail,
+  onInscrire,
+  onAnnuler,
+  onConfirmerRenfort,
+  onVoirCertificat,
+}: {
+  mission: ExplorerMission;
+  onDetail: () => void;
+  onInscrire: () => void;
+  onAnnuler: () => void;
+  onConfirmerRenfort: () => void;
+  onVoirCertificat: () => void;
+}) {
+  const isUrgent = mission.statut === 'RENFORT_URGENT';
+  const isSaturee = mission.statut === 'SATUREE';
+  const isPubliee = mission.statut === 'PUBLIEE';
+  const isTerminee = mission.statut === 'TERMINEE';
+
+  // Badge et bouton selon la situation du bénévole
+  let badge: React.ReactNode;
+  let bouton: React.ReactNode;
+  let message: React.ReactNode = null;
+
+  if (!mission.inscriptionStatut) {
+    // Non inscrit
+    if (isPubliee) {
+      badge = (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 border border-green-300 px-3 py-1 text-xs font-bold text-green-800">
+          <Check className="h-3.5 w-3.5" />
+          {mission.placesRestantes} place{mission.placesRestantes > 1 ? 's' : ''} disponible{mission.placesRestantes > 1 ? 's' : ''}
+        </span>
+      );
+      bouton = (
+        <Button
+          size="sm"
+          onClick={(e) => { e.stopPropagation(); onInscrire(); }}
+          disabled={mission.chevauche}
+          className="mt-4 w-full rounded-xl border-2 border-ink bg-pink font-bold text-pink-foreground shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90"
+        >
+          {mission.chevauche ? 'Chevauche une de vos missions' : "S'inscrire"}
+        </Button>
+      );
+    } else if (isSaturee) {
+      badge = (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 border border-orange-300 px-3 py-1 text-xs font-bold text-orange-800">
+          Saturée
+        </span>
+      );
+      bouton = (
+        <Button
+          size="sm"
+          onClick={(e) => { e.stopPropagation(); onInscrire(); }}
+          disabled={mission.chevauche}
+          className="mt-4 w-full rounded-xl border-2 border-ink bg-orange-100 text-orange-800 border-orange-300 font-bold shadow-[3px_3px_0_var(--color-ink)] hover:bg-orange-200"
+        >
+          {mission.chevauche ? 'Chevauche une de vos missions' : 'Rejoindre la liste d\'attente'}
+        </Button>
+      );
+      message = (
+        <p className="text-xs text-muted-foreground mt-2">
+          {mission.listeAttenteCount} personne{mission.listeAttenteCount > 1 ? 's' : ''} en liste d'attente. Vous serez en position {mission.listeAttenteCount + 1}.
+        </p>
+      );
+    } else if (isUrgent) {
+      badge = (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 border border-red-300 px-3 py-1 text-xs font-bold text-red-800">
+          <Zap className="h-3.5 w-3.5" />
+          🚨 Renfort urgent
+        </span>
+      );
+      bouton = (
+        <Button
+          size="sm"
+          onClick={(e) => { e.stopPropagation(); onInscrire(); }}
+          disabled={mission.chevauche}
+          className="mt-4 w-full rounded-xl border-2 border-ink bg-red-500 text-white font-bold shadow-[3px_3px_0_var(--color-ink)] hover:bg-red-600"
+        >
+          {mission.chevauche ? 'Chevauche une de vos missions' : 'Je viens aider'}
+        </Button>
+      );
+      message = (
+        <p className="text-xs text-muted-foreground mt-2">
+          {mission.nbRenfortDemande} bénévole{mission.nbRenfortDemande > 1 ? 's' : ''} recherché{mission.nbRenfortDemande > 1 ? 's' : ''}
+        </p>
+      );
     }
+  } else if (mission.inscriptionStatut === 'CONFIRMEE') {
+    // Inscrit confirmé
+    badge = (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 border border-green-300 px-3 py-1 text-xs font-bold text-green-800">
+        <Check className="h-3.5 w-3.5" />
+        ✓ Inscrit
+      </span>
+    );
+    if (isUrgent) {
+      bouton = null; // Pas d'annulation pour RENFORT_URGENT
+    } else {
+      bouton = (
+        <Button
+          size="sm"
+          onClick={(e) => { e.stopPropagation(); onAnnuler(); }}
+          className="mt-4 w-full rounded-xl border-2 border-ink bg-gray-100 text-gray-800 border-gray-300 font-bold shadow-[3px_3px_0_var(--color-ink)] hover:bg-gray-200"
+        >
+          Annuler mon inscription
+        </Button>
+      );
+    }
+  } else if (mission.inscriptionStatut === 'EN_LISTE_ATTENTE') {
+    // En liste d'attente
+    badge = (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 border border-orange-300 px-3 py-1 text-xs font-bold text-orange-800">
+        <Clock className="h-3.5 w-3.5" />
+        En attente, rang {mission.rang}
+      </span>
+    );
+    if (isUrgent) {
+      bouton = (
+        <div className="flex gap-2 mt-4">
+          <Button
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onConfirmerRenfort(); }}
+            className="flex-1 rounded-xl border-2 border-ink bg-pink font-bold text-pink-foreground shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90"
+          >
+            Confirmer ma venue
+          </Button>
+          <Button
+            size="sm"
+            onClick={(e) => { e.stopPropagation(); onAnnuler(); }}
+            className="flex-1 rounded-xl border-2 border-ink bg-gray-100 text-gray-800 border-gray-300 font-bold shadow-[3px_3px_0_var(--color-ink)] hover:bg-gray-200"
+          >
+            Quitter la liste
+          </Button>
+        </div>
+      );
+    } else {
+      bouton = (
+        <Button
+          size="sm"
+          onClick={(e) => { e.stopPropagation(); onAnnuler(); }}
+          className="mt-4 w-full rounded-xl border-2 border-ink bg-gray-100 text-gray-800 border-gray-300 font-bold shadow-[3px_3px_0_var(--color-ink)] hover:bg-gray-200"
+        >
+          Quitter la liste d'attente
+        </Button>
+      );
+      message = (
+        <p className="text-xs text-muted-foreground mt-2">
+          Vous serez prévenu par e-mail dès qu'une place se libère.
+        </p>
+      );
+    }
+  } else if (mission.inscriptionStatut === 'ANNULEE') {
+    // Inscription annulée
+    badge = (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 border border-gray-300 px-3 py-1 text-xs font-bold text-gray-800">
+        <X className="h-3.5 w-3.5" />
+        Inscription annulée
+      </span>
+    );
+    bouton = (
+      <Button
+        size="sm"
+        onClick={(e) => { e.stopPropagation(); onInscrire(); }}
+        disabled={mission.chevauche}
+        className="mt-4 w-full rounded-xl border-2 border-ink bg-pink font-bold text-pink-foreground shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90"
+      >
+        {mission.chevauche ? 'Chevauche une de vos missions' : (isSaturee ? 'Rejoindre la liste d\'attente' : 'Se réinscrire')}
+      </Button>
+    );
+  } else if (isTerminee && mission.inscriptionStatut === 'CONFIRMEE') {
+    // Mission terminée avec inscription confirmée
+    badge = (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 border border-green-300 px-3 py-1 text-xs font-bold text-green-800">
+        <Trophy className="h-3.5 w-3.5" />
+        Mission terminée
+      </span>
+    );
+    bouton = (
+      <Button
+        size="sm"
+        onClick={(e) => { e.stopPropagation(); onVoirCertificat(); }}
+        className="mt-4 w-full rounded-xl border-2 border-ink bg-mustard font-bold text-ink shadow-[3px_3px_0_var(--color-ink)] hover:opacity-90"
+      >
+        Voir mon certificat
+      </Button>
+    );
   }
 
   return (
@@ -203,7 +434,7 @@ function MissionCard({ mission, onDetail }: { mission: MissionDash; onDetail: ()
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="truncate text-xs font-semibold text-muted-foreground">{mission.association}</p>
+            <p className="truncate text-xs font-semibold text-muted-foreground">{mission.associationNom}</p>
             <h3 className="mt-1 text-base font-bold leading-tight text-ink">{mission.titre}</h3>
           </div>
           <StatusBadge statut={mission.statut} className="shrink-0" />
@@ -211,7 +442,8 @@ function MissionCard({ mission, onDetail }: { mission: MissionDash; onDetail: ()
 
         <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
           <p className="flex items-center gap-2">
-            <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> {mission.adresse}
+            <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {mission.aDistance ? 'À distance' : (mission.adresse || mission.associationVille)}
           </p>
           <p className="flex items-center gap-2">
             <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -220,77 +452,296 @@ function MissionCard({ mission, onDetail }: { mission: MissionDash; onDetail: ()
           </p>
         </div>
 
-        <span className="mt-3 inline-block w-fit rounded-full border border-mustard bg-mustard/20 px-2.5 py-0.5 text-xs font-semibold text-ink">
-          {mission.domaine}
-        </span>
+        {mission.domaine && (
+          <span className="mt-3 inline-block w-fit rounded-full border border-mustard bg-mustard/20 px-2.5 py-0.5 text-xs font-semibold text-ink">
+            {mission.domaine}
+          </span>
+        )}
 
         <div className="mt-3 flex items-center gap-4 text-xs">
           <span
             className={cn(
               'flex items-center gap-1 font-semibold',
-              placesRestantes > 0 ? 'text-green-700' : 'text-orange-700',
+              mission.placesRestantes > 0 ? 'text-green-700' : 'text-orange-700',
             )}
           >
             <Users className="h-3.5 w-3.5" aria-hidden="true" />
-            {placesRestantes > 0
-              ? `${placesRestantes} place${placesRestantes > 1 ? 's' : ''} restante${placesRestantes > 1 ? 's' : ''}`
+            {mission.placesRestantes > 0
+              ? `${mission.placesRestantes} place${mission.placesRestantes > 1 ? 's' : ''} restante${mission.placesRestantes > 1 ? 's' : ''}`
               : 'Complet'}
-            <span className="text-muted-foreground font-normal">/ {mission.placesTotal}</span>
+            <span className="text-muted-foreground font-normal">/ {mission.nbPlaces}</span>
           </span>
-          {mission.listeAttente > 0 && (
-            <span className="text-muted-foreground">{mission.listeAttente} en attente</span>
+          {mission.listeAttenteCount > 0 && (
+            <span className="text-muted-foreground">{mission.listeAttenteCount} en attente</span>
           )}
         </div>
 
-        <Button
-          size="sm"
-          onClick={handleInscription}
-          disabled={inscrit}
-          className={cn(
-            'mt-4 w-full rounded-xl border-2 border-ink font-bold shadow-[3px_3px_0_var(--color-ink)]',
-            inscrit
-              ? 'bg-green-100 text-green-800 border-green-300'
-              : isComplete
-                ? 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200'
-                : 'bg-pink text-pink-foreground hover:opacity-90',
-          )}
-        >
-          {inscrit
-            ? <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4" /> Inscrit</span>
-            : isComplete
-              ? "Rejoindre la liste d'attente"
-              : "S'inscrire"}
-        </Button>
+        {badge}
+        {bouton}
+        {message}
       </div>
     </article>
   );
 }
 
+function formaterDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function ExplorerMissions() {
-  const [search, setSearch] = useState('');
-  const [domaine, setDomaine] = useState('Tous');
-  const [ville, setVille] = useState('Toutes');
-  const [statut, setStatut] = useState('Tous');
+  const { token, user } = useAuth();
+  const router = useRouter();
+  const search = Route.useSearch();
+  const initialTab = (search.tab as any) || 'missions';
+
+  const [tab, setTab] = useState<'missions' | 'recommandations' | 'carte'>(initialTab);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<ExplorerStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Filtres pour l'onglet "Toutes les missions"
+  const [searchText, setSearchText] = useState('');
+  const [domaine, setDomaine] = useState('');
+  const [ville, setVille] = useState('');
+  const [date, setDate] = useState('');
+  const [competences, setCompetences] = useState<number[]>([]);
+  const [placesDisponibles, setPlacesDisponibles] = useState(false);
+  const [filtreInscription, setFiltreInscription] = useState<'disponibles' | 'inscrites' | 'terminees' | 'toutes'>('disponibles');
+  const [page, setPage] = useState(0);
   const [view, setView] = useState<'list' | 'grid'>('grid');
-  const [page, setPage] = useState(1);
-  const [detail, setDetail] = useState<MissionDash | null>(null);
 
-  const filtered = MISSIONS_FICTIVES.filter((m) => {
-    const matchSearch =
-      search === '' ||
-      m.titre.toLowerCase().includes(search.toLowerCase()) ||
-      m.association.toLowerCase().includes(search.toLowerCase());
-    const matchDomaine = domaine === 'Tous' || m.domaine === domaine;
-    const matchVille = ville === 'Toutes' || m.ville === ville;
-    const matchStatut = statut === 'Tous' || m.statut === statut;
-    return matchSearch && matchDomaine && matchVille && matchStatut;
-  });
+  // Données pour chaque onglet
+  const [missions, setMissions] = useState<ExplorerMission[]>([]);
+  const [recommandations, setRecommandations] = useState<ExplorerMission[]>([]);
+  const [carteMissions, setCarteMissions] = useState<MissionCarte[]>([]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Catalogues
+  const [domaines, setDomaines] = useState<{ id: number; nom: string }[]>([]);
+  const [villes, setVilles] = useState<string[]>([]);
+  const [competencesList, setCompetencesList] = useState<{ id: number; nom: string }[]>([]);
+
+  // Détail
+  const [detail, setDetail] = useState<ExplorerMission | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // Certificat
+  const [certificat, setCertificat] = useState<{
+    codeVerification: string;
+    dateDelivrance: string;
+    missionTitre: string;
+    missionDateDebut: string;
+    missionDateFin: string;
+    associationNom: string;
+  } | null>(null);
+  const [certificatLoading, setCertificatLoading] = useState(false);
+
+  // Chargement des catalogues (une seule fois)
+  useEffect(() => {
+    async function loadCatalogues() {
+      const [d, v, c] = await Promise.all([
+        explorerApi.domaines(),
+        explorerApi.villes(),
+        explorerApi.competences(),
+      ]);
+      setDomaines(d);
+      setVilles(v);
+      setCompetencesList(c);
+    }
+    loadCatalogues();
+  }, []);
+
+  // Chargement des stats (uniquement pour les bénévoles)
+  useEffect(() => {
+    if (user?.role === 'BENEVOLE' && token) {
+      setStatsLoading(true);
+      explorerApi.stats(token)
+        .then(setStats)
+        .catch(() => setStats(null))
+        .finally(() => setStatsLoading(false));
+    }
+  }, [token, user]);
+
+  // Chargement des missions selon l'onglet
+  useEffect(() => {
+    if (!token) return;
+
+    async function loadData() {
+      setLoading(true);
+      try {
+        if (tab === 'missions') {
+          if (filtreInscription === 'inscrites') {
+            const data = await explorerApi.mesInscriptions(token, page);
+            setMissions(data.content);
+          } else if (filtreInscription === 'terminees') {
+            const data = await explorerApi.mesInscriptionsTerminees(token);
+            setMissions(data);
+          } else {
+            const filters: ExplorerFilters = {
+              page,
+              domaine: domaine || undefined,
+              ville: ville || undefined,
+              date: date || undefined,
+              competences: competences.length > 0 ? competences : undefined,
+              placesDisponibles: placesDisponibles || undefined,
+              inclureInscrites: filtreInscription === 'toutes' ? true : undefined,
+            };
+            const data = await explorerApi.explorer(token, filters);
+            setMissions(data.content);
+          }
+        } else if (tab === 'recommandations') {
+          const data = await explorerApi.recommandations(token);
+          setRecommandations(data);
+        } else if (tab === 'carte') {
+          const data = await explorerApi.carte(token, {
+            domaine: domaine || undefined,
+            date: date || undefined,
+          });
+          setCarteMissions(data);
+        }
+      } catch (error) {
+        console.error('Erreur de chargement:', error);
+        toast.error('Erreur lors du chargement des missions');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [token, tab, page, domaine, ville, date, competences, placesDisponibles, filtreInscription]);
 
   function resetPage() {
-    setPage(1);
+    setPage(0);
+  }
+
+  async function handleInscrire(missionId: number) {
+    if (!token) {
+      toast.error('Connectez-vous pour vous inscrire');
+      return;
+    }
+
+    try {
+      await explorerApi.inscrire(token, missionId);
+      toast.success('Inscription confirmée !');
+      // Recharger les données
+      if (tab === 'missions') {
+        if (filtreInscription === 'inscrites') {
+          const data = await explorerApi.mesInscriptions(token, page);
+          setMissions(data.content);
+        } else if (filtreInscription === 'terminees') {
+          const data = await explorerApi.mesInscriptionsTerminees(token);
+          setMissions(data);
+        } else {
+          const filters: ExplorerFilters = { page, domaine, ville, date, competences, placesDisponibles, inclureInscrites: filtreInscription === 'toutes' ? true : undefined };
+          const data = await explorerApi.explorer(token, filters);
+          setMissions(data.content);
+        }
+      } else if (tab === 'recommandations') {
+        const data = await explorerApi.recommandations(token);
+        setRecommandations(data);
+      }
+      // Recharger les stats
+      if (user?.role === 'BENEVOLE') {
+        const newStats = await explorerApi.stats(token);
+        setStats(newStats);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'inscription');
+    }
+  }
+
+  async function handleAnnuler(missionId: number) {
+    if (!token) return;
+
+    try {
+      await explorerApi.annuler(token, missionId);
+      toast.success('Inscription annulée');
+      // Recharger les données
+      if (tab === 'missions') {
+        if (filtreInscription === 'inscrites') {
+          const data = await explorerApi.mesInscriptions(token, page);
+          setMissions(data.content);
+        } else if (filtreInscription === 'terminees') {
+          const data = await explorerApi.mesInscriptionsTerminees(token);
+          setMissions(data);
+        } else {
+          const filters: ExplorerFilters = { page, domaine, ville, date, competences, placesDisponibles, inclureInscrites: filtreInscription === 'toutes' ? true : undefined };
+          const data = await explorerApi.explorer(token, filters);
+          setMissions(data.content);
+        }
+      } else if (tab === 'recommandations') {
+        const data = await explorerApi.recommandations(token);
+        setRecommandations(data);
+      }
+      // Recharger les stats
+      if (user?.role === 'BENEVOLE') {
+        const newStats = await explorerApi.stats(token);
+        setStats(newStats);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'annulation');
+    }
+  }
+
+  async function handleConfirmerRenfort(missionId: number) {
+    if (!token) return;
+
+    try {
+      await explorerApi.confirmerRenfort(token, missionId);
+      toast.success('Venue confirmée !');
+      // Recharger les données
+      if (tab === 'missions') {
+        if (filtreInscription === 'inscrites') {
+          const data = await explorerApi.mesInscriptions(token, page);
+          setMissions(data.content);
+        } else if (filtreInscription === 'terminees') {
+          const data = await explorerApi.mesInscriptionsTerminees(token);
+          setMissions(data);
+        } else {
+          const filters: ExplorerFilters = { page, domaine, ville, date, competences, placesDisponibles, inclureInscrites: filtreInscription === 'toutes' ? true : undefined };
+          const data = await explorerApi.explorer(token, filters);
+          setMissions(data.content);
+        }
+      } else if (tab === 'recommandations') {
+        const data = await explorerApi.recommandations(token);
+        setRecommandations(data);
+      }
+      // Recharger les stats
+      if (user?.role === 'BENEVOLE') {
+        const newStats = await explorerApi.stats(token);
+        setStats(newStats);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de la confirmation');
+    }
+  }
+
+  async function handleDetail(missionId: number) {
+    if (!token) return;
+
+    setDetailLoading(true);
+    try {
+      const data = await explorerApi.detail(token, missionId);
+      setDetail(data);
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors du chargement du détail');
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
+  async function handleVoirCertificat(missionId: number) {
+    if (!token) return;
+
+    setCertificatLoading(true);
+    try {
+      const data = await explorerApi.getCertificat(token, missionId);
+      setCertificat(data);
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors du chargement du certificat');
+    } finally {
+      setCertificatLoading(false);
+    }
   }
 
   return (
@@ -298,138 +749,312 @@ function ExplorerMissions() {
       <div>
         <h1 className="font-display text-2xl font-black text-ink">Explorer les missions</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {filtered.length} mission{filtered.length > 1 ? 's' : ''} trouvée
-          {filtered.length > 1 ? 's' : ''}
+          Trouvez la mission qui vous correspond.
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              placeholder="Rechercher une mission…"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                resetPage();
-              }}
-              className="pl-9 border-2 border-ink rounded-xl"
-            />
+      {/* Mini-dashboard (bénévoles uniquement) */}
+      {user?.role === 'BENEVOLE' && (
+        <>
+          <DashboardStats stats={stats} loading={statsLoading} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <NiveauBadge stats={stats} loading={statsLoading} />
+            <ProchaineMission stats={stats} loading={statsLoading} onExplore={() => router.navigate({ to: '/benevole/explorer', search: { tab: 'missions' } })} />
           </div>
-          <Select value={domaine} onValueChange={(v) => { setDomaine(v); resetPage(); }}>
-            <SelectTrigger className="w-40 border-2 border-ink rounded-xl">
+        </>
+      )}
+
+      {/* Onglets */}
+      <div className="flex gap-2 border-b-2 border-ink pb-1">
+        <button
+          onClick={() => { setTab('missions'); resetPage(); }}
+          className={cn(
+            'px-4 py-2 text-sm font-bold transition-colors rounded-t-lg',
+            tab === 'missions' ? 'bg-mustard text-ink' : 'text-muted-foreground hover:bg-muted',
+          )}
+        >
+          Toutes les missions
+        </button>
+        <button
+          onClick={() => { setTab('recommandations'); }}
+          className={cn(
+            'px-4 py-2 text-sm font-bold transition-colors rounded-t-lg',
+            tab === 'recommandations' ? 'bg-mustard text-ink' : 'text-muted-foreground hover:bg-muted',
+          )}
+        >
+          Recommandées pour moi
+        </button>
+        <button
+          onClick={() => { setTab('carte'); }}
+          className={cn(
+            'px-4 py-2 text-sm font-bold transition-colors rounded-t-lg',
+            tab === 'carte' ? 'bg-mustard text-ink' : 'text-muted-foreground hover:bg-muted',
+          )}
+        >
+          Carte
+        </button>
+      </div>
+
+      {/* Filtres (onglet missions) */}
+      {tab === 'missions' && (
+        <div className="rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                placeholder="Rechercher une mission…"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="pl-9 border-2 border-ink rounded-xl"
+              />
+            </div>
+            <Select value={domaine} onValueChange={(v) => { setDomaine(v); resetPage(); }}>
+              <SelectTrigger className="w-40 border-2 border-ink rounded-xl">
+                <SelectValue placeholder="Domaine" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Tous</SelectItem>
+                {domaines.map((d) => (
+                  <SelectItem key={d.id} value={d.nom}>{d.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={ville} onValueChange={(v) => { setVille(v); resetPage(); }}>
+              <SelectTrigger className="w-40 border-2 border-ink rounded-xl">
+                <SelectValue placeholder="Ville" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Toutes</SelectItem>
+                {villes.map((v) => (
+                  <SelectItem key={v} value={v}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => { setDate(e.target.value); resetPage(); }}
+              className="w-40 border-2 border-ink rounded-xl"
+            />
+            <Select value={filtreInscription} onValueChange={(v: 'disponibles' | 'inscrites' | 'terminees' | 'toutes') => { setFiltreInscription(v); resetPage(); }}>
+              <SelectTrigger className="w-40 border-2 border-ink rounded-xl">
+                <SelectValue placeholder="Filtre" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="disponibles">Disponibles</SelectItem>
+                <SelectItem value="inscrites">Mes inscriptions</SelectItem>
+                <SelectItem value="terminees">Terminées</SelectItem>
+                <SelectItem value="toutes">Toutes</SelectItem>
+              </SelectContent>
+            </Select>
+            <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
+              <input
+                type="checkbox"
+                checked={placesDisponibles}
+                onChange={(e) => { setPlacesDisponibles(e.target.checked); resetPage(); }}
+                className="rounded border-ink"
+              />
+              Uniquement avec des places
+            </label>
+
+            {/* View toggle */}
+            <div className="flex rounded-xl border-2 border-ink overflow-hidden ml-auto">
+              <button
+                onClick={() => setView('grid')}
+                className={cn(
+                  'px-3 py-2 transition-colors',
+                  view === 'grid' ? 'bg-mustard text-ink font-bold' : 'bg-paper text-muted-foreground hover:bg-muted',
+                )}
+                aria-label="Vue grille"
+              >
+                <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className={cn(
+                  'px-3 py-2 transition-colors border-l-2 border-ink',
+                  view === 'list' ? 'bg-mustard text-ink font-bold' : 'bg-paper text-muted-foreground hover:bg-muted',
+                )}
+                aria-label="Vue liste"
+              >
+                <LayoutList className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filtres (onglet carte) */}
+      {tab === 'carte' && (
+        <div className="flex flex-wrap gap-3 rounded-2xl border-2 border-ink bg-paper p-4 shadow-[4px_4px_0_var(--color-ink)]">
+          <Select value={domaine} onValueChange={setDomaine}>
+            <SelectTrigger className="w-44 border-2 border-ink rounded-xl">
               <SelectValue placeholder="Domaine" />
             </SelectTrigger>
             <SelectContent>
-              {DOMAINES.map((d) => (
-                <SelectItem key={d} value={d}>{d}</SelectItem>
+              <SelectItem value="">Tous</SelectItem>
+              {domaines.map((d) => (
+                <SelectItem key={d.id} value={d.nom}>{d.nom}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={ville} onValueChange={(v) => { setVille(v); resetPage(); }}>
-            <SelectTrigger className="w-40 border-2 border-ink rounded-xl">
-              <SelectValue placeholder="Ville" />
-            </SelectTrigger>
-            <SelectContent>
-              {VILLES.map((v) => (
-                <SelectItem key={v} value={v}>{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={statut} onValueChange={(v) => { setStatut(v); resetPage(); }}>
-            <SelectTrigger className="w-48 border-2 border-ink rounded-xl">
-              <SelectValue placeholder="Statut" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUTS.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* View toggle */}
-          <div className="flex rounded-xl border-2 border-ink overflow-hidden">
-            <button
-              onClick={() => setView('grid')}
-              className={cn(
-                'px-3 py-2 transition-colors',
-                view === 'grid' ? 'bg-mustard text-ink font-bold' : 'bg-paper text-muted-foreground hover:bg-muted',
-              )}
-              aria-label="Vue grille"
-            >
-              <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <button
-              onClick={() => setView('list')}
-              className={cn(
-                'px-3 py-2 transition-colors border-l-2 border-ink',
-                view === 'list' ? 'bg-mustard text-ink font-bold' : 'bg-paper text-muted-foreground hover:bg-muted',
-              )}
-              aria-label="Vue liste"
-            >
-              <LayoutList className="h-4 w-4" aria-hidden="true" />
-            </button>
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-44 border-2 border-ink rounded-xl"
+            aria-label="Filtrer par date"
+          />
+          <div className="flex items-center gap-3 text-xs text-muted-foreground ml-auto">
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full bg-green-500 border border-ink inline-block" aria-hidden="true" />
+              Disponible
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full bg-orange-400 border border-ink inline-block" aria-hidden="true" />
+              Saturée
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full bg-red-500 border border-ink inline-block" aria-hidden="true" />
+              Urgent
+            </span>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Mission cards */}
-      {pageItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Search className="h-12 w-12 text-muted-foreground mb-4" aria-hidden="true" />
-          <p className="font-semibold text-ink">Aucune mission trouvée</p>
-          <p className="text-sm text-muted-foreground mt-1">Essayez de modifier vos filtres.</p>
-        </div>
-      ) : (
-        <div
-          className={cn(
-            view === 'grid' ? 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3' : 'flex flex-col gap-4',
-          )}
-        >
-          {pageItems.map((m) => (
-            <MissionCard key={m.id} mission={m} onDetail={() => setDetail(m)} />
+      {/* Contenu selon l'onglet */}
+      {loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-64 rounded-2xl border-2 border-ink" />
           ))}
         </div>
-      )}
+      ) : tab === 'missions' ? (
+        <>
+          {missions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Search className="h-12 w-12 text-muted-foreground mb-4" aria-hidden="true" />
+              <p className="font-semibold text-ink">Aucune mission trouvée</p>
+              <p className="text-sm text-muted-foreground mt-1">Essayez de modifier vos filtres.</p>
+            </div>
+          ) : (
+            <div
+              className={cn(
+                view === 'grid' ? 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3' : 'flex flex-col gap-4',
+              )}
+            >
+              {missions.map((m) => (
+                <MissionCard
+                  key={m.id}
+                  mission={m}
+                  onDetail={() => handleDetail(m.id)}
+                  onInscrire={() => handleInscrire(m.id)}
+                  onAnnuler={() => handleAnnuler(m.id)}
+                  onConfirmerRenfort={() => handleConfirmerRenfort(m.id)}
+                  onVoirCertificat={() => handleVoirCertificat(m.id)}
+                />
+              ))}
+            </div>
+          )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]"
-            aria-label="Page précédente"
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-          </Button>
-          <span className="text-sm font-semibold text-ink">
-            Page {page} / {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]"
-            aria-label="Page suivante"
-          >
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </Button>
+          {/* Pagination */}
+          {page > 0 && (
+            <div className="flex items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]"
+                aria-label="Page précédente"
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              </Button>
+              <span className="text-sm font-semibold text-ink">
+                Page {page + 1}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={missions.length < PAGE_SIZE}
+                className="rounded-xl border-2 border-ink shadow-[2px_2px_0_var(--color-ink)]"
+                aria-label="Page suivante"
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </div>
+          )}
+        </>
+      ) : tab === 'recommandations' ? (
+        <>
+          {recommandations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Sparkles className="h-12 w-12 text-muted-foreground mb-4" aria-hidden="true" />
+              <p className="font-semibold text-ink">Aucune recommandation pour le moment</p>
+              <p className="text-sm text-muted-foreground mt-1">Complétez votre profil pour recevoir des suggestions personnalisées.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recommandations.map((m) => (
+                <MissionCard
+                  key={m.id}
+                  mission={m}
+                  onDetail={() => handleDetail(m.id)}
+                  onInscrire={() => handleInscrire(m.id)}
+                  onAnnuler={() => handleAnnuler(m.id)}
+                  onConfirmerRenfort={() => handleConfirmerRenfort(m.id)}
+                  onVoirCertificat={() => handleVoirCertificat(m.id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      ) : tab === 'carte' ? (
+        <div className="rounded-2xl overflow-hidden border-2 border-ink shadow-[4px_4px_0_var(--color-ink)]" style={{ height: 'calc(100vh - 14rem)' }}>
+          {carteMissions.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-muted-foreground">Aucune mission géolocalisée trouvée</p>
+            </div>
+          ) : (
+            <MissionMap
+              missions={carteMissions.map((m) => ({
+                id: String(m.id),
+                titre: m.titre,
+                description: '',
+                domaine: m.domaine || '',
+                association: m.associationNom || '',
+                adresse: null,
+                ville: m.ville || '',
+                lat: m.latitude ? Number(m.latitude) : null,
+                lng: m.longitude ? Number(m.longitude) : null,
+                date: m.dateDebut,
+                placesRestantes: m.placesRestantes,
+                placesDemandees: m.placesRestantes + (m.statut === 'SATUREE' ? 0 : 5),
+                listeAttente: 0,
+              }))}
+              selectedId={null}
+              onSelect={(id) => handleDetail(Number(id))}
+              className="h-full"
+              zoom={6}
+            />
+          )}
         </div>
-      )}
+      ) : null}
 
       {/* Detail Dialog */}
       <Dialog open={!!detail} onOpenChange={(v) => !v && setDetail(null)}>
         <DialogContent className="max-w-lg border-2 border-ink shadow-[4px_4px_0_var(--color-ink)]">
-          {detail && (
+          {detailLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          ) : detail && (
             <>
               <DialogHeader>
                 <DialogTitle className="font-display text-xl font-black text-ink">
@@ -439,15 +1064,17 @@ function ExplorerMissions() {
                   <div className="space-y-3 pt-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <StatusBadge statut={detail.statut} />
-                      <span className="rounded-full border border-mustard bg-mustard/20 px-2.5 py-0.5 text-xs font-semibold text-ink">
-                        {detail.domaine}
-                      </span>
+                      {detail.domaine && (
+                        <span className="rounded-full border border-mustard bg-mustard/20 px-2.5 py-0.5 text-xs font-semibold text-ink">
+                          {detail.domaine}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm font-semibold text-muted-foreground">{detail.association}</p>
+                    <p className="text-sm font-semibold text-muted-foreground">{detail.associationNom}</p>
                     <div className="space-y-1.5 text-sm text-muted-foreground">
                       <p className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
-                        {detail.adresse}
+                        {detail.aDistance ? 'À distance' : (detail.adresse || detail.associationVille)}
                       </p>
                       <p className="flex items-center gap-2">
                         <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -455,16 +1082,21 @@ function ExplorerMissions() {
                       </p>
                       <p className="flex items-center gap-2">
                         <Users className="h-4 w-4 shrink-0" aria-hidden="true" />
-                        {detail.placesTotal - detail.placesConfirmees} places restantes /{' '}
-                        {detail.placesTotal} total
+                        {detail.placesRestantes} places restantes / {detail.nbPlaces} total
                       </p>
+                      {detail.listeAttenteCount > 0 && (
+                        <p className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          {detail.listeAttenteCount} personne{detail.listeAttenteCount > 1 ? 's' : ''} en liste d'attente
+                        </p>
+                      )}
                     </div>
                     {detail.description && (
                       <p className="text-sm text-ink border-t border-ink/10 pt-3">
                         {detail.description}
                       </p>
                     )}
-                    {detail.competences.length > 0 && (
+                    {detail.competences && detail.competences.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 border-t border-ink/10 pt-3">
                         {detail.competences.map((c) => (
                           <span
@@ -483,6 +1115,55 @@ function ExplorerMissions() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Certificat Dialog */}
+      <Dialog open={!!certificat} onOpenChange={(v) => !v && setCertificat(null)}>
+        <DialogContent className="max-w-lg border-2 border-ink shadow-[4px_4px_0_var(--color-ink)]">
+          {certificatLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+          ) : certificat && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display text-xl font-black text-ink flex items-center gap-2">
+                  <Trophy className="h-6 w-6 text-mustard" />
+                  Certificat de participation
+                </DialogTitle>
+                <DialogDescription asChild>
+                  <div className="space-y-4 pt-2">
+                    <div className="rounded-xl bg-mustard/10 border-2 border-mustard p-4">
+                      <p className="text-sm font-bold text-ink mb-2">Code de vérification</p>
+                      <p className="text-lg font-mono font-black text-ink tracking-wider">{certificat.codeVerification}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold text-ink">{certificat.missionTitre}</p>
+                      <p className="text-sm text-muted-foreground">{certificat.associationNom}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CalendarDays className="h-4 w-4" />
+                        {formaterDate(certificat.missionDateDebut)} — {formaterDate(certificat.missionDateFin)}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        Délivré le {formaterDate(certificat.dateDelivrance)}
+                      </div>
+                    </div>
+                  </div>
+                </DialogDescription>
+              </DialogHeader>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+export const Route = createFileRoute('/benevole/explorer')({
+  component: ExplorerMissions,
+  validateSearch: (search: Record<string, unknown>): ExplorerSearch => ({
+    tab: (search.tab as any) || 'missions',
+  }),
+});

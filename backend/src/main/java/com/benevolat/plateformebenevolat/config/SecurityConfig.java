@@ -62,8 +62,21 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // Signaler une mission : utilisateur connecté (avant le permitAll de /api/missions/**)
                 .requestMatchers(HttpMethod.POST, "/api/missions/*/signaler").authenticated()
+                // Explorer / inscriptions : bénévoles uniquement (avant le permitAll /api/missions/**)
+                .requestMatchers(HttpMethod.GET,
+                        "/api/missions/explorer",
+                        "/api/missions/recommandations",
+                        "/api/missions/carte"
+                ).hasRole("BENEVOLE")
+                .requestMatchers(HttpMethod.POST,
+                        "/api/missions/{id}/inscription",
+                        "/api/missions/{id}/inscription/confirmer-renfort"
+                ).hasRole("BENEVOLE")
+                .requestMatchers(HttpMethod.DELETE, "/api/missions/{id}/inscription").hasRole("BENEVOLE")
+                .requestMatchers("/api/benevole/**").hasRole("BENEVOLE")
                 // Endpoints publics (authentification, statistiques, missions, associations, catalogue)
                 .requestMatchers(
+                    "/api/health",
                     "/api/auth/**",
                     "/api/competences/**",
                     "/api/domaines/**",
@@ -77,6 +90,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/associations/me/**").hasRole("ASSOCIATION")
                 // Autres endpoints associations restent publics (pages de détail, etc.)
                 .requestMatchers("/api/associations/**").permitAll()
+                .requestMatchers("/api/benevoles/**").hasRole("BENEVOLE")
                 // Toutes les autres requêtes API nécessitent un JWT valide
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()

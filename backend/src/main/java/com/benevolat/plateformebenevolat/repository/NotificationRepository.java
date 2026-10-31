@@ -32,4 +32,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Transactional
     @Query("UPDATE Notification n SET n.statutEnvoi = :statut WHERE n.idNotification = :id")
     int majStatutEnvoi(@Param("id") Long id, @Param("statut") StatutEnvoi statut);
+
+    /** Les 3 dernières notifications (tableau de bord du bénévole). */
+    List<Notification> findTop3ByUtilisateur_IdUtilisateurOrderByCreatedAtDesc(Long utilisateurId);
 }

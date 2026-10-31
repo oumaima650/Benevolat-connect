@@ -45,10 +45,10 @@ public class InscriptionService {
      * 1. La mission doit être PUBLIEE / SATUREE (avant la date de début)
      *    ou RENFORT_URGENT (tant que la mission n'est pas terminée).
      * 2. Pas de double inscription active (CONFIRMEE ou EN_LISTE_ATTENTE).
-     * 3. Cas A : places restantes > 0 → CONFIRMEE.
-     * 4. Cas B : sinon, place en liste d'attente disponible → EN_LISTE_ATTENTE (rang = dernier + 1).
-     * 5. Cas C : sinon refus (mission pleine).
-     * 6. Le statut de la mission est recalculé (SATUREE, fin de renfort…).
+     * 3. Pas de chevauchement avec une autre mission confirmée (RM04).
+     * 4. RENFORT_URGENT → CONFIRMEE immédiatement ; sinon places restantes > 0 → CONFIRMEE,
+     *    sinon EN_LISTE_ATTENTE (rang = dernier + 1).
+     * 5. Le statut de la mission est recalculé (SATUREE, fin de renfort…).
      */
     @Transactional
     public InscriptionResponseDto inscrire(String email, Long missionId) {
@@ -58,24 +58,11 @@ public class InscriptionService {
         Mission mission = missionRepository.findByIdForUpdate(missionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable."));
 
-        // Règle 1 — statut et date
+        // RM07 — statut et date
         LocalDateTime now = LocalDateTime.now();
-        StatutMission statut = mission.getStatut();
-        if (statut == StatutMission.RENFORT_URGENT) {
-            if (mission.getDateFin() != null && mission.getDateFin().isBefore(now)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "La mission est terminée.");
-            }
-        } else if (statut == StatutMission.PUBLIEE || statut == StatutMission.SATUREE) {
-            if (mission.getDateDebut() != null && mission.getDateDebut().isBefore(now)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT,
-                        "La mission a déjà débuté, les inscriptions sont closes.");
-            }
-        } else {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "La mission n'est pas ouverte aux inscriptions (statut : " + statut + ").");
-        }
+        assertMissionOuverte(mission, now);
 
-        // Règle 2 — déjà inscrit ?
+        // RM02 — déjà inscrit (réinscription uniquement si ANNULEE)
         Inscription inscription = inscriptionRepository
                 .findByBenevole_IdUtilisateurAndMission_IdMission(benevole.getIdUtilisateur(), missionId)
                 .orElse(null);
@@ -83,28 +70,37 @@ public class InscriptionService {
         if (inscription != null
                 && (inscription.getStatut() == StatutInscription.CONFIRMEE
                 || inscription.getStatut() == StatutInscription.EN_LISTE_ATTENTE)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Déjà inscrit");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Vous êtes déjà inscrit à cette mission.");
         }
 
-        int nbPlaces = missionPlacesService.placesRestantes(mission);
+        // RM04 — chevauchement avec une autre mission CONFIRMEE
+        if (inscriptionRepository.existsChevauchement(
+                benevole.getIdUtilisateur(), missionId, mission.getDateDebut(), mission.getDateFin())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cette mission chevauche une mission où vous êtes déjà confirmé.");
+        }
+
+        int restantes = missionPlacesService.placesRestantes(mission);
         int nbAttente = missionPlacesService.countAttente(missionId);
-        int capaciteAttente = missionPlacesService.capaciteTotale(mission);
 
         StatutInscription nouveauStatut;
         Integer rang = null;
 
-        if (nbPlaces > 0) {
-            // Cas A — place principale
-            mission.setNbPlaces(nbPlaces - 1);
+        if (mission.getStatut() == StatutMission.RENFORT_URGENT) {
+            // Confirmation immédiate, sans liste d'attente
+            if (restantes > 0) {
+                mission.setNbPlaces(restantes - 1);
+            } else {
+                int demande = mission.getNbRenfortDemande() == null ? 0 : mission.getNbRenfortDemande();
+                mission.setNbRenfortDemande(Math.max(0, demande - 1));
+            }
             nouveauStatut = StatutInscription.CONFIRMEE;
-        } else if (nbAttente < capaciteAttente) {
-            // Cas B — liste d'attente
+        } else if (restantes > 0) {
+            mission.setNbPlaces(restantes - 1);
+            nouveauStatut = StatutInscription.CONFIRMEE;
+        } else {
             nouveauStatut = StatutInscription.EN_LISTE_ATTENTE;
             rang = nbAttente + 1;
-        } else {
-            // Cas C — mission pleine
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Mission complète, aucune place disponible ni en liste d'attente.");
         }
 
         // Création ou réutilisation de l'inscription (contrainte unique)
@@ -179,6 +175,10 @@ public class InscriptionService {
         }
 
         if (inscription.getStatut() == StatutInscription.CONFIRMEE) {
+            if (mission.getStatut() == StatutMission.RENFORT_URGENT) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "L'inscription à une mission en renfort urgent ne peut pas être annulée.");
+            }
             mission.setNbPlaces(missionPlacesService.placesRestantes(mission) + 1);
         }
 
@@ -244,5 +244,87 @@ public class InscriptionService {
                         i.getDateInscription()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Confirme la venue d'un bénévole déjà en liste d'attente sur une mission RENFORT_URGENT.
+     */
+    @Transactional
+    public InscriptionResponseDto confirmerRenfort(String email, Long missionId) {
+        Benevole benevole = benevoleRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bénévole introuvable."));
+
+        Mission mission = missionRepository.findByIdForUpdate(missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mission introuvable."));
+
+        if (mission.getStatut() != StatutMission.RENFORT_URGENT) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "La confirmation de renfort n'est possible que sur une mission en renfort urgent.");
+        }
+
+        Inscription inscription = inscriptionRepository
+                .findByBenevole_IdUtilisateurAndMission_IdMission(benevole.getIdUtilisateur(), missionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Aucune inscription trouvée pour cette mission."));
+
+        if (inscription.getStatut() == StatutInscription.CONFIRMEE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Votre venue est déjà confirmée.");
+        }
+        if (inscription.getStatut() != StatutInscription.EN_LISTE_ATTENTE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Seuls les bénévoles en liste d'attente peuvent confirmer un renfort.");
+        }
+
+        if (inscriptionRepository.existsChevauchement(
+                benevole.getIdUtilisateur(), missionId, mission.getDateDebut(), mission.getDateFin())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cette mission chevauche une mission où vous êtes déjà confirmé.");
+        }
+
+        int restantes = missionPlacesService.placesRestantes(mission);
+        if (restantes > 0) {
+            mission.setNbPlaces(restantes - 1);
+        } else {
+            int demande = mission.getNbRenfortDemande() == null ? 0 : mission.getNbRenfortDemande();
+            mission.setNbRenfortDemande(Math.max(0, demande - 1));
+        }
+
+        inscription.setStatut(StatutInscription.CONFIRMEE);
+        inscription.setRang(null);
+        inscriptionRepository.save(inscription);
+
+        missionPlacesService.recalculer(mission);
+
+        notificationService.notifier(benevole, CategorieNotif.PROMOTION,
+                "Votre venue en renfort est confirmée",
+                "Merci ! Votre place sur la mission « " + mission.getTitre() + " » est confirmée.",
+                "/missions/" + missionId, NotificationService.detailsMission(mission));
+        notificationService.notifier(mission.getAssociation(), CategorieNotif.RENFORT,
+                "Renfort confirmé",
+                NotificationService.nomAffiche(benevole) + " " + (benevole.getNom() != null ? benevole.getNom() : "")
+                        + " a confirmé sa venue en renfort sur « " + mission.getTitre() + " ».",
+                "/association/inscrits", false);
+
+        return new InscriptionResponseDto(StatutInscription.CONFIRMEE, null, mission.getNbPlaces(),
+                mission.getNbPlacesListeAttente(), mission.getStatut());
+    }
+
+    private void assertMissionOuverte(Mission mission, LocalDateTime now) {
+        StatutMission statut = mission.getStatut();
+        if (statut == StatutMission.RENFORT_URGENT) {
+            if (mission.getDateFin() != null && mission.getDateFin().isBefore(now)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "La mission est terminée.");
+            }
+            return;
+        }
+        if (statut == StatutMission.PUBLIEE || statut == StatutMission.SATUREE) {
+            if (mission.getDateDebut() != null && !mission.getDateDebut().isAfter(now)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "La mission a déjà débuté, les inscriptions sont closes.");
+            }
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "La mission n'est pas ouverte aux inscriptions (statut : " + statut + ").");
     }
 }

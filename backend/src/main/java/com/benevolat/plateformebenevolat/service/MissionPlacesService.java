@@ -95,7 +95,8 @@ public class MissionPlacesService {
         } else if (s == StatutMission.SATUREE && restantes > 0) {
             m.setStatut(StatutMission.PUBLIEE);
         } else if (s == StatutMission.RENFORT_URGENT && restantes == 0) {
-            // Renfort comblé : la mission reprend son cours normal
+            // Renfort comblé : demanderRenfort ajoute les places demandées à nbPlaces,
+            // donc plus aucune place libre = besoin couvert ; la mission reprend son cours normal
             m.setNbRenfortDemande(0);
             notificationService.notifier(m.getAssociation(), CategorieNotif.RENFORT,
                     "Renfort comblé",

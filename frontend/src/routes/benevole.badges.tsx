@@ -1,7 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Lock, Sprout, Handshake, Medal, Trophy, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Lock, Sprout, Handshake, Medal, Trophy, Check, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { badges, niveauLabel, prochainNiveau } from '@/components/dashboard/data';
+import { useAuth } from '@/context/AuthContext';
+import { benevoleApi, type BadgeNiveau, type NiveauInfo } from '@/services/benevoleApi';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/benevole/badges')({
   component: BadgesNiveau,
@@ -14,12 +17,59 @@ const PALIERS = [
   { label: 'Champion', min: 30, max: Infinity, icone: <Trophy className="h-5 w-5" /> },
 ];
 
+const BADGE_ICONS: Record<string, React.ReactNode> = {
+  'PREMIERE_MISSION': <Sprout className="h-10 w-10" />,
+  'ENGAGE': <Handshake className="h-10 w-10" />,
+  'EXPERT': <Medal className="h-10 w-10" />,
+  'CHAMPION': <Trophy className="h-10 w-10" />,
+};
+
 function BadgesNiveau() {
-  const nMissions = 7;
-  const niveau = niveauLabel(nMissions);
-  const niveauInfo = prochainNiveau(nMissions);
-  const progressPct = Math.round((niveauInfo.actuel / niveauInfo.suivant) * 100);
-  const palierActuel = PALIERS.find((p) => p.label === niveau) ?? PALIERS[0]!;
+  const { token } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [niveau, setNiveau] = useState<NiveauInfo | null>(null);
+  const [badges, setBadges] = useState<BadgeNiveau[]>([]);
+
+  useEffect(() => {
+    if (!token) return;
+    async function loadData() {
+      setLoading(true);
+      try {
+        const data = await benevoleApi.getBadgesNiveau(token);
+        setNiveau(data.niveau);
+        setBadges(data.badges);
+      } catch (error: any) {
+        console.error('Erreur:', error);
+        toast.error('Erreur lors du chargement des badges');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [token]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!niveau) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <p className="text-muted-foreground">Impossible de charger les données de niveau</p>
+      </div>
+    );
+  }
+
+  const nMissions = niveau.missionsActuelles;
+  const niveauActuel = niveau.nom;
+  const progressPct = niveau.seuilSuivant
+    ? Math.round((nMissions / niveau.seuilSuivant) * 100)
+    : 100;
+  const palierActuel = PALIERS.find((p) => p.label === niveauActuel) ?? PALIERS[0]!;
 
   return (
     <div className="space-y-6">
@@ -36,15 +86,15 @@ function BadgesNiveau() {
           </div>
           <div className="flex-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink/60">Niveau actuel</p>
-            <h2 className="font-display text-3xl font-black text-ink">{niveau}</h2>
+            <h2 className="font-display text-3xl font-black text-ink">{niveauActuel}</h2>
             <p className="text-sm text-ink/70">{nMissions} missions réalisées</p>
           </div>
         </div>
         <div className="mt-4">
           <Progress value={progressPct} className="h-3" />
           <p className="mt-1.5 text-sm text-ink/70">
-            {niveauInfo.actuel} / {niveauInfo.suivant} missions pour atteindre{' '}
-            <span className="font-bold text-ink">{niveauInfo.label}</span>
+            {nMissions} / {niveau.seuilSuivant || '—'} missions pour atteindre{' '}
+            <span className="font-bold text-ink">{niveau.niveauSuivant || 'Niveau maximum'}</span>
           </p>
         </div>
       </div>
@@ -63,7 +113,7 @@ function BadgesNiveau() {
             </thead>
             <tbody>
               {PALIERS.map((p) => {
-                const isActuel = niveau === p.label;
+                const isActuel = niveauActuel === p.label;
                 const isAtteint = nMissions >= p.min;
                 return (
                   <tr
@@ -107,12 +157,12 @@ function BadgesNiveau() {
           {badges.map((b) => (
             <div
               key={b.id}
-              className={`flex flex-col items-center gap-3 rounded-2xl border-2 border-ink p-5 text-center shadow-[4px_4px_0_var(--color-ink)] ${b.debloque ? 'bg-paper' : 'bg-muted opacity-70'
+              className={`flex flex-col items-center gap-3 rounded-2xl border-2 border-ink p-5 text-center shadow-[4px_4px_0_var(--color-ink)] ${b.obtenu ? 'bg-paper' : 'bg-muted opacity-70'
                 }`}
             >
-              {b.debloque ? (
+              {b.obtenu ? (
                 <div className="flex h-12 w-12 items-center justify-center text-ink" aria-label={b.nom}>
-                  <b.icone className="h-10 w-10" />
+                  {BADGE_ICONS[b.code] || <Medal className="h-10 w-10" />}
                 </div>
               ) : (
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-200">
@@ -120,11 +170,11 @@ function BadgesNiveau() {
                 </div>
               )}
               <div>
-                <p className={`text-sm font-bold ${b.debloque ? 'text-ink' : 'text-muted-foreground'}`}>
+                <p className={`text-sm font-bold ${b.obtenu ? 'text-ink' : 'text-muted-foreground'}`}>
                   {b.nom}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{b.description}</p>
-                {b.debloque && b.dateObtention && (
+                {b.obtenu && b.dateObtention && (
                   <p className="mt-1.5 text-xs font-semibold text-emerald">
                     Obtenu le {new Date(b.dateObtention).toLocaleDateString('fr-FR')}
                   </p>
