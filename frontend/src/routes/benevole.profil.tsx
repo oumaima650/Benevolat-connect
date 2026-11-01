@@ -11,7 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/dashboard/ConfirmDialog';
 import { ImageUpload } from '@/components/common/ImageUpload';
 import { useAuth } from '@/context/AuthContext';
-import { benevoleApi } from '@/services/benevoleApi';
+import { benevoleApi, type Gamification } from '@/services/benevoleApi';
+import { themeBanniere, PastilleNiveau } from '@/components/gamification/BanniereBenevole';
+import { BadgesDecroches } from '@/components/gamification/BadgesDecroches';
+import { Link } from '@tanstack/react-router';
 import { benevoleProfile as fallbackProfile } from '@/components/dashboard/data';
 import {
   fetchCompetences,
@@ -193,6 +196,8 @@ function ProfilBenevole() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   /* catalogues depuis l'API */
+  const [gamification, setGamification]   = useState<Gamification | null>(null);
+  const [profilId, setProfilId]           = useState<number | null>(null);
   const [catalogComp, setCatalogComp]     = useState<CompetenceItem[]>([]);
   const [catalogDom, setCatalogDom]       = useState<DomaineItem[]>([]);
 
@@ -230,8 +235,11 @@ function ProfilBenevole() {
 
     if (!token) { setLoading(false); return; }
 
+    benevoleApi.getGamification(token).then(setGamification).catch(() => {});
+
     benevoleApi.getProfile(token)
       .then(data => {
+        setProfilId(data.id ?? null);
         setForm(f => ({
           ...f,
           prenom:        data.prenom        || f.prenom,
@@ -355,8 +363,15 @@ function ProfilBenevole() {
           <div className="lg:col-span-4 space-y-6">
 
             {/* Carte profil / avatar */}
-            <div className="rounded-2xl border-2 border-ink bg-paper p-6 shadow-[4px_4px_0_var(--color-ink)] space-y-6 text-center">
-              <div className="flex justify-center">
+            <div className="overflow-hidden rounded-2xl border-2 border-ink bg-paper px-6 pb-6 shadow-[4px_4px_0_var(--color-ink)] space-y-6 text-center">
+              {/* Bannière débloquée par le dernier badge palier */}
+              <div
+                className="relative -mx-6 h-24 border-b-2 border-ink"
+                style={{ background: themeBanniere(gamification?.theme).fond }}
+              >
+                <div aria-hidden className="absolute inset-0" style={{ backgroundImage: themeBanniere(gamification?.theme).motif }} />
+              </div>
+              <div className="-mt-20 flex justify-center">
                 {hasPhoto ? (
                   <img
                     src={photoUrl}
@@ -374,6 +389,20 @@ function ProfilBenevole() {
                 <h2 className="font-display text-xl font-black text-ink">
                   {form.prenom || form.nom ? `${form.prenom} ${form.nom}` : 'Bénévole'}
                 </h2>
+                {gamification && (
+                  <div className="mt-2 flex justify-center">
+                    <PastilleNiveau theme={gamification.theme} niveau={gamification.niveau} nomNiveau={gamification.nomNiveau} />
+                  </div>
+                )}
+                {profilId != null && (
+                  <Link
+                    to="/benevoles/$id"
+                    params={{ id: String(profilId) }}
+                    className="mt-2 inline-block text-xs font-bold text-pink underline underline-offset-2"
+                  >
+                    Voir mon profil public
+                  </Link>
+                )}
                 <p className="mt-1 text-sm text-muted-foreground flex items-center justify-center gap-1.5">
                   <MapPin className="h-4 w-4" /> {form.ville || 'Ville non renseignée'}
                 </p>
@@ -388,6 +417,13 @@ function ProfilBenevole() {
                   </p>
                 )}
               </div>
+
+              {/* Badges décrochés (comme les « Achievements » d'un profil GitHub) */}
+              {gamification && (
+                <div className="border-t-2 border-ink/10 pt-4 text-left">
+                  <BadgesDecroches badges={gamification.badges} taille={56} />
+                </div>
+              )}
 
               <div className="pt-2 border-t-2 border-ink/10 text-left">
                 <ImageUpload

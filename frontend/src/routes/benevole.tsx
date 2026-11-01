@@ -5,6 +5,7 @@ import {
   BookOpen, Award, Bell, UserCircle, Menu, LogOut, ChevronDown,
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
+import { CelebrationBadges } from '@/components/gamification/CelebrationBadges';
 import { useUnreadNotifications } from '@/hooks/use-unread-notifications';
 import { useAuth, getInitial } from '@/context/AuthContext';
 import { UserAvatar } from '@/components/common/UserAvatar';
@@ -198,6 +199,7 @@ function BenevoleLayout() {
         </main>
       </div>
       <Toaster richColors position="top-right" />
+      <CelebrationBadges />
     </div>
   );
 }

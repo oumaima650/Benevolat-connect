@@ -41,6 +41,7 @@ public class CertificatService {
     private final AssociationRepository associationRepository;
     private final EmailService emailService;
     private final NotificationService notificationService;
+    private final GamificationService gamificationService;
 
     @Value("${cloudinary.cloud-name:}")
     private String cloudName;
@@ -117,6 +118,9 @@ public class CertificatService {
                     asso.getNom() + " vous a délivré un certificat pour la mission « "
                             + inscription.getMission().getTitre() + " ».",
                     "/benevole/parcours", false);
+
+            // 1 certificat = +1 niveau ; attribution des badges mérités
+            gamificationService.onCertificatDelivre(inscription.getBenevole());
 
             // Envoyer email de notification au bénévole
             try {

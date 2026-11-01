@@ -2,26 +2,43 @@ import { BenevoleInscription, MissionCardBackend } from './missionApi';
 
 const API_BASE = (import.meta.env['VITE_API_URL'] as string | undefined) ?? 'http://localhost:8080';
 
-export interface BadgeNiveau {
-  id: number;
+/** Badge PALIER (tous les 5 niveaux, avec bannière) ou SPECIAL (critère d'engagement). */
+export interface BadgeGamification {
   code: string;
   nom: string;
   description: string;
-  niveau: string;
+  type: 'PALIER' | 'SPECIAL';
+  theme: string | null;
+  valeurCritere: number;
+  /** Valeur actuelle du critère, plafonnée au seuil. */
+  progression: number;
   obtenu: boolean;
   dateObtention: string | null;
 }
 
-export interface NiveauInfo {
-  nom: string;
-  missionsActuelles: number;
-  seuilSuivant: number | null;
-  niveauSuivant: string | null;
+/** Niveau = nombre de missions avec certificat délivré. */
+export interface Gamification {
+  niveau: number;
+  nomNiveau: string;
+  prochainNiveauNom: string;
+  /** Thème de la bannière de profil (plus haut badge PALIER obtenu, sinon "nouveau"). */
+  theme: string;
+  palierActuel: BadgeGamification | null;
+  prochainPalier: BadgeGamification | null;
+  niveauxAvantProchainPalier: number;
+  /** Avancement dans la série de 5 niveaux en cours (0-100). */
+  progressionPalier: number;
+  echelle: { niveau: number; nom: string; atteint: boolean }[];
+  badges: BadgeGamification[];
+  nouveauxBadges: BadgeGamification[];
 }
 
-export interface BadgesNiveauResponse {
-  niveau: NiveauInfo;
-  badges: BadgeNiveau[];
+/** Version courte affichée aux associations et à l'administrateur. */
+export interface GamificationResume {
+  niveau: number;
+  nomNiveau: string;
+  theme: string;
+  palier: string | null;
 }
 
 export interface BenevoleProfileApi {
@@ -44,13 +61,9 @@ export interface BenevoleProfileApi {
 export interface BenevoleDashboardData {
   prenom: string;
   missionsRealisees: number;
-  niveauActuel: string;
   badgesObtenus: number;
   enListeAttenteCount: number;
-  progressPct: number;
-  missionsPourSuivant: number;
-  missionsTotalPourSuivant: number;
-  prochainNiveauLabel: string;
+  gamification: Gamification;
   prochainesMissions: MissionCardBackend[];
   listeAttente: BenevoleInscription[];
   dernieresNotifications: {
@@ -137,10 +150,16 @@ export const benevoleApi = {
     return res.json();
   },
 
-  async getBadgesNiveau(token: string): Promise<BadgesNiveauResponse> {
-    const res = await authFetch(`${API_BASE}/api/benevoles/badges-niveau`, token);
+  async getGamification(token: string): Promise<Gamification> {
+    const res = await authFetch(`${API_BASE}/api/benevoles/gamification`, token);
     if (!res.ok) throw new ApiHttpError('Erreur lors du chargement des badges.', res.status);
     return res.json();
+  },
+
+  /** Les célébrations des nouveaux badges ont été affichées. */
+  async marquerBadgesVus(token: string): Promise<void> {
+    const res = await authFetch(`${API_BASE}/api/benevoles/gamification/vus`, token, { method: 'POST' });
+    if (!res.ok) throw new ApiHttpError('Erreur lors de la mise à jour des badges.', res.status);
   },
 
   async changePassword(token: string, currentPassword: string, newPassword: string): Promise<void> {

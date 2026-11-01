@@ -2,6 +2,7 @@ package com.benevolat.plateformebenevolat.repository;
 
 import com.benevolat.plateformebenevolat.entity.ScoreMatching;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,8 +19,12 @@ public interface ScoreMatchingRepository extends JpaRepository<ScoreMatching, Lo
             JOIN FETCH m.association a
             JOIN FETCH m.domaine d
             WHERE sm.benevole.idUtilisateur = :benevoleId
-              AND m.statut = com.benevolat.plateformebenevolat.entity.StatutMission.PUBLIEE
+              AND m.statut IN (
+                    com.benevolat.plateformebenevolat.entity.StatutMission.PUBLIEE,
+                    com.benevolat.plateformebenevolat.entity.StatutMission.RENFORT_URGENT
+              )
               AND m.estSignalee = false
+              AND m.estMasquee = false
               AND a.statut = com.benevolat.plateformebenevolat.entity.StatutUtilisateur.ACTIF
               AND m.dateDebut > :now
               AND NOT EXISTS (
@@ -43,4 +48,11 @@ public interface ScoreMatchingRepository extends JpaRepository<ScoreMatching, Lo
             """)
     List<ScoreMatching> findRecommandationsValides(@Param("benevoleId") Long benevoleId,
                                                    @Param("now") LocalDateTime now);
+
+    List<ScoreMatching> findByBenevole_IdUtilisateur(Long benevoleId);
+
+    /** Profil modifié : les scores seront recalculés au prochain affichage. */
+    @Modifying
+    @Query("DELETE FROM ScoreMatching sm WHERE sm.benevole.idUtilisateur = :benevoleId")
+    void supprimerPourBenevole(@Param("benevoleId") Long benevoleId);
 }

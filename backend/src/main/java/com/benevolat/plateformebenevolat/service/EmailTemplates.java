@@ -38,6 +38,7 @@ public class EmailTemplates {
             case VALIDATION -> new Style(BLEU, "#fff", "Validation", "Accéder à mon espace");
             case COMPTE -> new Style(ENCRE, "#fff", "Mon compte", "Aller sur CountMeIn");
             case MODERATION -> new Style(ROUGE, "#fff", "Modération", "Voir mes missions");
+            case GAMIFICATION -> new Style(JAUNE, ENCRE, "Badge débloqué", "Voir mes badges");
             case SYSTEME -> new Style(ENCRE, "#fff", "Information", "Aller sur CountMeIn");
         };
     }

@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Ban, Loader2, RotateCcw, Search, Users } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PastilleNiveau } from '@/components/gamification/BanniereBenevole';
 import { adminApi, signalerChangementAdmin, type UtilisateurAdmin } from '@/services/adminApi';
 
 export const Route = createFileRoute('/admin/utilisateurs')({
@@ -160,7 +161,17 @@ function AdminUtilisateurs() {
                     <div className="flex items-center gap-3">
                       <Avatar u={u} />
                       <div className="min-w-0">
-                        <p className="truncate font-semibold text-ink">{u.nom || '—'}</p>
+                        {u.role === 'BENEVOLE' ? (
+                          <Link
+                            to="/benevoles/$id"
+                            params={{ id: String(u.id) }}
+                            className="block truncate font-semibold text-ink hover:text-pink hover:underline"
+                          >
+                            {u.nom || '—'}
+                          </Link>
+                        ) : (
+                          <p className="truncate font-semibold text-ink">{u.nom || '—'}</p>
+                        )}
                         <p className="truncate text-xs text-muted-foreground">{u.email}</p>
                       </div>
                     </div>
@@ -169,6 +180,11 @@ function AdminUtilisateurs() {
                     <span className={`rounded-full border border-ink/40 px-2 py-0.5 text-xs font-bold ${ROLE_BADGE[u.role].classe}`}>
                       {ROLE_BADGE[u.role].label}
                     </span>
+                    {u.gamification && (
+                      <div className="mt-1.5">
+                        <PastilleNiveau theme={u.gamification.theme} niveau={u.gamification.niveau} nomNiveau={u.gamification.nomNiveau} />
+                      </div>
+                    )}
                     {u.statutValidation === 'EN_ATTENTE' && (
                       <span className="ml-1 text-[11px] font-semibold text-mustard-foreground">(non validée)</span>
                     )}

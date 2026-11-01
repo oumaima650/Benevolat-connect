@@ -50,6 +50,10 @@ public class Inscription {
     @Column(name = "rappelEnvoye", nullable = false)
     private Boolean rappelEnvoye = false;
 
+    /** Venue en réponse à un renfort urgent (badge « Renfort de choc »). */
+    @Column(name = "estRenfort", nullable = false)
+    private Boolean estRenfort = false;
+
     public Inscription(Benevole benevole, Mission mission, StatutInscription statut, Integer rang) {
         this.benevole = benevole;
         this.mission = mission;

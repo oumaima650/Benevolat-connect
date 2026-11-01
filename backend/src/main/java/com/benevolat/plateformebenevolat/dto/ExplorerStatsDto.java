@@ -35,9 +35,14 @@ public class ExplorerStatsDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class NiveauInfo {
+        private int niveau;
         private String nom;
+        /** Thème de la bannière (plus haut badge PALIER obtenu). */
+        private String theme;
         private long missionsActuelles;
+        /** Niveau du prochain badge PALIER (null si tous obtenus). */
         private Integer seuilSuivant;
+        /** Nom du prochain badge PALIER. */
         private String niveauSuivant;
     }
 

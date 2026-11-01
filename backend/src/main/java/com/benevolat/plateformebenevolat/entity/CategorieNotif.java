@@ -17,5 +17,6 @@ public enum CategorieNotif {
     VALIDATION,         // association validée / refusée (F39)
     COMPTE,             // compte suspendu / réactivé (F40)
     MODERATION,         // mission signalée / masquée / rétablie (F41)
+    GAMIFICATION,       // niveau atteint / badge débloqué
     SYSTEME
 }

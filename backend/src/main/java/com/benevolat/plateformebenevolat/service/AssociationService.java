@@ -48,6 +48,7 @@ public class AssociationService {
     private final MissionPlacesService missionPlacesService;
     private final NotificationService notificationService;
     private final N8nService n8nService;
+    private final GamificationService gamificationService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 
@@ -311,7 +312,14 @@ public class AssociationService {
         all.addAll(confirmes);
         all.addAll(attente);
 
-        return all.stream().map(this::toInscritDto).collect(Collectors.toList());
+        var niveaux = gamificationService.resumes(all.stream().map(i -> i.getBenevole().getIdUtilisateur()).toList());
+        return all.stream()
+                .map(i -> {
+                    InscritDto dto = toInscritDto(i);
+                    dto.setGamification(niveaux.get(dto.getBenevoleId()));
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     public MissionDto demanderRenfort(String email, Long missionId, int nbBenevoles) {

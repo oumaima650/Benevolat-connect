@@ -40,8 +40,8 @@ VALUES (@asso3Id, 'Ecole du Quartier', 'Soutien scolaire', 'Tanger', 'contact@ec
 INSERT INTO Utilisateur (email, motDePasse, statut, notifEstActive, createdAt, updatedAt)
 VALUES ('benevole@test.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ACTIF', TRUE, NOW(), NOW());
 SET @benevoleId = LAST_INSERT_ID();
-INSERT INTO Benevole (idBenevole, nom, prenom, dateNaissance, ville, latitude, longitude, biographie, rayonDeplacementKm, telephone, idNiveau)
-VALUES (@benevoleId, 'Dupont', 'Jean', '1990-05-15', 'Casablanca', 33.5731, -7.5898, 'Bénévole passionné', 50, '0612345678', 1);
+INSERT INTO Benevole (idBenevole, nom, prenom, dateNaissance, ville, latitude, longitude, biographie, rayonDeplacementKm, telephone)
+VALUES (@benevoleId, 'Dupont', 'Jean', '1990-05-15', 'Casablanca', 33.5731, -7.5898, 'Bénévole passionné', 50, '0612345678');
 
 -- =====================================================================
 -- 2. DOMAINES ET COMPÉTENCES

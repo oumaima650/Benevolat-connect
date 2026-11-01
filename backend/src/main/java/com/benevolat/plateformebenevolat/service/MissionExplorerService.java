@@ -2,6 +2,7 @@ package com.benevolat.plateformebenevolat.service;
 
 import com.benevolat.plateformebenevolat.dto.ExplorerMissionDto;
 import com.benevolat.plateformebenevolat.dto.ExplorerStatsDto;
+import com.benevolat.plateformebenevolat.dto.GamificationDto;
 import com.benevolat.plateformebenevolat.dto.MissionCarteDto;
 import com.benevolat.plateformebenevolat.entity.*;
 import com.benevolat.plateformebenevolat.repository.*;
@@ -34,7 +35,7 @@ public class MissionExplorerService {
     private final ScoreMatchingRepository scoreMatchingRepository;
     private final CertificatRepository certificatRepository;
     private final ObtentionRepository obtentionRepository;
-    private final NiveauSeuils niveauSeuils;
+    private final GamificationService gamificationService;
     private final MissionPlacesService missionPlacesService;
 
     public Page<ExplorerMissionDto> explorer(
@@ -226,7 +227,7 @@ public class MissionExplorerService {
         Integer meilleur = recos.stream().map(ScoreMatching::getScore).filter(Objects::nonNull)
                 .max(Integer::compareTo).orElse(null);
 
-        NiveauSeuils.Resultat niveau = niveauSeuils.resolve(missionsRealisees);
+        GamificationDto niveau = gamificationService.profil(id);
 
         Obtention lastBadge = obtentionRepository.findDernierBadge(id).orElse(null);
 
@@ -252,10 +253,12 @@ public class MissionExplorerService {
                         .meilleurScore(meilleur)
                         .build())
                 .niveau(ExplorerStatsDto.NiveauInfo.builder()
-                        .nom(niveau.nom())
-                        .missionsActuelles(niveau.missionsActuelles())
-                        .seuilSuivant(niveau.seuilSuivant())
-                        .niveauSuivant(niveau.niveauSuivant())
+                        .niveau(niveau.niveau())
+                        .nom(niveau.nomNiveau())
+                        .theme(niveau.theme())
+                        .missionsActuelles(missionsRealisees)
+                        .seuilSuivant(niveau.prochainPalier() != null ? niveau.prochainPalier().valeurCritere() : null)
+                        .niveauSuivant(niveau.prochainPalier() != null ? niveau.prochainPalier().nom() : null)
                         .build())
                 .dernierBadge(lastBadge == null ? null : ExplorerStatsDto.DernierBadge.builder()
                         .code(lastBadge.getBadge().getCode())

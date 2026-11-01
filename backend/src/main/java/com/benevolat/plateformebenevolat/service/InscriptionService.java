@@ -112,6 +112,7 @@ public class InscriptionService {
         }
         inscription.setRappelEnvoye(false);
         inscription.setDateInscription(now);
+        inscription.setEstRenfort(mission.getStatut() == StatutMission.RENFORT_URGENT);
         inscriptionRepository.save(inscription);
 
         // Règle 6 — recalcul des compteurs et du statut
@@ -291,6 +292,7 @@ public class InscriptionService {
 
         inscription.setStatut(StatutInscription.CONFIRMEE);
         inscription.setRang(null);
+        inscription.setEstRenfort(true);
         inscriptionRepository.save(inscription);
 
         missionPlacesService.recalculer(mission);

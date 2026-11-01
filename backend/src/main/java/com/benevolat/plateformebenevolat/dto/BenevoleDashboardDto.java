@@ -13,15 +13,12 @@ import java.util.List;
 @NoArgsConstructor
 public class BenevoleDashboardDto {
     private String prenom;
+    /** Missions avec certificat délivré (= niveau). */
     private long missionsRealisees;
-    private String niveauActuel;
     private int badgesObtenus;
     private long enListeAttenteCount;
-    
-    private int progressPct;
-    private int missionsPourSuivant;
-    private int missionsTotalPourSuivant;
-    private String prochainNiveauLabel;
+
+    private GamificationDto gamification;
     
     private List<MissionCardDto> prochainesMissions;
     private List<BenevoleInscriptionDto> listeAttente;

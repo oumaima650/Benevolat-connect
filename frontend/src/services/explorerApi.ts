@@ -55,8 +55,11 @@ export interface ExplorerStats {
   enListeAttente: number;
   renfortDisponiblePourMoi: boolean;
   recommandations: { nombre: number; meilleurScore: number | null };
+  /** Niveau = missions avec certificat ; seuilSuivant / niveauSuivant = prochain badge palier. */
   niveau: {
+    niveau: number;
     nom: string;
+    theme: string;
     missionsActuelles: number;
     seuilSuivant: number | null;
     niveauSuivant: string | null;

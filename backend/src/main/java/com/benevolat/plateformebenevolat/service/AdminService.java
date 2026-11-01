@@ -1,6 +1,7 @@
 package com.benevolat.plateformebenevolat.service;
 
 import com.benevolat.plateformebenevolat.dto.AdminDtos.*;
+import com.benevolat.plateformebenevolat.dto.GamificationDto;
 import com.benevolat.plateformebenevolat.entity.*;
 import com.benevolat.plateformebenevolat.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class AdminService {
     private final InscriptionRepository inscriptionRepository;
     private final CertificatRepository certificatRepository;
     private final NotificationService notificationService;
+    private final GamificationService gamificationService;
 
     /* ─── Statistiques (F34) ───────────────────────────────────────────────── */
 
@@ -157,9 +159,13 @@ public class AdminService {
     @Transactional(readOnly = true)
     public List<UtilisateurAdmin> getUtilisateurs(String role, String q) {
         String recherche = q == null ? "" : q.trim().toLowerCase();
-        return userRepository.findAll().stream()
+        List<Utilisateur> utilisateurs = userRepository.findAll().stream()
                 .filter(u -> role == null || role.isBlank() || u.getRole().name().equalsIgnoreCase(role))
-                .map(this::toUtilisateurAdmin)
+                .toList();
+        Map<Long, GamificationDto.Resume> niveaux = gamificationService.resumes(utilisateurs.stream()
+                .filter(u -> u instanceof Benevole).map(Utilisateur::getIdUtilisateur).toList());
+        return utilisateurs.stream()
+                .map(u -> toUtilisateurAdmin(u, niveaux.get(u.getIdUtilisateur())))
                 .filter(u -> recherche.isEmpty()
                         || u.email().toLowerCase().contains(recherche)
                         || (u.nom() != null && u.nom().toLowerCase().contains(recherche))
@@ -186,10 +192,10 @@ public class AdminService {
                                 + "\nVos données et votre historique sont conservés."
                         : "Votre compte CountMeIn est de nouveau actif. Vous pouvez vous reconnecter.",
                 null);
-        return toUtilisateurAdmin(u);
+        return toUtilisateurAdmin(u, u instanceof Benevole ? gamificationService.resume(u.getIdUtilisateur()) : null);
     }
 
-    private UtilisateurAdmin toUtilisateurAdmin(Utilisateur u) {
+    private UtilisateurAdmin toUtilisateurAdmin(Utilisateur u, GamificationDto.Resume gamification) {
         String nom = null, ville = null, photo = u.getPhotoProfil(), validation = null;
         if (u instanceof Benevole b) {
             nom = ((b.getPrenom() != null ? b.getPrenom() + " " : "") + (b.getNom() != null ? b.getNom() : "")).trim();
@@ -203,7 +209,7 @@ public class AdminService {
             nom = "Administrateur";
         }
         return new UtilisateurAdmin(u.getIdUtilisateur(), u.getEmail(), u.getRole().name(), nom, ville, photo,
-                u.getStatut() != null ? u.getStatut().name() : "ACTIF", validation, u.getCreatedAt());
+                u.getStatut() != null ? u.getStatut().name() : "ACTIF", validation, u.getCreatedAt(), gamification);
     }
 
     /* ─── Modération des missions (F41) ────────────────────────────────────── */

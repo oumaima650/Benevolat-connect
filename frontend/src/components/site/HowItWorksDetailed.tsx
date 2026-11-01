@@ -7,6 +7,8 @@ import {
   Building2, FileText, Users, BarChart3, CalendarCheck, Check,
 } from "lucide-react";
 import { Reveal } from "./Reveal";
+import { themeBanniere } from "@/components/gamification/BanniereBenevole";
+import { BadgeMedaille } from "@/components/gamification/BadgeMedaille";
 import { useAuth } from "@/context/AuthContext";
 
 /* ─────────────────────────────────────────────
@@ -141,47 +143,46 @@ function B1() {
   );
 }
 
-const NIVEAUX = [
-  { icon: Sprout, label: "Débutant",  seuil: "1 – 4",   badge: "Première mission", missions: 1,  max: 5,  accent: "bg-mustard text-ink",               barColor: "#d97706" },
-  { icon: Star,   label: "Engagé",    seuil: "5 – 14",  badge: "Badge Engagé",     missions: 5,  max: 15, accent: "bg-muted text-ink",                  barColor: "#9ca3af" },
-  { icon: Trophy, label: "Expert",    seuil: "15 – 29", badge: "Badge Expert",     missions: 15, max: 30, accent: "bg-pink text-pink-foreground",       barColor: "#e2457a" },
-  { icon: Crown,  label: "Champion",  seuil: "30+",     badge: "Badge Champion",   missions: 30, max: 30, accent: "bg-emerald text-emerald-foreground", barColor: "#1f8a5b" },
-];
+/** Un badge palier tous les 5 niveaux ; chacun débloque une bannière de profil. */
+const PALIERS = ["etincelle", "flamme", "phare", "etoile", "constellation", "legende"].map((theme, i) => ({
+  theme,
+  niveau: (i + 1) * 5,
+}));
 
 function B2() {
   return (
     <>
       <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-        Chaque mission pour laquelle tu reçois un certificat compte dans ta progression. Plus tu t'engages, plus ton niveau monte. Les badges sont obtenus une seule fois, automatiquement.
+        Chaque mission pour laquelle tu reçois un certificat te fait gagner <strong>un niveau</strong>, et chaque niveau a son nom
+        (Premier pas, Main tendue, Volontaire…). Tous les <strong>5 niveaux</strong>, tu décroches un badge qui personnalise la bannière
+        de ton profil, visible par les associations. Des badges spéciaux récompensent aussi les renforts urgents, la fidélité et la diversité de tes missions.
       </p>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {NIVEAUX.map(({ icon: Icon, label, seuil, badge, missions, max, accent, barColor }) => (
-          <div key={label} className="flex flex-col rounded-xl border-2 border-ink bg-paper p-5 shadow-[4px_4px_0_var(--color-ink)] hover:-translate-y-0.5 transition-all">
-            <div className={`mb-3 flex h-12 w-12 items-center justify-center rounded-xl border-2 border-ink ${accent}`}>
-              <Icon className="h-6 w-6" strokeWidth={2} />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {PALIERS.map(({ theme, niveau }) => {
+          const t = themeBanniere(theme);
+          return (
+            <div key={theme} className="overflow-hidden rounded-xl border-2 border-ink bg-paper shadow-[4px_4px_0_var(--color-ink)] hover:-translate-y-0.5 transition-all">
+              <div className="relative h-16 border-b-2 border-ink" style={{ background: t.fond }}>
+                <div aria-hidden className="absolute inset-0" style={{ backgroundImage: t.motif }} />
+                {t.badge && <BadgeMedaille code={t.badge} taille={52} titre={t.label} className="absolute right-3 top-4" />}
+              </div>
+              <div className="p-4">
+                <p className="font-display font-black text-lg text-ink">{t.label}</p>
+                <p className="text-xs text-muted-foreground">Badge et bannière au niveau {niveau}</p>
+              </div>
             </div>
-            <p className="font-display font-black text-lg text-ink">{label}</p>
-            <p className="text-xs text-muted-foreground mb-3">{seuil} missions</p>
-            <div className="h-2.5 w-full rounded-full border border-ink bg-muted overflow-hidden mb-1">
-              <div className="h-full rounded-full border-r border-ink" style={{ width: `${Math.min(100, (missions / max) * 100)}%`, backgroundColor: barColor }} />
-            </div>
-            <p className="text-[11px] text-muted-foreground mb-3">à partir de {missions} mission{missions > 1 ? "s" : ""}</p>
-            <div className="mt-auto">
-              <span className="inline-flex items-center gap-1 rounded-full border-2 border-ink px-2.5 py-0.5 text-[10px] font-black" style={{ backgroundColor: barColor + "22", color: barColor }}>
-                <Award className="h-3 w-3" /> {badge}
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </>
   );
 }
 
 const criteres = [
-  { label: "Proximité", pct: 45, color: "#2563eb", desc: "Les missions près de chez toi passent en premier." },
-  { label: "Affinité",  pct: 35, color: "#e2457a", desc: "Tes domaines et compétences sont pris en compte." },
-  { label: "Besoin",    pct: 20, color: "#1f8a5b", desc: "Les missions qui ont le plus besoin de bénévoles remontent." },
+  { label: "Proximité",   pct: 40, color: "#2563eb", desc: "Les missions près de chez toi passent en premier." },
+  { label: "Compétences", pct: 30, color: "#e2457a", desc: "Tes compétences sont comparées à celles demandées." },
+  { label: "Besoin",      pct: 20, color: "#1f8a5b", desc: "Les renforts urgents et les missions qui manquent de bénévoles remontent." },
+  { label: "Fidélité",    pct: 10, color: "#d97706", desc: "Les associations que tu as déjà aidées sont mises en avant." },
 ];
 
 function B3() {

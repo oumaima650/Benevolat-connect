@@ -1,3 +1,4 @@
+import type { GamificationResume } from './benevoleApi';
 const API_BASE =
   (import.meta.env["VITE_API_URL"] as string | undefined) ?? "http://localhost:8080";
 
@@ -151,6 +152,8 @@ export type InscritDashboard = {
   rang?: number;
   dateInscription: string;
   certificatDelivre: boolean;
+  /** Niveau et bannière du bénévole (gamification). */
+  gamification?: GamificationResume | null;
 };
 
 export const getInscrits = (missionId: number) =>

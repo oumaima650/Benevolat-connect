@@ -18,7 +18,7 @@ Le bénévolat joue un rôle essentiel dans la vie sociale et solidaire. Cependa
 - **Renfort Urgent en cours de mission :** Gestion des besoins de dernière minute lorsque la mission est en cours (`RENFORT_URGENT`).
 - **Certificats PDF Vérifiables :** Attestations d'engagement générées en PDF et vérifiables publiquement via un code unique non devinable.
 - **Automatisation & Rappels n8n :** Workflows n8n déclenchés par le backend (rappels H-24, e-mails d'inscription, messages générés par IA).
-- **Gamification & Impact :** Badges (*Première mission*, *Engagé*, *Expert*, *Champion*) et niveaux de progression.
+- **Gamification & Impact :** 1 mission avec certificat = +1 niveau (chaque niveau a un nom) ; un badge palier tous les 5 niveaux (*Étincelle*, *Flamme*, *Phare*, *Étoile*, *Constellation*, *Légende*) débloque une bannière de profil ; badges spéciaux (*Renfort de choc*, *Fidèle*, *Explorateur*, *Spécialiste*, *Régulier*).
 - **Cartographie & Tableaux de bord :** Carte interactive Leaflet/OpenStreetMap et métriques d'impact.
 
 ---

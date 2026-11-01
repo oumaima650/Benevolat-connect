@@ -60,7 +60,9 @@ public final class AdminDtos {
             String photoUrl,
             String statut,
             String statutValidation,
-            LocalDateTime createdAt
+            LocalDateTime createdAt,
+            /** Niveau et bannière (bénévoles uniquement, sinon null). */
+            GamificationDto.Resume gamification
     ) {}
 
     /** Mission vue par l'administrateur (modération F41). */

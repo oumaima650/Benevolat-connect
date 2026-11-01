@@ -5,6 +5,7 @@ import com.benevolat.plateformebenevolat.dto.InscriptionResponseDto;
 import com.benevolat.plateformebenevolat.dto.MissionCarteDto;
 import com.benevolat.plateformebenevolat.service.InscriptionService;
 import com.benevolat.plateformebenevolat.service.MissionExplorerService;
+import com.benevolat.plateformebenevolat.service.RecommandationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ public class MissionExplorerController {
 
     private final MissionExplorerService missionExplorerService;
     private final InscriptionService inscriptionService;
+    private final RecommandationService recommandationService;
 
     @GetMapping("/explorer")
     public ResponseEntity<Page<ExplorerMissionDto>> explorer(
@@ -65,6 +67,8 @@ public class MissionExplorerController {
 
     @GetMapping("/recommandations")
     public ResponseEntity<List<ExplorerMissionDto>> recommandations(Authentication authentication) {
+        // Scores calculés hors de la transaction de lecture, pour que la liste les voie
+        recommandationService.actualiserSiNecessaire(authentication.getName());
         return ResponseEntity.ok(missionExplorerService.recommandations(authentication.getName()));
     }
 

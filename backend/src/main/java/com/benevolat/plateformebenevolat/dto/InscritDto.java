@@ -29,4 +29,6 @@ public class InscritDto {
     private Integer rang;
     private LocalDateTime dateInscription;
     private Boolean certificatDelivre;
+    /** Niveau et bannière du bénévole (gamification). */
+    private GamificationDto.Resume gamification;
 }

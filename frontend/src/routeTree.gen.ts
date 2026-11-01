@@ -43,6 +43,7 @@ import { Route as BenevoleNotificationsRouteImport } from './routes/benevole.not
 import { Route as BenevoleParcoursRouteImport } from './routes/benevole.parcours'
 import { Route as BenevoleProfilRouteImport } from './routes/benevole.profil'
 import { Route as BenevoleRecommandationsRouteImport } from './routes/benevole.recommandations'
+import { Route as BenevolesIdRouteImport } from './routes/benevoles.$id'
 import { Route as MissionsIndexRouteImport } from './routes/missions.index'
 import { Route as MissionsIdRouteImport } from './routes/missions.$id'
 
@@ -218,6 +219,11 @@ const BenevoleRecommandationsRoute = BenevoleRecommandationsRouteImport.update({
   path: '/recommandations',
   getParentRoute: () => BenevoleRoute,
 } as any)
+const BenevolesIdRoute = BenevolesIdRouteImport.update({
+  id: '/benevoles/$id',
+  path: '/benevoles/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MissionsIndexRoute = MissionsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/benevole/parcours': typeof BenevoleParcoursRoute
   '/benevole/profil': typeof BenevoleProfilRoute
   '/benevole/recommandations': typeof BenevoleRecommandationsRoute
+  '/benevoles/$id': typeof BenevolesIdRoute
   '/missions/$id': typeof MissionsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/association/': typeof AssociationIndexRoute
@@ -295,6 +302,7 @@ export interface FileRoutesByTo {
   '/benevole/parcours': typeof BenevoleParcoursRoute
   '/benevole/profil': typeof BenevoleProfilRoute
   '/benevole/recommandations': typeof BenevoleRecommandationsRoute
+  '/benevoles/$id': typeof BenevolesIdRoute
   '/missions/$id': typeof MissionsIdRoute
   '/admin': typeof AdminIndexRoute
   '/association': typeof AssociationIndexRoute
@@ -334,6 +342,7 @@ export interface FileRoutesById {
   '/benevole/parcours': typeof BenevoleParcoursRoute
   '/benevole/profil': typeof BenevoleProfilRoute
   '/benevole/recommandations': typeof BenevoleRecommandationsRoute
+  '/benevoles/$id': typeof BenevolesIdRoute
   '/missions/$id': typeof MissionsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/association/': typeof AssociationIndexRoute
@@ -374,6 +383,7 @@ export interface FileRouteTypes {
     | '/benevole/parcours'
     | '/benevole/profil'
     | '/benevole/recommandations'
+    | '/benevoles/$id'
     | '/missions/$id'
     | '/admin/'
     | '/association/'
@@ -408,6 +418,7 @@ export interface FileRouteTypes {
     | '/benevole/parcours'
     | '/benevole/profil'
     | '/benevole/recommandations'
+    | '/benevoles/$id'
     | '/missions/$id'
     | '/admin'
     | '/association'
@@ -446,6 +457,7 @@ export interface FileRouteTypes {
     | '/benevole/parcours'
     | '/benevole/profil'
     | '/benevole/recommandations'
+    | '/benevoles/$id'
     | '/missions/$id'
     | '/admin/'
     | '/association/'
@@ -467,6 +479,7 @@ export interface RootRouteChildren {
   MissionsRoute: typeof MissionsRouteWithChildren
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  BenevolesIdRoute: typeof BenevolesIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -709,6 +722,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BenevoleRecommandationsRouteImport
       parentRoute: typeof BenevoleRoute
     }
+    '/benevoles/$id': {
+      id: '/benevoles/$id'
+      path: '/benevoles/$id'
+      fullPath: '/benevoles/$id'
+      preLoaderRoute: typeof BenevolesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/missions/': {
       id: '/missions/'
       path: '/'
@@ -824,6 +844,7 @@ const rootRouteChildren: RootRouteChildren = {
   MissionsRoute: MissionsRouteWithChildren,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  BenevolesIdRoute: BenevolesIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

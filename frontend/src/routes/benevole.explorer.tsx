@@ -146,7 +146,7 @@ function NiveauBadge({ stats, loading }: { stats: ExplorerStats | null; loading:
           <div className="flex items-center gap-2 mb-2">
             <Trophy className="h-5 w-5 text-mustard" />
             <div>
-              <p className="text-lg font-bold text-ink">{stats.niveau.nom}</p>
+              <p className="text-lg font-bold text-ink">Niv. {stats.niveau.niveau} · {stats.niveau.nom}</p>
               {stats.dernierBadge && (
                 <p className="text-xs text-muted-foreground">{stats.dernierBadge.nom}</p>
               )}
@@ -156,9 +156,9 @@ function NiveauBadge({ stats, loading }: { stats: ExplorerStats | null; loading:
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{stats.niveau.missionsActuelles} missions</span>
               {stats.niveau.seuilSuivant ? (
-                <span>{stats.niveau.seuilSuivant} pour {stats.niveau.niveauSuivant}</span>
+                <span>{stats.niveau.seuilSuivant} pour le badge {stats.niveau.niveauSuivant}</span>
               ) : (
-                <span>Niveau maximum atteint</span>
+                <span>Tous les badges paliers débloqués</span>
               )}
             </div>
             <div className="h-2 rounded-full bg-muted overflow-hidden">

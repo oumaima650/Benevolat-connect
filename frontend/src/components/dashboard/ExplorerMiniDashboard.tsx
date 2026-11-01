@@ -180,7 +180,7 @@ export function ExplorerMiniDashboard({
             <h2 className="font-display font-bold text-ink">Niveau et badges</h2>
             {!loading && !failed && niveau && (
               <span className="ml-auto rounded-full border-2 border-ink bg-mustard px-2.5 py-0.5 text-xs font-bold text-ink">
-                {niveau.nom}
+                Niv. {niveau.niveau} · {niveau.nom}
               </span>
             )}
           </div>
@@ -197,13 +197,13 @@ export function ExplorerMiniDashboard({
               <Progress value={progression} className="mt-4 h-3" />
               <p className="mt-2 text-sm text-muted-foreground">
                 {niveauMax ? (
-                  <span className="font-bold text-pink">Niveau maximum atteint</span>
+                  <span className="font-bold text-pink">Tous les badges paliers débloqués</span>
                 ) : (
                   <>
                     <span className="font-semibold text-ink">
                       {niveau.missionsActuelles} / {seuilSuivant} missions
                     </span>{' '}
-                    pour atteindre le niveau{' '}
+                    pour le badge{' '}
                     <span className="font-bold text-pink">{niveau.niveauSuivant}</span>
                   </>
                 )}
