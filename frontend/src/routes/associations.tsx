@@ -97,7 +97,8 @@ function CarteAssociation({ association }: { association: AssociationBackend }) 
 
         {/* CTA */}
         <Link
-          to="/missions"
+          to="/associations/$id"
+          params={{ id: String(association.id) }}
           className="mt-auto flex items-center justify-between rounded-xl border-2 border-ink bg-paper px-3 py-2.5 text-sm font-bold text-ink shadow-[2px_2px_0_var(--color-ink)] hover:bg-mustard transition-colors group-hover:bg-mustard"
         >
           Voir ses missions

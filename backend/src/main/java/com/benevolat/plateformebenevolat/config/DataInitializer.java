@@ -2,12 +2,12 @@ package com.benevolat.plateformebenevolat.config;
 
 import com.benevolat.plateformebenevolat.entity.Badge;
 import com.benevolat.plateformebenevolat.entity.Competence;
+import com.benevolat.plateformebenevolat.entity.CritereBadge;
 import com.benevolat.plateformebenevolat.entity.Domaine;
-import com.benevolat.plateformebenevolat.entity.Niveau;
 import com.benevolat.plateformebenevolat.repository.BadgeRepository;
 import com.benevolat.plateformebenevolat.repository.CompetenceRepository;
 import com.benevolat.plateformebenevolat.repository.DomaineRepository;
-import com.benevolat.plateformebenevolat.repository.NiveauRepository;
+import com.benevolat.plateformebenevolat.service.GamificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -16,9 +16,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+import static com.benevolat.plateformebenevolat.entity.TypeBadge.PALIER;
+import static com.benevolat.plateformebenevolat.entity.TypeBadge.SPECIAL;
+
 /**
  * Initialiseur de données exécuté au démarrage du serveur backend.
- * Pré-remplit les tables prédéfinies (Competence, Domaine, Niveau, Badge) si elles sont vides.
+ * Pré-remplit les tables prédéfinies (Competence, Domaine, Badge) si elles sont vides,
+ * puis attribue les badges déjà mérités (rattrapage).
  * S'exécute avant DataSeeder (@Order).
  */
 @Component
@@ -29,15 +33,15 @@ public class DataInitializer implements CommandLineRunner {
 
     private final CompetenceRepository competenceRepository;
     private final DomaineRepository domaineRepository;
-    private final NiveauRepository niveauRepository;
     private final BadgeRepository badgeRepository;
+    private final GamificationService gamificationService;
 
     @Override
     public void run(String... args) {
         initCompetences();
         initDomaines();
-        initNiveaux();
         initBadges();
+        gamificationService.rattraperTous();
     }
 
     private void initCompetences() {
@@ -83,45 +87,36 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    private void initNiveaux() {
-        if (niveauRepository.count() == 0) {
-            niveauRepository.saveAll(List.of(
-                new Niveau("Débutant", 0),
-                new Niveau("Engagé", 5),
-                new Niveau("Expert", 15),
-                new Niveau("Champion", 30)
-            ));
-            log.info("4 niveaux initiaux insérés avec succès !");
-            return;
-        }
-        for (Niveau n : niveauRepository.findAll()) {
-            if (n.getSeuilMissions() != null) {
-                continue;
-            }
-            switch (n.getNom()) {
-                case "Débutant" -> n.setSeuilMissions(0);
-                case "Engagé" -> n.setSeuilMissions(5);
-                case "Expert" -> n.setSeuilMissions(15);
-                case "Champion" -> n.setSeuilMissions(30);
-                default -> { }
-            }
-            niveauRepository.save(n);
-        }
-    }
-
+    /** Badges PALIER (tous les 5 niveaux, avec bannière) et SPECIAL ; ajoute ceux qui manquent. */
     private void initBadges() {
-        if (badgeRepository.count() == 0) {
-            Niveau debutant = niveauRepository.findByNom("Débutant").orElseThrow();
-            Niveau engage = niveauRepository.findByNom("Engagé").orElseThrow();
-            Niveau expert = niveauRepository.findByNom("Expert").orElseThrow();
-            Niveau champion = niveauRepository.findByNom("Champion").orElseThrow();
-            badgeRepository.saveAll(List.of(
-                new Badge("PREMIERE_MISSION", "Première mission", debutant),
-                new Badge("ENGAGE", "Engagé", engage),
-                new Badge("EXPERT", "Expert", expert),
-                new Badge("CHAMPION", "Champion", champion)
-            ));
-            log.info("4 badges initiaux insérés avec succès !");
+        List<Badge> badges = List.of(
+            new Badge("ETINCELLE", "Étincelle", "Atteindre le niveau 5 : tes premières missions ont allumé l'étincelle.",
+                PALIER, CritereBadge.NIVEAU, 5, "etincelle", 1),
+            new Badge("FLAMME", "Flamme", "Atteindre le niveau 10 : ton engagement brûle d'une belle flamme.",
+                PALIER, CritereBadge.NIVEAU, 10, "flamme", 2),
+            new Badge("PHARE", "Phare", "Atteindre le niveau 15 : tu guides et inspires les autres bénévoles.",
+                PALIER, CritereBadge.NIVEAU, 15, "phare", 3),
+            new Badge("ETOILE", "Étoile", "Atteindre le niveau 20 : une étoile de la solidarité.",
+                PALIER, CritereBadge.NIVEAU, 20, "etoile", 4),
+            new Badge("CONSTELLATION", "Constellation", "Atteindre le niveau 25 : ton impact relie toute une communauté.",
+                PALIER, CritereBadge.NIVEAU, 25, "constellation", 5),
+            new Badge("LEGENDE", "Légende", "Atteindre le niveau 30 : une légende du bénévolat.",
+                PALIER, CritereBadge.NIVEAU, 30, "legende", 6),
+            new Badge("RENFORT_DE_CHOC", "Renfort de choc", "Répondre présent à un renfort urgent.",
+                SPECIAL, CritereBadge.RENFORT, 1, null, 7),
+            new Badge("FIDELE", "Fidèle", "Réaliser 3 missions avec la même association.",
+                SPECIAL, CritereBadge.MEME_ASSOCIATION, 3, null, 8),
+            new Badge("EXPLORATEUR", "Explorateur", "Réaliser des missions dans 3 domaines différents.",
+                SPECIAL, CritereBadge.DOMAINES_DIFFERENTS, 3, null, 9),
+            new Badge("SPECIALISTE", "Spécialiste", "Réaliser 5 missions dans un même domaine.",
+                SPECIAL, CritereBadge.MEME_DOMAINE, 5, null, 10),
+            new Badge("REGULIER", "Régulier", "Réaliser au moins une mission par mois pendant 3 mois d'affilée.",
+                SPECIAL, CritereBadge.MOIS_CONSECUTIFS, 3, null, 11)
+        );
+        List<Badge> manquants = badges.stream().filter(b -> !badgeRepository.existsByCode(b.getCode())).toList();
+        if (!manquants.isEmpty()) {
+            badgeRepository.saveAll(manquants);
+            log.info("{} badge(s) inséré(s) avec succès !", manquants.size());
         }
     }
 }

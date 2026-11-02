@@ -1,5 +1,6 @@
 package com.benevolat.plateformebenevolat.service;
 
+import com.benevolat.plateformebenevolat.dto.ApercuDtos;
 import com.benevolat.plateformebenevolat.dto.AssociationProfileDto;
 import com.benevolat.plateformebenevolat.dto.ImageEvenementDto;
 import com.benevolat.plateformebenevolat.dto.InscritDto;
@@ -48,6 +49,7 @@ public class AssociationService {
     private final MissionPlacesService missionPlacesService;
     private final NotificationService notificationService;
     private final N8nService n8nService;
+    private final GamificationService gamificationService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 
@@ -311,7 +313,14 @@ public class AssociationService {
         all.addAll(confirmes);
         all.addAll(attente);
 
-        return all.stream().map(this::toInscritDto).collect(Collectors.toList());
+        var niveaux = gamificationService.resumes(all.stream().map(i -> i.getBenevole().getIdUtilisateur()).toList());
+        return all.stream()
+                .map(i -> {
+                    InscritDto dto = toInscritDto(i);
+                    dto.setGamification(niveaux.get(dto.getBenevoleId()));
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     public MissionDto demanderRenfort(String email, Long missionId, int nbBenevoles) {
@@ -375,6 +384,35 @@ public class AssociationService {
                 .stream()
                 .map(this::toImageEvenementDto)
                 .collect(Collectors.toList());
+    }
+
+    // ─── Profil public ────────────────────────────────────────────────────────
+
+    /** Profil public : association validée et active, missions visibles (hors brouillons/annulées/masquées). */
+    @Transactional(readOnly = true)
+    public ApercuDtos.AssociationPublique profilPublic(Long associationId) {
+        Association a = associationRepository.findById(associationId)
+                .filter(x -> x.getStatutValidation() == StatutValidation.VALIDE
+                        && x.getStatut() == StatutUtilisateur.ACTIF)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Association introuvable."));
+
+        List<ApercuDtos.MissionPublique> missions = missionRepository
+                .findByAssociationIdUtilisateurOrderByDateDebutDesc(associationId).stream()
+                .filter(m -> m.getStatut() != StatutMission.BROUILLON && m.getStatut() != StatutMission.ANNULEE)
+                .filter(m -> !Boolean.TRUE.equals(m.getEstMasquee()))
+                .map(m -> new ApercuDtos.MissionPublique(
+                        m.getIdMission(), m.getTitre(), m.getDescription(),
+                        m.getDomaine() != null ? m.getDomaine().getNom() : null,
+                        m.getStatut(), m.getDateDebut(), m.getDateFin(), m.getAdresse(),
+                        missionPlacesService.placesRestantes(m),
+                        imageEvenementRepository.findByMission_IdMissionOrderByDatePublicationDesc(m.getIdMission())
+                                .stream().map(this::toImageEvenementDto).toList()))
+                .toList();
+
+        return new ApercuDtos.AssociationPublique(
+                a.getIdUtilisateur(), a.getNom(), a.getDescription(), a.getVille(), a.getContact(), a.getEmail(),
+                a.getPhotoProfil(), a.getDomaines().stream().map(Domaine::getNom).toList(),
+                a.getLatitude(), a.getLongitude(), missions);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

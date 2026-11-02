@@ -89,6 +89,37 @@ export interface BenevoleCertificat {
   associationNom: string | null;
 }
 
+export interface PhotoMission {
+  id: number;
+  url: string;
+  titre: string | null;
+  description: string | null;
+  datePublication: string;
+}
+
+/** Aperçu d'une mission depuis « Mes inscriptions » (GET /benevoles/inscriptions/{id}/apercu). */
+export interface ApercuInscription {
+  inscriptionId: number;
+  statutInscription: StatutInscription;
+  missionId: number;
+  titre: string;
+  description: string | null;
+  domaine: string | null;
+  statut: string;
+  dateDebut: string;
+  dateFin: string;
+  adresse: string | null;
+  ville: string | null;
+  competences: string[];
+  associationId: number | null;
+  associationNom: string | null;
+  associationPhoto: string | null;
+  photosAssociation: PhotoMission[];
+  mesPhotos: PhotoMission[];
+  /** Certificat reçu : le bénévole peut publier ses photos de participation. */
+  certifiee: boolean;
+}
+
 /** Helper pour les requêtes authentifiées (Bearer token). */
 async function authFetch(url: string, token: string, options: RequestInit = {}) {
   return fetch(url, {
@@ -131,6 +162,38 @@ export const inscriptionApi = {
     const res = await authFetch(`${API_BASE_URL}/benevoles/mes-certificats`, token);
     if (!res.ok) throw new Error("Erreur lors du chargement des certificats.");
     return res.json();
+  },
+
+  /** Aperçu d'une inscription : mission, photos de l'association et photos du bénévole. */
+  async getApercu(token: string, inscriptionId: string | number): Promise<ApercuInscription> {
+    const res = await authFetch(`${API_BASE_URL}/benevoles/inscriptions/${inscriptionId}/apercu`, token);
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Erreur lors du chargement de la mission."));
+    return res.json();
+  },
+
+  /** Publier une photo de participation (mission certifiée uniquement). */
+  async ajouterPhoto(token: string, inscriptionId: string | number, url: string, description: string): Promise<PhotoMission> {
+    const res = await authFetch(`${API_BASE_URL}/benevoles/inscriptions/${inscriptionId}/photos`, token, {
+      method: "POST",
+      body: JSON.stringify({ url, description }),
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Erreur lors de l'ajout de la photo."));
+    return res.json();
+  },
+
+  async supprimerPhoto(token: string, inscriptionId: string | number, photoId: number): Promise<void> {
+    const res = await authFetch(`${API_BASE_URL}/benevoles/inscriptions/${inscriptionId}/photos/${photoId}`, token, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Erreur lors de la suppression de la photo."));
+  },
+
+  /** PDF du certificat généré par le backend → URL blob locale pour l'aperçu (à révoquer après usage). */
+  async getCertificatApercuUrl(token: string, certificatId: number): Promise<string> {
+    const res = await authFetch(`${API_BASE_URL}/benevoles/mes-certificats/${certificatId}/apercu`, token)
+      .catch(() => { throw new Error("Impossible de joindre le serveur backend."); });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, `Aperçu indisponible (erreur ${res.status})`));
+    return URL.createObjectURL(await res.blob());
   },
 
   /** S'inscrire à une mission. */

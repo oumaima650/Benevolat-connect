@@ -36,6 +36,10 @@ public class Obtention {
     @Column(name = "dateAttribution", nullable = false)
     private LocalDateTime dateAttribution = LocalDateTime.now();
 
+    /** La célébration de ce badge a déjà été affichée au bénévole. */
+    @Column(name = "vu", nullable = false)
+    private Boolean vu = false;
+
     public Obtention(Benevole benevole, Badge badge) {
         this.benevole = benevole;
         this.badge = badge;

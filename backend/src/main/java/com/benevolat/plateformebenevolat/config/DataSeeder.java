@@ -27,7 +27,6 @@ public class DataSeeder implements CommandLineRunner {
     private final ImageEvenementRepository imageEvenementRepository;
     private final MissionRepository missionRepository;
     private final CompetenceRepository competenceRepository;
-    private final ScoreMatchingRepository scoreMatchingRepository;
     private final PasswordEncoder passwordEncoder;
 
     /** Identifiants du compte bénévole de démonstration (page /dashboard-login). */
@@ -212,22 +211,6 @@ public class DataSeeder implements CommandLineRunner {
             Competence info = competenceRepository.findByNom("Informatique & Web").orElse(null);
             if (info != null) remote.getCompetences().add(info);
             creerMission(remote, "/assets/associations.jpg", "Atelier distant", "Formation en ligne");
-        }
-
-        if (scoreMatchingRepository.count() == 0) {
-            missionRepository.findAll().stream()
-                    .filter(m -> m.getStatut() == StatutMission.PUBLIEE)
-                    .limit(4)
-                    .forEach(m -> {
-                        int score = 62 + (int) (m.getIdMission() % 30);
-                        String explication = "Profil proche du domaine « "
-                                + (m.getDomaine() != null ? m.getDomaine().getNom() : "solidarité")
-                                + " » et disponibilités compatibles.";
-                        scoreMatchingRepository.save(new ScoreMatching(
-                                yasmine, m, Math.min(score, 98), explication,
-                                score % 2 == 0 ? MethodeScore.IA : MethodeScore.FORMULE));
-                    });
-            System.out.println(">>> [DataSeeder] Scores de matching de démonstration créés.");
         }
     }
 }

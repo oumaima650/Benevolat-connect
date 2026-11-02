@@ -30,6 +30,8 @@ public class BenevoleProfileService {
     private final ObtentionRepository obtentionRepository;
     private final CertificatRepository certificatRepository;
     private final MissionService missionService;
+    private final GamificationService gamificationService;
+    private final RecommandationService recommandationService;
 
     @Transactional(readOnly = true)
     public Map<String, Object> getProfile(String email) {
@@ -62,6 +64,28 @@ public class BenevoleProfileService {
         return result;
     }
 
+    /** Profil public : identité réduite, niveau, bannière et badges décrochés. */
+    @Transactional(readOnly = true)
+    public ProfilPublicDto profilPublic(Long id) {
+        Benevole b = benevoleRepository.findById(id)
+                .filter(x -> x.getStatut() == StatutUtilisateur.ACTIF)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profil introuvable"));
+        GamificationDto g = gamificationService.profil(id);
+        return new ProfilPublicDto(
+                b.getIdUtilisateur(),
+                b.getPrenom(),
+                b.getNom() != null && !b.getNom().isBlank() ? b.getNom().substring(0, 1).toUpperCase() + "." : null,
+                b.getVille(),
+                b.getPhotoUrl(),
+                b.getBiographie(),
+                b.getCompetences().stream().map(Competence::getNom).toList(),
+                b.getCreatedAt(),
+                g.niveau(),
+                g.nomNiveau(),
+                g.theme(),
+                g.badges().stream().filter(GamificationDto.BadgeDto::obtenu).toList());
+    }
+
     @Transactional(readOnly = true)
     public BenevoleDashboardDto getDashboardData(String email) {
         Benevole b = benevoleRepository.findByEmail(email)
@@ -69,19 +93,15 @@ public class BenevoleProfileService {
 
         List<Inscription> allInscriptions = inscriptionRepository.findDashboardInscriptions(b.getIdUtilisateur());
         
-        // 1. Missions réalisées (CONFIRMEE + Mission TERMINEE/CLOTUREE)
+        // 1. Inscriptions des missions terminées (répartition par domaine)
         List<Inscription> realizedInscriptions = allInscriptions.stream()
                 .filter(i -> i.getStatut() == StatutInscription.CONFIRMEE)
                 .filter(i -> i.getMission().getStatut() == StatutMission.TERMINEE || i.getMission().getStatut() == StatutMission.CLOTUREE)
                 .toList();
-        long missionsRealisees = realizedInscriptions.size();
 
-        // 2. Niveau et progression
-        String niveauActuel = getNiveauLabel(missionsRealisees);
-        NiveauProgression nextNiveau = getNextNiveauInfo(missionsRealisees);
-        int progressPct = nextNiveau.totalPourSuivant <= 0
-                ? 100
-                : Math.min(100, (int) Math.round(((double) missionsRealisees / nextNiveau.totalPourSuivant) * 100));
+        // 2. Niveau, progression et badges (niveau = missions avec certificat délivré)
+        GamificationDto gamification = gamificationService.profil(b.getIdUtilisateur());
+        long missionsRealisees = gamification.niveau();
 
         // 3. Badges et attente
         int badgesObtenus = (int) obtentionRepository.countByBenevole_IdUtilisateur(b.getIdUtilisateur());
@@ -134,39 +154,15 @@ public class BenevoleProfileService {
         return BenevoleDashboardDto.builder()
                 .prenom(b.getPrenom())
                 .missionsRealisees(missionsRealisees)
-                .niveauActuel(niveauActuel)
                 .badgesObtenus(badgesObtenus)
                 .enListeAttenteCount(enListeAttenteCount)
-                .progressPct(progressPct)
-                .missionsPourSuivant((int) missionsRealisees)
-                .missionsTotalPourSuivant(nextNiveau.totalPourSuivant)
-                .prochainNiveauLabel(nextNiveau.label)
+                .gamification(gamification)
                 .prochainesMissions(prochainesMissions)
                 .listeAttente(listeAttente)
                 .dernieresNotifications(dernieresNotifications)
                 .activiteMensuelle(activiteMensuelle)
                 .missionsParDomaine(missionsParDomaine)
                 .build();
-    }
-
-    private String getNiveauLabel(long count) {
-        if (count >= 30) return "Champion";
-        if (count >= 15) return "Expert";
-        if (count >= 5) return "Engagé";
-        return "Débutant";
-    }
-
-    private static class NiveauProgression {
-        String label;
-        int totalPourSuivant;
-        NiveauProgression(String l, int t) { label = l; totalPourSuivant = t; }
-    }
-
-    private NiveauProgression getNextNiveauInfo(long count) {
-        if (count >= 30) return new NiveauProgression("Champion", 30);
-        if (count >= 15) return new NiveauProgression("Champion", 30);
-        if (count >= 5) return new NiveauProgression("Expert", 15);
-        return new NiveauProgression("Engagé", 5);
     }
 
     private List<MonthlyActivityDto> getMonthlyActivity(Long benevoleId, List<Inscription> inscriptions) {
@@ -219,6 +215,8 @@ public class BenevoleProfileService {
     public Map<String, Object> updateProfile(String email, BenevoleProfileDto dto) {
         Benevole b = benevoleRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Bénévole introuvable : " + email));
+        // Compétences, position ou rayon peuvent changer : recommandations à recalculer
+        recommandationService.invalider(b.getIdUtilisateur());
 
         if (dto.getPrenom() != null) {
             b.setPrenom(dto.getPrenom());

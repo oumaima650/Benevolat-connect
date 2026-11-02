@@ -3,7 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   Award, Bell, CalendarClock, CheckCheck, CheckCircle2, Clock, Flag, Hourglass, Loader2,
-  PartyPopper, ShieldCheck, Siren, Trash2, UserCog, UserMinus, XCircle, type LucideIcon,
+  PartyPopper, ShieldCheck, Siren, Trash2, Trophy, UserCog, UserMinus, XCircle, type LucideIcon,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -27,6 +27,7 @@ const STYLE: Record<CategorieNotif, { icon: LucideIcon; classe: string }> = {
   VALIDATION: { icon: ShieldCheck, classe: "bg-blue-100 text-blue-700" },
   COMPTE: { icon: UserCog, classe: "bg-muted text-ink" },
   MODERATION: { icon: Flag, classe: "bg-red-100 text-red-700" },
+  GAMIFICATION: { icon: Trophy, classe: "bg-mustard/40 text-ink" },
   SYSTEME: { icon: Bell, classe: "bg-muted text-ink" },
 };
 

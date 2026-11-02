@@ -14,6 +14,7 @@ export type CategorieNotif =
   | "VALIDATION"
   | "COMPTE"
   | "MODERATION"
+  | "GAMIFICATION"
   | "SYSTEME";
 
 export type NotificationItem = {

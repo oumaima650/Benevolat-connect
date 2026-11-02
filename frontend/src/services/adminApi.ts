@@ -1,4 +1,5 @@
 import { apiRequest } from "./http";
+import type { GamificationResume } from "./benevoleApi";
 
 /** Émis par les pages admin après une action, pour rafraîchir les compteurs de la barre latérale. */
 export const ADMIN_CHANGED = "countmein:admin-changed";
@@ -56,6 +57,8 @@ export type UtilisateurAdmin = {
   statut: "ACTIF" | "SUSPENDUE" | "DESACTIVE";
   statutValidation: StatutValidation | null;
   createdAt: string;
+  /** Niveau et bannière (bénévoles uniquement). */
+  gamification: GamificationResume | null;
 };
 
 export type MissionAdmin = {

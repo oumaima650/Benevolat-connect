@@ -20,18 +20,27 @@ import { formaterDate } from '@/components/dashboard/data';
 import { useAuth } from '@/context/AuthContext';
 import { benevoleApi, ApiHttpError, type BenevoleDashboardData } from '@/services/benevoleApi';
 import { toast } from 'sonner';
+import { BanniereBenevole } from '@/components/gamification/BanniereBenevole';
 
 function emptyDashboard(prenom: string): BenevoleDashboardData {
   return {
     prenom: prenom || 'bénévole',
     missionsRealisees: 0,
-    niveauActuel: 'Débutant',
     badgesObtenus: 0,
     enListeAttenteCount: 0,
-    progressPct: 0,
-    missionsPourSuivant: 0,
-    missionsTotalPourSuivant: 5,
-    prochainNiveauLabel: 'Engagé',
+    gamification: {
+      niveau: 0,
+      nomNiveau: 'Nouveau cœur',
+      prochainNiveauNom: 'Premier pas',
+      theme: 'nouveau',
+      palierActuel: null,
+      prochainPalier: null,
+      niveauxAvantProchainPalier: 5,
+      progressionPalier: 0,
+      echelle: [],
+      badges: [],
+      nouveauxBadges: [],
+    },
     prochainesMissions: [],
     listeAttente: [],
     dernieresNotifications: [],
@@ -138,8 +147,9 @@ function BenevoleDashboard() {
 
   if (!data) return null;
 
+  const g = data.gamification;
   const scoreNiveau = [
-    { name: 'Progression', value: data.progressPct, fill: '#f59e0b' },
+    { name: 'Progression', value: g.progressionPalier, fill: '#f59e0b' },
   ];
 
   return (
@@ -159,26 +169,30 @@ function BenevoleDashboard() {
           </button>
         </div>
       )}
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-black text-ink inline-flex items-center gap-2">
-            Bonjour, {data.prenom} <Hand className="h-6 w-6 text-mustard" />
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Voici un aperçu de votre activité bénévole.</p>
-        </div>
-        <Link
-          to="/benevole/explorer"
-          className="press inline-flex items-center gap-2 rounded-xl border-2 border-ink bg-pink px-4 py-2.5 text-sm font-bold text-pink-foreground shadow-[3px_3px_0_var(--color-ink)]"
-        >
-          Explorer les missions <ArrowUpRight className="h-4 w-4" />
-        </Link>
-      </div>
+      {/* Header : bannière personnalisée selon le dernier badge palier */}
+      <BanniereBenevole
+        theme={g.theme}
+        niveau={g.niveau}
+        nomNiveau={g.nomNiveau}
+        aside={
+          <Link
+            to="/benevole/explorer"
+            className="press inline-flex items-center gap-2 rounded-xl border-2 border-ink bg-pink px-4 py-2.5 text-sm font-bold text-pink-foreground shadow-[3px_3px_0_var(--color-ink)]"
+          >
+            Explorer les missions <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        }
+      >
+        <h1 className="font-display text-2xl font-black inline-flex items-center gap-2">
+          Bonjour, {data.prenom} <Hand className="h-6 w-6" />
+        </h1>
+        <p className="mt-1 text-sm opacity-80">Voici un aperçu de votre activité bénévole.</p>
+      </BanniereBenevole>
 
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="Missions réalisées" value={data.missionsRealisees.toString()} icon={CheckCircle} colorClass="text-mustard" />
-        <KpiCard label="Niveau actuel"       value={data.niveauActuel}             icon={Star}         colorClass="text-pink" />
+        <KpiCard label="Niveau actuel"       value={`${g.niveau} · ${g.nomNiveau}`} icon={Star}         colorClass="text-pink" />
         <KpiCard label="Badges obtenus"      value={data.badgesObtenus.toString()} icon={Award}        colorClass="text-emerald" />
         <KpiCard label="En liste d'attente"  value={data.enListeAttenteCount.toString()} icon={Clock}  colorClass="text-muted-foreground" />
       </div>
@@ -202,8 +216,8 @@ function BenevoleDashboard() {
                 </RadialBarChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xl font-black text-ink">{data.progressPct}%</span>
-                <span className="text-[10px] text-muted-foreground">niveau</span>
+                <span className="text-xl font-black text-ink">{g.progressionPalier}%</span>
+                <span className="text-[10px] text-muted-foreground">palier</span>
               </div>
             </div>
           </div>
@@ -213,31 +227,33 @@ function BenevoleDashboard() {
               <TrendingUp className="h-5 w-5 text-mustard" />
               <h2 className="font-display font-bold text-ink">Progression de niveau</h2>
               <span className="rounded-full border-2 border-ink bg-mustard px-3 py-0.5 text-xs font-bold text-ink">
-                {data.niveauActuel}
+                Niv. {g.niveau} · {g.nomNiveau}
               </span>
             </div>
-            <Progress value={data.progressPct} className="h-3 mb-2" />
+            <Progress value={g.progressionPalier} className="h-3 mb-2" />
             <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-ink">{data.missionsPourSuivant} / {data.missionsTotalPourSuivant} missions</span>{' '}
-              pour atteindre le niveau{' '}
-              <span className="font-bold text-pink">{data.prochainNiveauLabel}</span>
+              {g.prochainPalier ? (
+                <>
+                  Encore <span className="font-semibold text-ink">{g.niveauxAvantProchainPalier} mission{g.niveauxAvantProchainPalier > 1 ? 's' : ''}</span>{' '}
+                  avant le badge{' '}
+                  <span className="font-bold text-pink">{g.prochainPalier.nom}</span>{' '}
+                  et sa bannière
+                </>
+              ) : (
+                <span className="font-semibold text-emerald">Tous les badges paliers sont débloqués !</span>
+              )}
             </p>
-            <div className="mt-3 flex gap-2 text-xs">
-              {[
-                { label: 'Débutant',  current: data.niveauActuel === 'Débutant' },
-                { label: 'Engagé',    current: data.niveauActuel === 'Engagé' },
-                { label: 'Expert',    current: data.niveauActuel === 'Expert' },
-                { label: 'Champion',  current: data.niveauActuel === 'Champion' },
-              ].map((n) => (
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              {g.echelle.map((n) => (
                 <span
-                  key={n.label}
+                  key={n.niveau}
                   className={`rounded-full px-2 py-0.5 border font-medium ${
-                    n.current
+                    n.atteint
                       ? 'border-ink bg-mustard text-ink font-bold'
                       : 'border-border bg-muted text-muted-foreground'
                   }`}
                 >
-                  {n.label}
+                  {n.niveau}. {n.nom}
                 </span>
               ))}
             </div>

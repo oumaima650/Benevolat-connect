@@ -35,14 +35,17 @@ import { Route as AssociationNotificationsRouteImport } from './routes/associati
 import { Route as AssociationNouvelleMissionRouteImport } from './routes/association.nouvelle-mission'
 import { Route as AssociationProfilRouteImport } from './routes/association.profil'
 import { Route as AssociationRenfortsRouteImport } from './routes/association.renforts'
+import { Route as AssociationsIdRouteImport } from './routes/associations_.$id'
 import { Route as BenevoleIndexRouteImport } from './routes/benevole.index'
 import { Route as BenevoleBadgesRouteImport } from './routes/benevole.badges'
 import { Route as BenevoleCarteRouteImport } from './routes/benevole.carte'
+import { Route as BenevoleCertificatsRouteImport } from './routes/benevole.certificats'
 import { Route as BenevoleExplorerRouteImport } from './routes/benevole.explorer'
 import { Route as BenevoleNotificationsRouteImport } from './routes/benevole.notifications'
 import { Route as BenevoleParcoursRouteImport } from './routes/benevole.parcours'
 import { Route as BenevoleProfilRouteImport } from './routes/benevole.profil'
 import { Route as BenevoleRecommandationsRouteImport } from './routes/benevole.recommandations'
+import { Route as BenevolesIdRouteImport } from './routes/benevoles.$id'
 import { Route as MissionsIndexRouteImport } from './routes/missions.index'
 import { Route as MissionsIdRouteImport } from './routes/missions.$id'
 
@@ -178,6 +181,11 @@ const AssociationRenfortsRoute = AssociationRenfortsRouteImport.update({
   path: '/renforts',
   getParentRoute: () => AssociationRoute,
 } as any)
+const AssociationsIdRoute = AssociationsIdRouteImport.update({
+  id: '/associations_/$id',
+  path: '/associations/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BenevoleIndexRoute = BenevoleIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -191,6 +199,11 @@ const BenevoleBadgesRoute = BenevoleBadgesRouteImport.update({
 const BenevoleCarteRoute = BenevoleCarteRouteImport.update({
   id: '/carte',
   path: '/carte',
+  getParentRoute: () => BenevoleRoute,
+} as any)
+const BenevoleCertificatsRoute = BenevoleCertificatsRouteImport.update({
+  id: '/certificats',
+  path: '/certificats',
   getParentRoute: () => BenevoleRoute,
 } as any)
 const BenevoleExplorerRoute = BenevoleExplorerRouteImport.update({
@@ -217,6 +230,11 @@ const BenevoleRecommandationsRoute = BenevoleRecommandationsRouteImport.update({
   id: '/recommandations',
   path: '/recommandations',
   getParentRoute: () => BenevoleRoute,
+} as any)
+const BenevolesIdRoute = BenevolesIdRouteImport.update({
+  id: '/benevoles/$id',
+  path: '/benevoles/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const MissionsIndexRoute = MissionsIndexRouteImport.update({
   id: '/',
@@ -254,13 +272,16 @@ export interface FileRoutesByFullPath {
   '/association/nouvelle-mission': typeof AssociationNouvelleMissionRoute
   '/association/profil': typeof AssociationProfilRoute
   '/association/renforts': typeof AssociationRenfortsRoute
+  '/associations/$id': typeof AssociationsIdRoute
   '/benevole/badges': typeof BenevoleBadgesRoute
   '/benevole/carte': typeof BenevoleCarteRoute
+  '/benevole/certificats': typeof BenevoleCertificatsRoute
   '/benevole/explorer': typeof BenevoleExplorerRoute
   '/benevole/notifications': typeof BenevoleNotificationsRoute
   '/benevole/parcours': typeof BenevoleParcoursRoute
   '/benevole/profil': typeof BenevoleProfilRoute
   '/benevole/recommandations': typeof BenevoleRecommandationsRoute
+  '/benevoles/$id': typeof BenevolesIdRoute
   '/missions/$id': typeof MissionsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/association/': typeof AssociationIndexRoute
@@ -288,13 +309,16 @@ export interface FileRoutesByTo {
   '/association/nouvelle-mission': typeof AssociationNouvelleMissionRoute
   '/association/profil': typeof AssociationProfilRoute
   '/association/renforts': typeof AssociationRenfortsRoute
+  '/associations/$id': typeof AssociationsIdRoute
   '/benevole/badges': typeof BenevoleBadgesRoute
   '/benevole/carte': typeof BenevoleCarteRoute
+  '/benevole/certificats': typeof BenevoleCertificatsRoute
   '/benevole/explorer': typeof BenevoleExplorerRoute
   '/benevole/notifications': typeof BenevoleNotificationsRoute
   '/benevole/parcours': typeof BenevoleParcoursRoute
   '/benevole/profil': typeof BenevoleProfilRoute
   '/benevole/recommandations': typeof BenevoleRecommandationsRoute
+  '/benevoles/$id': typeof BenevolesIdRoute
   '/missions/$id': typeof MissionsIdRoute
   '/admin': typeof AdminIndexRoute
   '/association': typeof AssociationIndexRoute
@@ -327,13 +351,16 @@ export interface FileRoutesById {
   '/association/nouvelle-mission': typeof AssociationNouvelleMissionRoute
   '/association/profil': typeof AssociationProfilRoute
   '/association/renforts': typeof AssociationRenfortsRoute
+  '/associations_/$id': typeof AssociationsIdRoute
   '/benevole/badges': typeof BenevoleBadgesRoute
   '/benevole/carte': typeof BenevoleCarteRoute
+  '/benevole/certificats': typeof BenevoleCertificatsRoute
   '/benevole/explorer': typeof BenevoleExplorerRoute
   '/benevole/notifications': typeof BenevoleNotificationsRoute
   '/benevole/parcours': typeof BenevoleParcoursRoute
   '/benevole/profil': typeof BenevoleProfilRoute
   '/benevole/recommandations': typeof BenevoleRecommandationsRoute
+  '/benevoles/$id': typeof BenevolesIdRoute
   '/missions/$id': typeof MissionsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/association/': typeof AssociationIndexRoute
@@ -367,13 +394,16 @@ export interface FileRouteTypes {
     | '/association/nouvelle-mission'
     | '/association/profil'
     | '/association/renforts'
+    | '/associations/$id'
     | '/benevole/badges'
     | '/benevole/carte'
+    | '/benevole/certificats'
     | '/benevole/explorer'
     | '/benevole/notifications'
     | '/benevole/parcours'
     | '/benevole/profil'
     | '/benevole/recommandations'
+    | '/benevoles/$id'
     | '/missions/$id'
     | '/admin/'
     | '/association/'
@@ -401,13 +431,16 @@ export interface FileRouteTypes {
     | '/association/nouvelle-mission'
     | '/association/profil'
     | '/association/renforts'
+    | '/associations/$id'
     | '/benevole/badges'
     | '/benevole/carte'
+    | '/benevole/certificats'
     | '/benevole/explorer'
     | '/benevole/notifications'
     | '/benevole/parcours'
     | '/benevole/profil'
     | '/benevole/recommandations'
+    | '/benevoles/$id'
     | '/missions/$id'
     | '/admin'
     | '/association'
@@ -439,13 +472,16 @@ export interface FileRouteTypes {
     | '/association/nouvelle-mission'
     | '/association/profil'
     | '/association/renforts'
+    | '/associations_/$id'
     | '/benevole/badges'
     | '/benevole/carte'
+    | '/benevole/certificats'
     | '/benevole/explorer'
     | '/benevole/notifications'
     | '/benevole/parcours'
     | '/benevole/profil'
     | '/benevole/recommandations'
+    | '/benevoles/$id'
     | '/missions/$id'
     | '/admin/'
     | '/association/'
@@ -467,6 +503,8 @@ export interface RootRouteChildren {
   MissionsRoute: typeof MissionsRouteWithChildren
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  AssociationsIdRoute: typeof AssociationsIdRoute
+  BenevolesIdRoute: typeof BenevolesIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -653,6 +691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AssociationRenfortsRouteImport
       parentRoute: typeof AssociationRoute
     }
+    '/associations_/$id': {
+      id: '/associations_/$id'
+      path: '/associations/$id'
+      fullPath: '/associations/$id'
+      preLoaderRoute: typeof AssociationsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/benevole/': {
       id: '/benevole/'
       path: '/'
@@ -672,6 +717,13 @@ declare module '@tanstack/react-router' {
       path: '/carte'
       fullPath: '/benevole/carte'
       preLoaderRoute: typeof BenevoleCarteRouteImport
+      parentRoute: typeof BenevoleRoute
+    }
+    '/benevole/certificats': {
+      id: '/benevole/certificats'
+      path: '/certificats'
+      fullPath: '/benevole/certificats'
+      preLoaderRoute: typeof BenevoleCertificatsRouteImport
       parentRoute: typeof BenevoleRoute
     }
     '/benevole/explorer': {
@@ -708,6 +760,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/benevole/recommandations'
       preLoaderRoute: typeof BenevoleRecommandationsRouteImport
       parentRoute: typeof BenevoleRoute
+    }
+    '/benevoles/$id': {
+      id: '/benevoles/$id'
+      path: '/benevoles/$id'
+      fullPath: '/benevoles/$id'
+      preLoaderRoute: typeof BenevolesIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/missions/': {
       id: '/missions/'
@@ -773,6 +832,7 @@ const AssociationRouteWithChildren = AssociationRoute._addFileChildren(
 interface BenevoleRouteChildren {
   BenevoleBadgesRoute: typeof BenevoleBadgesRoute
   BenevoleCarteRoute: typeof BenevoleCarteRoute
+  BenevoleCertificatsRoute: typeof BenevoleCertificatsRoute
   BenevoleExplorerRoute: typeof BenevoleExplorerRoute
   BenevoleNotificationsRoute: typeof BenevoleNotificationsRoute
   BenevoleParcoursRoute: typeof BenevoleParcoursRoute
@@ -784,6 +844,7 @@ interface BenevoleRouteChildren {
 const BenevoleRouteChildren: BenevoleRouteChildren = {
   BenevoleBadgesRoute: BenevoleBadgesRoute,
   BenevoleCarteRoute: BenevoleCarteRoute,
+  BenevoleCertificatsRoute: BenevoleCertificatsRoute,
   BenevoleExplorerRoute: BenevoleExplorerRoute,
   BenevoleNotificationsRoute: BenevoleNotificationsRoute,
   BenevoleParcoursRoute: BenevoleParcoursRoute,
@@ -824,6 +885,8 @@ const rootRouteChildren: RootRouteChildren = {
   MissionsRoute: MissionsRouteWithChildren,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  AssociationsIdRoute: AssociationsIdRoute,
+  BenevolesIdRoute: BenevolesIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,11 +1,16 @@
 package com.benevolat.plateformebenevolat.controller;
 
 import com.benevolat.plateformebenevolat.dto.*;
-import com.benevolat.plateformebenevolat.entity.*;
 import com.benevolat.plateformebenevolat.repository.*;
 import com.benevolat.plateformebenevolat.service.BenevoleProfileService;
+import com.benevolat.plateformebenevolat.service.CertificatService;
+import com.benevolat.plateformebenevolat.service.GamificationService;
 import com.benevolat.plateformebenevolat.service.InscriptionService;
+import com.benevolat.plateformebenevolat.service.ParticipationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +29,9 @@ public class BenevoleController {
     private final InscriptionService inscriptionService;
     private final BenevoleRepository benevoleRepository;
     private final CertificatRepository certificatRepository;
-    private final BadgeRepository badgeRepository;
-    private final ObtentionRepository obtentionRepository;
-    private final NiveauRepository niveauRepository;
+    private final GamificationService gamificationService;
+    private final ParticipationService participationService;
+    private final CertificatService certificatService;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyProfile(Authentication authentication) {
@@ -75,6 +80,31 @@ public class BenevoleController {
         return ResponseEntity.ok(inscriptionService.listInscriptionsDuBenevole(authentication.getName()));
     }
 
+    /** GET /api/benevoles/inscriptions/{id}/apercu — mission, photos de l'association et mes photos */
+    @GetMapping("/inscriptions/{inscriptionId}/apercu")
+    public ResponseEntity<ApercuDtos.ApercuMission> apercuInscription(Authentication authentication,
+                                                                      @PathVariable Long inscriptionId) {
+        return ResponseEntity.ok(participationService.apercu(authentication.getName(), inscriptionId));
+    }
+
+    /** POST /api/benevoles/inscriptions/{id}/photos — photo de participation (mission certifiée uniquement) */
+    @PostMapping("/inscriptions/{inscriptionId}/photos")
+    public ResponseEntity<ImageEvenementDto> ajouterPhoto(Authentication authentication,
+                                                          @PathVariable Long inscriptionId,
+                                                          @RequestBody Map<String, String> body) {
+        ImageEvenementDto dto = participationService.ajouterPhoto(authentication.getName(), inscriptionId,
+                body.get("url"), body.get("description"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    @DeleteMapping("/inscriptions/{inscriptionId}/photos/{photoId}")
+    public ResponseEntity<Void> supprimerPhoto(Authentication authentication,
+                                               @PathVariable Long inscriptionId,
+                                               @PathVariable Long photoId) {
+        participationService.supprimerPhoto(authentication.getName(), inscriptionId, photoId);
+        return ResponseEntity.noContent().build();
+    }
+
     /** GET /api/benevoles/mes-certificats — liste les certificats du bénévole connecté */
     @GetMapping("/mes-certificats")
     @Transactional(readOnly = true)
@@ -106,67 +136,26 @@ public class BenevoleController {
         return ResponseEntity.ok(certs);
     }
 
-    /** GET /api/benevoles/badges-niveau — badges et niveau du bénévole */
-    @GetMapping("/badges-niveau")
-    @Transactional(readOnly = true)
-    public ResponseEntity<BadgesNiveauResponse> getBadgesNiveau(Authentication authentication) {
-        var benevole = benevoleRepository.findByEmail(authentication.getName()).orElse(null);
-        if (benevole == null) return ResponseEntity.notFound().build();
+    /** GET /api/benevoles/mes-certificats/{id}/apercu — PDF généré à la volée (inline) pour la prévisualisation */
+    @GetMapping("/mes-certificats/{certificatId}/apercu")
+    public ResponseEntity<byte[]> apercuCertificat(Authentication authentication, @PathVariable Long certificatId) {
+        byte[] pdf = certificatService.getPdfBytesBenevole(authentication.getName(), certificatId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"certificat-" + certificatId + ".pdf\"")
+                .body(pdf);
+    }
 
-        // Calculer le nombre de missions réalisées (certificats)
-        long missionsRealisees = certificatRepository.countByInscription_Benevole_IdUtilisateur(benevole.getIdUtilisateur());
+    /** GET /api/benevoles/gamification — niveau, progression, bannière et badges du bénévole */
+    @GetMapping("/gamification")
+    public ResponseEntity<GamificationDto> getGamification(Authentication authentication) {
+        return ResponseEntity.ok(gamificationService.profil(authentication.getName()));
+    }
 
-        // Récupérer le niveau actuel
-        final Niveau niveauActuel;
-        Niveau tempNiveau = benevole.getNiveau();
-        if (tempNiveau == null) {
-            tempNiveau = niveauRepository.findAll().stream()
-                .min(Comparator.comparing(Niveau::getSeuilMissions))
-                .orElse(null);
-        }
-        niveauActuel = tempNiveau;
-
-        final long seuilActuel = niveauActuel != null ? niveauActuel.getSeuilMissions() : 0;
-
-        // Trouver le niveau suivant
-        Niveau niveauSuivant = niveauRepository.findAll().stream()
-            .filter(n -> n.getSeuilMissions() != null && n.getSeuilMissions() > seuilActuel)
-            .min(Comparator.comparing(Niveau::getSeuilMissions))
-            .orElse(null);
-
-        // Construire les infos de niveau
-        NiveauInfoDto niveauInfo = NiveauInfoDto.builder()
-            .nom(niveauActuel != null ? niveauActuel.getNom() : "Débutant")
-            .missionsActuelles((int) missionsRealisees)
-            .seuilSuivant(niveauSuivant != null ? niveauSuivant.getSeuilMissions() : null)
-            .niveauSuivant(niveauSuivant != null ? niveauSuivant.getNom() : null)
-            .build();
-
-        // Récupérer tous les badges avec leur statut d'obtention
-        List<Badge> allBadges = badgeRepository.findAll();
-        List<Obtention> obtentions = obtentionRepository.findByBenevole_IdUtilisateur(benevole.getIdUtilisateur());
-
-        List<BadgeNiveauDto> badgeDtos = allBadges.stream()
-            .map(badge -> {
-                Optional<Obtention> obtention = obtentions.stream()
-                    .filter(o -> o.getBadge().getIdBadge().equals(badge.getIdBadge()))
-                    .findFirst();
-
-                return BadgeNiveauDto.builder()
-                    .id(badge.getIdBadge())
-                    .code(badge.getCode())
-                    .nom(badge.getNom())
-                    .description("Badge " + badge.getNom())
-                    .niveau(badge.getNiveau() != null ? badge.getNiveau().getNom() : "")
-                    .obtenu(obtention.isPresent())
-                    .dateObtention(obtention.isPresent() ? obtention.get().getDateAttribution().toString() : null)
-                    .build();
-            })
-            .collect(Collectors.toList());
-
-        return ResponseEntity.ok(BadgesNiveauResponse.builder()
-            .niveau(niveauInfo)
-            .badges(badgeDtos)
-            .build());
+    /** POST /api/benevoles/gamification/vus — les célébrations des nouveaux badges ont été affichées */
+    @PostMapping("/gamification/vus")
+    public ResponseEntity<Void> marquerBadgesVus(Authentication authentication) {
+        gamificationService.marquerVus(authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 }

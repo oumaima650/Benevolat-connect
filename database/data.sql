@@ -36,14 +36,6 @@ CREATE TABLE Administrateur (
         REFERENCES Utilisateur (idUtilisateur)
 ) ENGINE=InnoDB;
 
--- Niveau est créé avant Benevole (Benevole en dépend)
-CREATE TABLE Niveau (
-    idNiveau BIGINT       NOT NULL AUTO_INCREMENT,
-    nom      VARCHAR(50)  NOT NULL,
-    PRIMARY KEY (idNiveau),
-    CONSTRAINT uq_niveau_nom UNIQUE (nom)
-) ENGINE=InnoDB;
-
 CREATE TABLE Benevole (
     idBenevole          BIGINT       NOT NULL,
     nom                 VARCHAR(100) NULL,
@@ -55,12 +47,11 @@ CREATE TABLE Benevole (
     biographie          TEXT         NULL,
     rayonDeplacementKm  DOUBLE       NULL,
     telephone           VARCHAR(20)  NULL,
-    idNiveau            BIGINT       NULL,                   -- « obtient » Benevole-Niveau (le service affecte « Débutant » à l'inscription)
+    -- Gamification : le niveau n'est pas stocké, il vaut le nombre de certificats délivrés
+    -- (1 mission avec certificat = +1 niveau). Les noms des niveaux sont définis dans le backend.
     PRIMARY KEY (idBenevole),
     CONSTRAINT fk_benevole_utilisateur FOREIGN KEY (idBenevole)
         REFERENCES Utilisateur (idUtilisateur),
-    CONSTRAINT fk_benevole_niveau FOREIGN KEY (idNiveau)
-        REFERENCES Niveau (idNiveau),
     CONSTRAINT ck_benevole_rayon CHECK (rayonDeplacementKm IS NULL OR rayonDeplacementKm >= 0)
 ) ENGINE=InnoDB;
 
@@ -104,15 +95,22 @@ CREATE TABLE Competence (
     CONSTRAINT uq_competence_nom UNIQUE (nom)
 ) ENGINE=InnoDB;
 
+-- PALIER  : obtenu en atteignant un niveau (tous les 5 niveaux) ; débloque une bannière de profil.
+-- SPECIAL : obtenu selon un critère d'engagement (renfort, fidélité, diversité…).
 CREATE TABLE Badge (
-    idBadge  BIGINT       NOT NULL AUTO_INCREMENT,
-    code     VARCHAR(50)  NOT NULL,
-    nom      VARCHAR(100) NOT NULL,
-    idNiveau BIGINT       NOT NULL,                          -- association « associé » : 1 badge <-> 1 niveau
+    idBadge        BIGINT       NOT NULL AUTO_INCREMENT,
+    code           VARCHAR(50)  NOT NULL,
+    nom            VARCHAR(100) NOT NULL,
+    description    VARCHAR(255) NOT NULL,
+    type           ENUM('PALIER','SPECIAL') NOT NULL,
+    critere        ENUM('NIVEAU','RENFORT','MEME_ASSOCIATION','DOMAINES_DIFFERENTS',
+                        'MEME_DOMAINE','MOIS_CONSECUTIFS') NOT NULL,
+    valeurCritere  INT          NOT NULL,                    -- niveau à atteindre, nombre de missions, de domaines ou de mois
+    theme          VARCHAR(30)  NULL,                        -- thème de la bannière de profil (badges PALIER)
+    ordre          INT          NOT NULL DEFAULT 0,          -- ordre d'affichage
     PRIMARY KEY (idBadge),
-    CONSTRAINT uq_badge_code   UNIQUE (code),
-    CONSTRAINT uq_badge_niveau UNIQUE (idNiveau),            -- Niveau 0..1 badge
-    CONSTRAINT fk_badge_niveau FOREIGN KEY (idNiveau) REFERENCES Niveau (idNiveau)
+    CONSTRAINT uq_badge_code UNIQUE (code),
+    CONSTRAINT ck_badge_valeur CHECK (valeurCritere > 0)
 ) ENGINE=InnoDB;
 
 -- =====================================================================
@@ -175,6 +173,7 @@ CREATE TABLE Inscription (
     rang             INT      NULL,                          -- rang en liste d'attente (NULL si confirmée/annulée)
     dateInscription  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     rappelEnvoye     BOOLEAN  NOT NULL DEFAULT FALSE,        -- F29 : un seul rappel par inscription
+    estRenfort       BOOLEAN  NOT NULL DEFAULT FALSE,        -- venue en réponse à un renfort urgent (badge « Renfort de choc »)
     PRIMARY KEY (idInscription),
     CONSTRAINT uq_inscription_benevole_mission UNIQUE (idBenevole, idMission),   -- RM02
     CONSTRAINT fk_inscription_benevole FOREIGN KEY (idBenevole) REFERENCES Benevole (idBenevole),
@@ -234,6 +233,7 @@ CREATE TABLE Obtention (
     idBenevole       BIGINT   NOT NULL,
     idBadge          BIGINT   NOT NULL,
     dateAttribution  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    vu               BOOLEAN  NOT NULL DEFAULT FALSE,        -- célébration déjà affichée au bénévole
     PRIMARY KEY (idObtention),
     CONSTRAINT uq_obtention UNIQUE (idBenevole, idBadge),    -- RM11
     CONSTRAINT fk_obtention_benevole FOREIGN KEY (idBenevole) REFERENCES Benevole (idBenevole),
@@ -315,29 +315,18 @@ CREATE TABLE PasswordResetToken (
 
 -- =====================================================================
 -- 9. DONNÉES DE RÉFÉRENCE (Badge est « une table prédéfinie » dans le MCD)
---    Niveaux et badges d'après le cahier des charges (section Gamification)
+--    Niveau = nombre de certificats ; un badge PALIER tous les 5 niveaux.
 -- =====================================================================
 
-INSERT INTO Niveau (nom) VALUES ('Débutant'), ('Engagé'), ('Expert'), ('Champion');
--- ordre d'insertion = idNiveau 1..4 ; idNiveau 1 (Débutant) est le défaut de Benevole
-
-INSERT INTO Badge (code, nom, idNiveau) VALUES
-    ('PREMIERE_MISSION', 'Première mission', 1),
-    ('ENGAGE',           'Engagé',           2),
-    ('EXPERT',           'Expert',           3),
-    ('CHAMPION',         'Champion',         4);
-
--- =====================================================================
--- 10. AJOUTS RECOMMANDÉS (hors MCD actuel) - à décommenter si vous les validez
--- =====================================================================
--- Seuils pour calculer niveaux et badges (cahier : 0-4 / 5-14 / 15-29 / 30+ ; badges à 1, 5, 15, 30)
--- ALTER TABLE Niveau ADD COLUMN seuilMissions INT NOT NULL DEFAULT 0;
--- ALTER TABLE Badge  ADD COLUMN seuilMissions INT NOT NULL DEFAULT 1;
--- UPDATE Niveau SET seuilMissions = 0  WHERE idNiveau = 1;
--- UPDATE Niveau SET seuilMissions = 5  WHERE idNiveau = 2;
--- UPDATE Niveau SET seuilMissions = 15 WHERE idNiveau = 3;
--- UPDATE Niveau SET seuilMissions = 30 WHERE idNiveau = 4;
--- UPDATE Badge  SET seuilMissions = 1  WHERE idBadge = 1;
--- UPDATE Badge  SET seuilMissions = 5  WHERE idBadge = 2;
--- UPDATE Badge  SET seuilMissions = 15 WHERE idBadge = 3;
--- UPDATE Badge  SET seuilMissions = 30 WHERE idBadge = 4;
+INSERT INTO Badge (code, nom, description, type, critere, valeurCritere, theme, ordre) VALUES
+    ('ETINCELLE',       'Étincelle',       'Atteindre le niveau 5 : tes premières missions ont allumé l''étincelle.',  'PALIER',  'NIVEAU',              5, 'etincelle', 1),
+    ('FLAMME',          'Flamme',          'Atteindre le niveau 10 : ton engagement brûle d''une belle flamme.',        'PALIER',  'NIVEAU',             10, 'flamme', 2),
+    ('PHARE',           'Phare',           'Atteindre le niveau 15 : tu guides et inspires les autres bénévoles.',     'PALIER',  'NIVEAU',             15, 'phare', 3),
+    ('ETOILE',          'Étoile',          'Atteindre le niveau 20 : une étoile de la solidarité.',                    'PALIER',  'NIVEAU',             20, 'etoile', 4),
+    ('CONSTELLATION',   'Constellation',   'Atteindre le niveau 25 : ton impact relie toute une communauté.',          'PALIER',  'NIVEAU',             25, 'constellation', 5),
+    ('LEGENDE',         'Légende',         'Atteindre le niveau 30 : une légende du bénévolat.',                       'PALIER',  'NIVEAU',             30, 'legende', 6),
+    ('RENFORT_DE_CHOC', 'Renfort de choc', 'Répondre présent à un renfort urgent.',                                    'SPECIAL', 'RENFORT',             1, NULL, 7),
+    ('FIDELE',          'Fidèle',          'Réaliser 3 missions avec la même association.',                            'SPECIAL', 'MEME_ASSOCIATION',    3, NULL, 8),
+    ('EXPLORATEUR',     'Explorateur',     'Réaliser des missions dans 3 domaines différents.',                        'SPECIAL', 'DOMAINES_DIFFERENTS', 3, NULL, 9),
+    ('SPECIALISTE',     'Spécialiste',     'Réaliser 5 missions dans un même domaine.',                                'SPECIAL', 'MEME_DOMAINE',        5, NULL, 10),
+    ('REGULIER',        'Régulier',        'Réaliser au moins une mission par mois pendant 3 mois d''affilée.',        'SPECIAL', 'MOIS_CONSECUTIFS',    3, NULL, 11);

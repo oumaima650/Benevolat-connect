@@ -2,6 +2,7 @@ package com.benevolat.plateformebenevolat.repository;
 
 import com.benevolat.plateformebenevolat.entity.Obtention;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,7 +12,6 @@ import java.util.Optional;
 
 @Repository
 public interface ObtentionRepository extends JpaRepository<Obtention, Long> {
-    List<Obtention> findByBenevole_IdUtilisateur(Long benevoleId);
     long countByBenevole_IdUtilisateur(Long benevoleId);
 
     @Query("""
@@ -26,4 +26,9 @@ public interface ObtentionRepository extends JpaRepository<Obtention, Long> {
         List<Obtention> all = findByBenevoleOrderByDateDesc(benevoleId);
         return all.isEmpty() ? Optional.empty() : Optional.of(all.get(0));
     }
+
+    /** Marque les célébrations comme affichées. */
+    @Modifying
+    @Query("UPDATE Obtention o SET o.vu = true WHERE o.benevole.idUtilisateur = :benevoleId AND o.vu = false")
+    int marquerVus(@Param("benevoleId") Long benevoleId);
 }

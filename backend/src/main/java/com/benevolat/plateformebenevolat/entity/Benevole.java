@@ -47,11 +47,6 @@ public class Benevole extends Utilisateur {
     @Column(name = "longitude")
     private Double longitude;
 
-    /** Niveau courant (association « obtient » Benevole-Niveau). À affecter à l'inscription (Débutant). */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idNiveau")
-    private Niveau niveau;
-
     /** Centres d'intérêt (association « s'intéresse »). */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

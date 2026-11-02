@@ -69,7 +69,8 @@ function CarteAssociation({ association }: { association: AssociationBackend }) 
       {/* Footer */}
       <div className="border-t-2 border-ink px-5 py-3">
         <Link
-          to="/missions"
+          to="/associations/$id"
+          params={{ id: String(association.id) }}
           className="flex items-center justify-between text-sm font-bold hover:text-pink"
         >
           Voir ses missions <ArrowUpRight className="h-4 w-4" />

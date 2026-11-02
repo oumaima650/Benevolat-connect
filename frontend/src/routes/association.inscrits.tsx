@@ -1,28 +1,20 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { Loader2, Award, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { BanniereBenevole, PastilleNiveau } from '@/components/gamification/BanniereBenevole';
 import { getMyMissions, getInscrits, type MissionDashboard, type InscritDashboard } from '@/services/associationApi';
 
 export const Route = createFileRoute('/association/inscrits')({
   component: InscritsMission,
 });
 
-function NiveauBadge({ niveau }: { niveau?: string }) {
-  if (!niveau) return null;
-  const colors: Record<string, string> = {
-    Débutant: 'bg-gray-100 text-gray-700 border-gray-300',
-    Engagé: 'bg-mustard/30 text-ink border-mustard',
-    Expert: 'bg-blue-100 text-blue-700 border-blue-300',
-    Champion: 'bg-green-100 text-green-700 border-green-300',
-  };
-  return (
-    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${colors[niveau] ?? 'bg-gray-100 text-gray-700 border-gray-300'}`}>
-      {niveau}
-    </span>
-  );
+function NiveauBadge({ inscrit }: { inscrit: InscritDashboard }) {
+  const g = inscrit.gamification;
+  if (!g) return null;
+  return <PastilleNiveau theme={g.theme} niveau={g.niveau} nomNiveau={g.nomNiveau} />;
 }
 
 function ProfilSheet({ inscrit, onClose }: { inscrit: InscritDashboard; onClose: () => void }) {
@@ -34,6 +26,19 @@ function ProfilSheet({ inscrit, onClose }: { inscrit: InscritDashboard; onClose:
         </SheetTitle>
       </SheetHeader>
       <div className="mt-6 space-y-5">
+        {/* Bannière du bénévole (dernier badge palier) */}
+        {inscrit.gamification && (
+          <BanniereBenevole
+            theme={inscrit.gamification.theme}
+            niveau={inscrit.gamification.niveau}
+            nomNiveau={inscrit.gamification.nomNiveau}
+            taille="sm"
+          >
+            {inscrit.gamification.palier && (
+              <p className="text-xs font-semibold">Badge {inscrit.gamification.palier}</p>
+            )}
+          </BanniereBenevole>
+        )}
         {/* Avatar */}
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-mustard shadow-[2px_2px_0_var(--color-ink)] overflow-hidden">
@@ -48,6 +53,13 @@ function ProfilSheet({ inscrit, onClose }: { inscrit: InscritDashboard; onClose:
             <p className="font-bold text-ink">{inscrit.prenom} {inscrit.nom}</p>
             {inscrit.ville && <p className="text-sm text-muted-foreground">{inscrit.ville}</p>}
             {inscrit.email && <p className="text-xs text-muted-foreground">{inscrit.email}</p>}
+            <Link
+              to="/benevoles/$id"
+              params={{ id: String(inscrit.benevoleId) }}
+              className="mt-1 inline-block text-xs font-bold text-pink underline underline-offset-2"
+            >
+              Voir le profil et les badges
+            </Link>
           </div>
         </div>
 
@@ -194,6 +206,7 @@ function InscritsMission() {
                         <div className="flex items-center gap-2">
                           <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           {i.prenom} {i.nom}
+                          <NiveauBadge inscrit={i} />
                           {i.certificatDelivre && <Award className="h-3.5 w-3.5 text-emerald" title="Certificat délivré" />}
                         </div>
                       </td>
@@ -234,7 +247,9 @@ function InscritsMission() {
                           {i.rang}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 font-medium text-ink">{i.prenom} {i.nom}</td>
+                      <td className="px-4 py-2.5 font-medium text-ink">
+                        <div className="flex flex-wrap items-center gap-2">{i.prenom} {i.nom} <NiveauBadge inscrit={i} /></div>
+                      </td>
                       <td className="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">{i.ville}</td>
                     </tr>
                   ))}
