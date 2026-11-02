@@ -3,9 +3,14 @@ package com.benevolat.plateformebenevolat.controller;
 import com.benevolat.plateformebenevolat.dto.*;
 import com.benevolat.plateformebenevolat.repository.*;
 import com.benevolat.plateformebenevolat.service.BenevoleProfileService;
+import com.benevolat.plateformebenevolat.service.CertificatService;
 import com.benevolat.plateformebenevolat.service.GamificationService;
 import com.benevolat.plateformebenevolat.service.InscriptionService;
+import com.benevolat.plateformebenevolat.service.ParticipationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +30,8 @@ public class BenevoleController {
     private final BenevoleRepository benevoleRepository;
     private final CertificatRepository certificatRepository;
     private final GamificationService gamificationService;
+    private final ParticipationService participationService;
+    private final CertificatService certificatService;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyProfile(Authentication authentication) {
@@ -73,6 +80,31 @@ public class BenevoleController {
         return ResponseEntity.ok(inscriptionService.listInscriptionsDuBenevole(authentication.getName()));
     }
 
+    /** GET /api/benevoles/inscriptions/{id}/apercu — mission, photos de l'association et mes photos */
+    @GetMapping("/inscriptions/{inscriptionId}/apercu")
+    public ResponseEntity<ApercuDtos.ApercuMission> apercuInscription(Authentication authentication,
+                                                                      @PathVariable Long inscriptionId) {
+        return ResponseEntity.ok(participationService.apercu(authentication.getName(), inscriptionId));
+    }
+
+    /** POST /api/benevoles/inscriptions/{id}/photos — photo de participation (mission certifiée uniquement) */
+    @PostMapping("/inscriptions/{inscriptionId}/photos")
+    public ResponseEntity<ImageEvenementDto> ajouterPhoto(Authentication authentication,
+                                                          @PathVariable Long inscriptionId,
+                                                          @RequestBody Map<String, String> body) {
+        ImageEvenementDto dto = participationService.ajouterPhoto(authentication.getName(), inscriptionId,
+                body.get("url"), body.get("description"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    @DeleteMapping("/inscriptions/{inscriptionId}/photos/{photoId}")
+    public ResponseEntity<Void> supprimerPhoto(Authentication authentication,
+                                               @PathVariable Long inscriptionId,
+                                               @PathVariable Long photoId) {
+        participationService.supprimerPhoto(authentication.getName(), inscriptionId, photoId);
+        return ResponseEntity.noContent().build();
+    }
+
     /** GET /api/benevoles/mes-certificats — liste les certificats du bénévole connecté */
     @GetMapping("/mes-certificats")
     @Transactional(readOnly = true)
@@ -102,6 +134,16 @@ public class BenevoleController {
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(certs);
+    }
+
+    /** GET /api/benevoles/mes-certificats/{id}/apercu — PDF généré à la volée (inline) pour la prévisualisation */
+    @GetMapping("/mes-certificats/{certificatId}/apercu")
+    public ResponseEntity<byte[]> apercuCertificat(Authentication authentication, @PathVariable Long certificatId) {
+        byte[] pdf = certificatService.getPdfBytesBenevole(authentication.getName(), certificatId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"certificat-" + certificatId + ".pdf\"")
+                .body(pdf);
     }
 
     /** GET /api/benevoles/gamification — niveau, progression, bannière et badges du bénévole */

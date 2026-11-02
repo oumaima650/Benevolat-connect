@@ -371,7 +371,8 @@ function ProfilBenevole() {
               >
                 <div aria-hidden className="absolute inset-0" style={{ backgroundImage: themeBanniere(gamification?.theme).motif }} />
               </div>
-              <div className="-mt-20 flex justify-center">
+              {/* relative + z-10 : la photo passe au-dessus de la bannière (positionnée) qu'elle chevauche */}
+              <div className="relative z-10 -mt-20 flex justify-center">
                 {hasPhoto ? (
                   <img
                     src={photoUrl}

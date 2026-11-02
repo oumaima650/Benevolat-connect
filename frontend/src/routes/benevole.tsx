@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet, Link, Navigate, useNavigate, useMatchRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import {
-  LayoutDashboard, Search, MapPin, Sparkles,
-  BookOpen, Award, Bell, UserCircle, Menu, LogOut, ChevronDown,
+  LayoutDashboard, Search, Sparkles, BookOpen, Award,
+  ScrollText, Bell, UserCircle, Menu, LogOut, ChevronDown,
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { CelebrationBadges } from '@/components/gamification/CelebrationBadges';
@@ -26,9 +26,9 @@ export const Route = createFileRoute('/benevole')({
 const navItems = [
   { label: 'Tableau de bord', to: '/benevole' as const, icon: LayoutDashboard, exact: true },
   { label: 'Explorer les missions', to: '/benevole/explorer' as const, icon: Search, exact: false },
-  { label: 'Carte', to: '/benevole/carte' as const, icon: MapPin, exact: false },
   { label: 'Recommandations', to: '/benevole/recommandations' as const, icon: Sparkles, exact: false },
   { label: 'Mon parcours', to: '/benevole/parcours' as const, icon: BookOpen, exact: false },
+  { label: 'Mes certificats', to: '/benevole/certificats' as const, icon: ScrollText, exact: false },
   { label: 'Badges & niveau', to: '/benevole/badges' as const, icon: Award, exact: false },
   { label: 'Notifications', to: '/benevole/notifications' as const, icon: Bell, exact: false, badge: 'notifications' },
   { label: 'Mon profil', to: '/benevole/profil' as const, icon: UserCircle, exact: false },

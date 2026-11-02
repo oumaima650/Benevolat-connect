@@ -201,6 +201,20 @@ public class CertificatService {
         }
     }
 
+    /** Génère le PDF d'un certificat du bénévole connecté (prévisualisation dans son espace). */
+    @Transactional(readOnly = true)
+    public byte[] getPdfBytesBenevole(String emailBenevole, Long certificatId) {
+        Certificat cert = certificatRepository.findById(certificatId)
+                .filter(c -> c.getInscription().getBenevole().getEmail().equalsIgnoreCase(emailBenevole))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Certificat introuvable."));
+        try {
+            return genererPdfBytes(cert, cert.getInscription().getMission().getAssociation());
+        } catch (Exception e) {
+            log.error("Erreur génération PDF certificat {} : {}", certificatId, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Génération du PDF impossible.");
+        }
+    }
+
     private void genererEtUploader(Certificat certificat, Association asso) {
         try {
             byte[] pdfBytes = genererPdfBytes(certificat, asso);

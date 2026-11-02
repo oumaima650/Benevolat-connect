@@ -1,6 +1,8 @@
 package com.benevolat.plateformebenevolat.controller;
 
 import com.benevolat.plateformebenevolat.dto.*;
+import com.benevolat.plateformebenevolat.entity.StatutUtilisateur;
+import com.benevolat.plateformebenevolat.entity.StatutValidation;
 import com.benevolat.plateformebenevolat.repository.AssociationRepository;
 import com.benevolat.plateformebenevolat.service.AssociationService;
 import jakarta.validation.Valid;
@@ -24,11 +26,13 @@ public class AssociationController {
     private final AssociationRepository associationRepository;
     private final AssociationService associationService;
 
-    /* ── Public : liste des associations ── */
+    /* ── Public : liste des associations validées et actives (chaque carte mène à leur profil public) ── */
     @GetMapping
     @Transactional(readOnly = true)
     public List<AssociationSummaryDto> getAssociations() {
-        return associationRepository.findAll().stream().map(a ->
+        return associationRepository.findAll().stream()
+            .filter(a -> a.getStatutValidation() == StatutValidation.VALIDE && a.getStatut() == StatutUtilisateur.ACTIF)
+            .map(a ->
             new AssociationSummaryDto(
                 a.getIdUtilisateur(),
                 a.getNom(),
@@ -42,6 +46,12 @@ public class AssociationController {
                 a.getLongitude()
             )
         ).collect(Collectors.toList());
+    }
+
+    /* ── Public : profil d'une association validée, ses missions et leurs photos ── */
+    @GetMapping("/{id}/profil")
+    public ResponseEntity<ApercuDtos.AssociationPublique> getProfilPublic(@PathVariable Long id) {
+        return ResponseEntity.ok(associationService.profilPublic(id));
     }
 
     /* ── Dashboard : profil de l'association connectée ── */

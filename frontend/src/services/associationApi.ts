@@ -246,5 +246,49 @@ async function getFeaturedAssociations(): Promise<AssociationBackend[]> {
   }
 }
 
-const associationApi = { getFeaturedAssociations };
+export type PhotoEvenement = {
+  id: number;
+  url: string;
+  titre: string | null;
+  description: string | null;
+  datePublication: string;
+};
+
+export type MissionPublique = {
+  id: number;
+  titre: string;
+  description: string | null;
+  domaine: string | null;
+  statut: string;
+  dateDebut: string;
+  dateFin: string;
+  adresse: string | null;
+  placesRestantes: number;
+  photos: PhotoEvenement[];
+};
+
+/** Profil public d'une association validée (GET /api/associations/{id}/profil). */
+export type AssociationPublique = {
+  id: number;
+  nom: string;
+  description: string | null;
+  ville: string | null;
+  contact: string | null;
+  email: string | null;
+  photoProfil: string | null;
+  domaines: string[];
+  latitude: number | null;
+  longitude: number | null;
+  missions: MissionPublique[];
+};
+
+async function getProfilPublic(id: number | string): Promise<AssociationPublique> {
+  const res = await fetch(`${API_BASE}/api/associations/${id}/profil`)
+    .catch(() => { throw new Error("Impossible de joindre le serveur backend."); });
+  if (res.status === 404) throw new Error("Cette association n'existe pas ou n'est plus visible.");
+  if (!res.ok) throw new Error(`Erreur ${res.status}`);
+  return res.json();
+}
+
+const associationApi = { getFeaturedAssociations, getProfilPublic };
 export default associationApi;
