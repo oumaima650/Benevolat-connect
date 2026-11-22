@@ -19,6 +19,16 @@ public record ProfilPublicDto(
         int niveau,
         String nomNiveau,
         String theme,
-        /** Badges décrochés, dans l'ordre d'affichage. */
-        List<GamificationDto.BadgeDto> badges
-) {}
+        List<GamificationDto.BadgeDto> badges,
+        List<MissionParticipeeDto> missionsParticipees
+) {
+    /** Image publiée par le bénévole pour illustrer sa participation, + infos mission. */
+    public record MissionParticipeeDto(
+            Long id,
+            String titre,
+            String association,
+            String imageUrl,       // URL de l'ImageParticipation publiée par le bénévole
+            String description,    // Description de l'image de participation
+            String dateDebut
+    ) {}
+}

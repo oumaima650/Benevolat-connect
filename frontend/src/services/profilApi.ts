@@ -2,6 +2,15 @@ import { apiRequest } from "./http";
 import type { BadgeGamification } from "./benevoleApi";
 
 /** Profil public d'un bénévole (utilisateur connecté requis). */
+export type MissionParticipee = {
+  id: number;
+  titre: string;
+  association: string;
+  imageUrl?: string | null;
+  description?: string | null;
+  dateDebut?: string | null;
+};
+
 export type ProfilPublic = {
   id: number;
   prenom: string | null;
@@ -14,8 +23,8 @@ export type ProfilPublic = {
   niveau: number;
   nomNiveau: string;
   theme: string;
-  /** Badges décrochés, dans l'ordre d'affichage. */
   badges: BadgeGamification[];
+  missionsParticipees?: MissionParticipee[];
 };
 
 export const getProfilPublic = (benevoleId: number | string) =>

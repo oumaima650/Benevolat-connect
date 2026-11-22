@@ -82,7 +82,8 @@ public class SecurityConfig {
                     "/api/domaines/**",
                     "/api/stats/**",
                     "/api/missions/**",
-                    "/api/certificates/**"
+                    "/api/certificates/**",
+                    "/api/chatbot/**"
                 ).permitAll()
                 // GET /api/associations (liste publique) — accessible sans authentification
                 .requestMatchers(HttpMethod.GET, "/api/associations").permitAll()
