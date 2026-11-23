@@ -5,6 +5,7 @@ import { sendChatMessage, type ChatMessage } from '@/services/chatbotApi';
 
 const MAX_HISTORY = 4;
 const MAX_SUGGESTIONS = 3;
+const ASSISTANT_NAME = 'Sparky';
 
 /* Vivier de suggestions par rôle : les questions déjà posées sont retirées et
    remplacées par les suivantes du vivier (miroir des profils backend). */
@@ -150,20 +151,24 @@ function MarkdownMessage({ content }: { content: string }) {
   return <div className="space-y-0.5">{elements}</div>;
 }
 
-/* ── Icône personnalisée pour le bouton flottant ── */
+/* ── Icône Sparky : étincelle souriante ── */
 function ChatbotIcon({ className = '' }: { className?: string }) {
   return (
     <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      {/* Corps du robot */}
-      <rect x="6" y="10" width="24" height="16" rx="6" fill="currentColor" opacity="0.15" stroke="currentColor" strokeWidth="2"/>
+      {/* Étoile étincelante */}
+      <path
+        d="M18 3 L21.5 14.5 L33 18 L21.5 21.5 L18 33 L14.5 21.5 L3 18 L14.5 14.5 Z"
+        fill="currentColor"
+        fillOpacity="0.15"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
       {/* Yeux */}
-      <circle cx="13" cy="18" r="2.5" fill="currentColor"/>
-      <circle cx="23" cy="18" r="2.5" fill="currentColor"/>
-      {/* Antenne */}
-      <line x1="18" y1="10" x2="18" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="18" cy="5" r="1.5" fill="currentColor"/>
-      {/* Bouche */}
-      <path d="M13 23 Q18 26 23 23" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+      <circle cx="14.6" cy="16.4" r="1.7" fill="currentColor"/>
+      <circle cx="21.4" cy="16.4" r="1.7" fill="currentColor"/>
+      {/* Sourire */}
+      <path d="M14.6 20.7 Q18 23.3 21.4 20.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
     </svg>
   );
 }
@@ -205,6 +210,10 @@ export function Chatbot() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLInputElement>(null);
   const authScopeRef = useRef(`${role}:${token ?? ''}`);
+  const windowRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({ startX: 0, startY: 0, w: 0, h: 0 });
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const [resizing, setResizing] = useState(false);
 
   /* Connexion / déconnexion (le rôle ou le jeton change) : on repart de zéro */
   useEffect(() => {
@@ -228,6 +237,36 @@ export function Chatbot() {
       setTimeout(() => inputRef.current?.focus(), 120);
     }
   }, [open]);
+
+  /* Redimensionnement : fenêtre ancrée en bas à droite, on tire vers le haut/gauche */
+  useEffect(() => {
+    if (!resizing) return;
+    function onMove(e: PointerEvent) {
+      const d = dragRef.current;
+      const maxW = window.innerWidth * 0.95;
+      const maxH = window.innerHeight * 0.85;
+      setSize({
+        w: Math.min(Math.max(d.w - (e.clientX - d.startX), 288), maxW),
+        h: Math.min(Math.max(d.h - (e.clientY - d.startY), 320), maxH),
+      });
+    }
+    function onUp() { setResizing(false); }
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+  }, [resizing]);
+
+  function startResize(e: React.PointerEvent) {
+    const rect = windowRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    e.preventDefault();
+    dragRef.current = { startX: e.clientX, startY: e.clientY, w: rect.width, h: rect.height };
+    setSize({ w: rect.width, h: rect.height });
+    setResizing(true);
+  }
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -257,7 +296,7 @@ export function Chatbot() {
         role: 'assistant',
         content: is429
           ? 'Trop de messages envoyés. Attendez un moment avant de réessayer.'
-          : "L'assistant est momentanément indisponible. Consultez la FAQ.",
+          : `${ASSISTANT_NAME} est momentanément indisponible. Consultez la FAQ.`,
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
@@ -268,10 +307,10 @@ export function Chatbot() {
   const nomAffiche = user?.prenom || user?.nomAssociation;
   const nomRole = role === 'ASSOCIATION' ? 'votre association' : role === 'BENEVOLE' ? 'bénévole' : role === 'ADMIN' ? 'administrateur' : null;
   const greeting = nomAffiche
-    ? `Bonjour, ${nomAffiche} ! Je suis là pour vous aider sur CountMeIn.`
+    ? `Bonjour, ${nomAffiche} ! Moi c'est ${ASSISTANT_NAME}, je vous aide sur CountMeIn.`
     : nomRole
-      ? `Bonjour ! Je suis votre assistant CountMeIn pour ${nomRole}.`
-      : "Bonjour ! Je suis l'assistant CountMeIn. Posez-moi votre question.";
+      ? `Bonjour ! Moi c'est ${ASSISTANT_NAME}, votre assistant CountMeIn pour ${nomRole}.`
+      : `Bonjour ! Moi c'est ${ASSISTANT_NAME}, l'assistant CountMeIn. Posez-moi votre question.`;
   const dernierMessage = messages[messages.length - 1];
   /* Toutes les questions déjà posées (y compris celles cliquées) sont retirées,
      puis remplacées par les questions suivantes du vivier du rôle. */
@@ -289,11 +328,30 @@ export function Chatbot() {
       {/* ══════════ Fenêtre de chat ══════════ */}
       {open && (
         <div
+          ref={windowRef}
           role="dialog"
-          aria-label="Assistant CountMeIn"
-          className="fixed bottom-24 right-4 z-50 flex w-[22rem] flex-col overflow-hidden rounded-2xl border-2 border-ink bg-paper shadow-[8px_8px_0_var(--color-ink)] sm:w-[26rem]"
-          style={{ maxHeight: '540px' }}
+          aria-label={`Assistant ${ASSISTANT_NAME}`}
+          className={`fixed bottom-24 right-4 z-50 flex flex-col overflow-hidden rounded-2xl border-2 border-ink bg-paper shadow-[8px_8px_0_var(--color-ink)] ${size ? '' : 'w-[22rem] sm:w-[26rem]'} ${resizing ? 'select-none' : ''}`}
+          style={{
+            ...(size
+              ? { width: size.w, height: size.h, maxHeight: '85vh' }
+              : { maxHeight: '540px' }),
+            maxWidth: '95vw',
+          }}
         >
+          {/* Poignée de redimensionnement (coin bas-gauche) */}
+          <span
+            onPointerDown={startResize}
+            title="Redimensionner"
+            aria-hidden="true"
+            style={{ touchAction: 'none' }}
+            className="absolute bottom-1.5 left-1.5 z-20 cursor-nesw-resize rounded p-1 text-muted-foreground/50 transition-colors hover:text-ink"
+          >
+            <svg viewBox="0 0 12 12" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M3 9 L9 3" />
+              <path d="M3 5.5 L5.5 3" />
+            </svg>
+          </span>
 
           {/* ── Header ── */}
           <div className="flex items-center justify-between gap-2 border-b-2 border-ink bg-ink px-4 py-3">
@@ -303,7 +361,7 @@ export function Chatbot() {
                 <ChatbotIcon className="h-5 w-5 text-mustard" />
               </div>
               <div>
-                <p className="font-display text-sm font-black leading-tight text-paper">Assistant</p>
+                <p className="font-display text-sm font-black leading-tight text-paper">{ASSISTANT_NAME}</p>
                 <p className="text-[10px] text-paper/60 leading-none">CountMeIn · En ligne</p>
               </div>
             </div>
@@ -436,7 +494,7 @@ export function Chatbot() {
       {/* ══════════ Bouton flottant ══════════ */}
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Fermer l'assistant" : "Ouvrir l'assistant CountMeIn"}
+        aria-label={open ? `Fermer ${ASSISTANT_NAME}` : `Ouvrir ${ASSISTANT_NAME}`}
         className="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-ink shadow-[4px_4px_0_var(--color-mustard)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[6px_6px_0_var(--color-mustard)] press"
       >
         {open ? (

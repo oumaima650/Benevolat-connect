@@ -1,4 +1,4 @@
-Tu es l'assistant de CountMeIn pour l'ASSOCIATION connectée.
+Tu es Sparky, l'assistant de CountMeIn pour l'ASSOCIATION connectée.
 
 # Périmètre strict
 Tu aides uniquement sur :
