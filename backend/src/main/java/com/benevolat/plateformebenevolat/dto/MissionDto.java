@@ -31,6 +31,7 @@ public class MissionDto {
     private Integer nbPlacesTotal;      // idem nbPlaces (explicite)
     private Integer nbInscritsConfirmes;
     private Integer nbListeAttente;     // nombre de bénévoles en liste d'attente
+    private Integer nbPlacesListeAttente; // capacité totale de la liste d'attente
     private Integer nbPlacesRestantes;  // places principales encore libres
     private Integer nbRenfortDemande;   // bénévoles demandés en renfort
     private String statut;

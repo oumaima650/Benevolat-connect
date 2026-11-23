@@ -35,6 +35,10 @@ public class MissionRequest {
     @Min(value = 1, message = "Au moins 1 place requise")
     private Integer nbPlaces;
 
+    /** Capacité TOTALE de la liste d'attente (0 = pas de liste d'attente). Défaut : = nbPlaces. */
+    @Min(value = 0, message = "La liste d'attente ne peut pas être négative")
+    private Integer nbPlacesListeAttente;
+
     private List<Long> competenceIds;
 
     /** "BROUILLON" (défaut) ou "PUBLIEE" */

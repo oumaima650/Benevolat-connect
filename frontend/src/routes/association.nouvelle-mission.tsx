@@ -4,8 +4,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import {
   X, Plus, Loader2, Check, BookOpen, MapPin, Zap,
-  Save, Rocket, ChevronLeft, Calendar, Users,
-} from 'lucide-react';
+  Save, Rocket, ChevronLeft, Calendar, Users, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -89,8 +88,11 @@ function NouvelleMission() {
 
   const [form, setForm] = useState({
     titre: '', description: '', domaineId: 0,
-    adresse: '', dateDebut: '', dateFin: '', nbPlaces: '',
+    adresse: '', dateDebut: '', dateFin: '', nbPlaces: '', nbPlacesListeAttente: '',
   });
+  // Tant que l'association n'a pas touché au champ, la liste d'attente suit le nombre de places
+  const [attenteTouchee, setAttenteTouchee] = useState(false);
+  const [nbEnAttente, setNbEnAttente] = useState(0);
 
   /* ── Reverse geocoding ── */
   async function reverseGeocode(lat: number, lng: number): Promise<string> {
@@ -142,7 +144,10 @@ function NouvelleMission() {
         dateDebut: m.dateDebut ? m.dateDebut.substring(0, 16) : '',
         dateFin: m.dateFin ? m.dateFin.substring(0, 16) : '',
         nbPlaces: String(m.nbPlaces),
+        nbPlacesListeAttente: String(m.nbPlacesListeAttente ?? m.nbPlaces),
       });
+      setAttenteTouchee(true);
+      setNbEnAttente(m.nbListeAttente ?? 0);
       setSelectedCompetenceIds(m.competenceIds ?? []);
       if (m.latitude && m.longitude) setPosition([m.latitude, m.longitude]);
     }).catch(() => toast.error('Impossible de charger la mission.')).finally(() => setLoadingInit(false));
@@ -157,6 +162,9 @@ function NouvelleMission() {
     if (!form.domaineId) { toast.error('Sélectionnez un domaine.'); return; }
     if (!form.dateDebut) { toast.error('La date de début est obligatoire.'); return; }
     if (!form.nbPlaces || Number(form.nbPlaces) < 1) { toast.error('Le nombre de places doit être ≥ 1.'); return; }
+    const attente = form.nbPlacesListeAttente === '' ? Number(form.nbPlaces) : Number(form.nbPlacesListeAttente);
+    if (!Number.isInteger(attente) || attente < 0) { toast.error("La liste d'attente doit être un nombre ≥ 0."); return; }
+    if (attente < nbEnAttente) { toast.error(`${nbEnAttente} bénévole(s) sont déjà en liste d'attente : la capacité ne peut pas être inférieure.`); return; }
     setSubmitting(true);
     try {
       const payload: MissionFormData = {
@@ -165,7 +173,7 @@ function NouvelleMission() {
         latitude: position[0],
         longitude: position[1],
         dateDebut: form.dateDebut, dateFin: form.dateFin || null,
-        nbPlaces: Number(form.nbPlaces), competenceIds: selectedCompetenceIds, statut,
+        nbPlaces: Number(form.nbPlaces), nbPlacesListeAttente: attente, competenceIds: selectedCompetenceIds, statut,
       };
       if (isEdit) { await updateMission(Number(editId), payload); toast.success('Mission mise à jour !'); }
       else { await createMission(payload); toast.success(statut === 'PUBLIEE' ? 'Mission publiée !' : 'Brouillon enregistré.'); }
@@ -317,15 +325,38 @@ function NouvelleMission() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="places" className="text-sm font-bold text-ink">Nombre de places <span className="text-pink">*</span></Label>
-                <div className="relative w-48">
-                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <Input id="places" type="number" min={1} value={form.nbPlaces} onChange={set('nbPlaces')}
-                    placeholder="20"
-                    className="rounded-xl border-2 border-ink pl-9 shadow-[2px_2px_0_var(--color-ink)]" required />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="places" className="text-sm font-bold text-ink">Nombre de places <span className="text-pink">*</span></Label>
+                  <div className="relative">
+                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input id="places" type="number" min={1} value={form.nbPlaces}
+                      onChange={e => {
+                        const v = e.target.value;
+                        setForm(f => ({ ...f, nbPlaces: v, ...(attenteTouchee ? {} : { nbPlacesListeAttente: v }) }));
+                      }}
+                      placeholder="20"
+                      className="rounded-xl border-2 border-ink pl-9 shadow-[2px_2px_0_var(--color-ink)]" required />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Nombre maximum de bénévoles confirmés.</p>
                 </div>
-                <p className="text-xs text-muted-foreground">Nombre maximum de bénévoles.</p>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="attente" className="text-sm font-bold text-ink">Places en liste d'attente</Label>
+                  <div className="relative">
+                    <Hourglass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input id="attente" type="number" min={nbEnAttente} value={form.nbPlacesListeAttente}
+                      onChange={e => { setAttenteTouchee(true); setForm(f => ({ ...f, nbPlacesListeAttente: e.target.value })); }}
+                      placeholder={form.nbPlaces || '20'}
+                      className="rounded-xl border-2 border-ink pl-9 shadow-[2px_2px_0_var(--color-ink)]" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {nbEnAttente > 0
+                      ? `${nbEnAttente} bénévole(s) déjà en attente. `
+                      : ''}
+                    Remplaçants promus automatiquement si un inscrit se désiste. 0 = pas de liste d'attente.
+                  </p>
+                </div>
               </div>
             </SectionCard>
 
@@ -338,6 +369,7 @@ function NouvelleMission() {
                 <p><span className="font-semibold text-ink">Titre :</span> {form.titre || '—'}</p>
                 <p><span className="font-semibold text-ink">Domaine :</span> {catalogDomaines.find(d => d.id === form.domaineId)?.nom || '—'}</p>
                 <p><span className="font-semibold text-ink">Places :</span> {form.nbPlaces || '—'}</p>
+                <p><span className="font-semibold text-ink">Liste d'attente :</span> {(form.nbPlacesListeAttente || form.nbPlaces) ? `${form.nbPlacesListeAttente || form.nbPlaces} place(s)` : '—'}</p>
                 <p><span className="font-semibold text-ink">Compétences :</span> {selectedCompetenceIds.length + customCompetences.length} sélectionnée(s)</p>
               </div>
             </div>

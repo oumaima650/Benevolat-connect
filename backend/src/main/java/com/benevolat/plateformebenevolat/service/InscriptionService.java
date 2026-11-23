@@ -82,6 +82,7 @@ public class InscriptionService {
 
         int restantes = missionPlacesService.placesRestantes(mission);
         int nbAttente = missionPlacesService.countAttente(missionId);
+        int capaciteAttente = missionPlacesService.capaciteAttente(mission);
 
         StatutInscription nouveauStatut;
         Integer rang = null;
@@ -99,6 +100,11 @@ public class InscriptionService {
             mission.setNbPlaces(restantes - 1);
             nouveauStatut = StatutInscription.CONFIRMEE;
         } else {
+            if (nbAttente >= capaciteAttente) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, capaciteAttente == 0
+                        ? "La mission est complète et n'a pas de liste d'attente."
+                        : "La mission est complète et sa liste d'attente aussi.");
+            }
             nouveauStatut = StatutInscription.EN_LISTE_ATTENTE;
             rang = nbAttente + 1;
         }
@@ -116,7 +122,7 @@ public class InscriptionService {
         inscriptionRepository.save(inscription);
 
         // Règle 6 — recalcul des compteurs et du statut
-        missionPlacesService.recalculer(mission);
+        missionPlacesService.recalculer(mission, capaciteAttente);
 
         // F28 : confirmation au bénévole + information de l'association
         String lien = "/missions/" + missionId;
@@ -175,6 +181,8 @@ public class InscriptionService {
                     "La mission a déjà commencé : l'inscription ne peut plus être annulée.");
         }
 
+        int capaciteAttente = missionPlacesService.capaciteAttente(mission);
+
         if (inscription.getStatut() == StatutInscription.CONFIRMEE) {
             if (mission.getStatut() == StatutMission.RENFORT_URGENT) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -188,7 +196,7 @@ public class InscriptionService {
         inscriptionRepository.save(inscription);
 
         // Promotion de la liste d'attente + renumérotation + statut
-        missionPlacesService.recalculer(mission);
+        missionPlacesService.recalculer(mission, capaciteAttente);
 
         notificationService.notifier(mission.getAssociation(), CategorieNotif.ANNULATION,
                 "Désistement d'un bénévole",
@@ -282,6 +290,7 @@ public class InscriptionService {
                     "Cette mission chevauche une mission où vous êtes déjà confirmé.");
         }
 
+        int capaciteAttente = missionPlacesService.capaciteAttente(mission);
         int restantes = missionPlacesService.placesRestantes(mission);
         if (restantes > 0) {
             mission.setNbPlaces(restantes - 1);
@@ -295,7 +304,7 @@ public class InscriptionService {
         inscription.setEstRenfort(true);
         inscriptionRepository.save(inscription);
 
-        missionPlacesService.recalculer(mission);
+        missionPlacesService.recalculer(mission, capaciteAttente);
 
         notificationService.notifier(benevole, CategorieNotif.PROMOTION,
                 "Votre venue en renfort est confirmée",

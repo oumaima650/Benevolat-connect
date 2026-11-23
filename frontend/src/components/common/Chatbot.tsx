@@ -151,24 +151,86 @@ function MarkdownMessage({ content }: { content: string }) {
   return <div className="space-y-0.5">{elements}</div>;
 }
 
-/* ── Icône Sparky : étincelle souriante ── */
-function ChatbotIcon({ className = '' }: { className?: string }) {
+/* ── Mascotte Sparky ──
+   Une bulle de discussion moutarde, vivante : antenne-étincelle sur la tête, grands yeux,
+   joues roses, une main qui salue et un petit cœur emerald (le bénévolat !).
+   Ombre rose décalée + contour ink épais = charte néo-brutaliste CountMeIn.
+   mood="thinking" : yeux levés et bouche en « o » pendant que l'IA rédige. */
+type SparkyMood = 'happy' | 'thinking';
+
+function ChatbotIcon({
+  className = '',
+  animated = false,
+  mood = 'happy',
+}: {
+  className?: string;
+  animated?: boolean;
+  mood?: SparkyMood;
+}) {
+  const a = (cls: string) => (animated ? cls : undefined);
+  const thinking = mood === 'thinking';
+  const body =
+    'M18 14 H30 A11 11 0 0 1 41 25 V31 A11 11 0 0 1 30 42 H17 L8.5 46.5 L11.2 39.4 A11 11 0 0 1 7 31 V25 A11 11 0 0 1 18 14 Z';
+  const ink = 'var(--color-ink)';
+
   return (
-    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      {/* Étoile étincelante */}
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true">
+      {/* Ombre décalée */}
+      <path d={body} transform="translate(2.5 2.5)" fill="var(--color-pink)" />
+
+      {/* Main qui salue (derrière le corps) */}
+      <g className={a('sparky-hand')}>
+        <path d="M38.5 27 L43 21.5" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
+        <circle cx="43.6" cy="20.6" r="3" fill="var(--color-mustard)" stroke={ink} strokeWidth="1.8" />
+      </g>
+
+      {/* Antenne + étincelle */}
+      <path d="M24 14 V10" stroke={ink} strokeWidth="2" strokeLinecap="round" />
       <path
-        d="M18 3 L21.5 14.5 L33 18 L21.5 21.5 L18 33 L14.5 21.5 L3 18 L14.5 14.5 Z"
-        fill="currentColor"
-        fillOpacity="0.15"
-        stroke="currentColor"
-        strokeWidth="2"
+        className={a('sparky-spark')}
+        d="M24 1 Q25 5 29 6 Q25 7 24 11 Q23 7 19 6 Q23 5 24 1 Z"
+        fill="var(--color-pink)"
+        stroke={ink}
+        strokeWidth="1.6"
         strokeLinejoin="round"
       />
+
+      {/* Corps : bulle de discussion */}
+      <path d={body} fill="var(--color-mustard)" stroke={ink} strokeWidth="2.2" strokeLinejoin="round" />
+      {/* Reflet */}
+      <path d="M12.5 24 Q13 19.5 17 17.8" stroke="var(--color-paper)" strokeWidth="1.8" strokeLinecap="round" />
+
       {/* Yeux */}
-      <circle cx="14.6" cy="16.4" r="1.7" fill="currentColor"/>
-      <circle cx="21.4" cy="16.4" r="1.7" fill="currentColor"/>
-      {/* Sourire */}
-      <path d="M14.6 20.7 Q18 23.3 21.4 20.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
+      <g className={a('sparky-eyes')}>
+        <ellipse cx="19" cy="26.5" rx="2.4" ry="3.2" fill={ink} />
+        <ellipse cx="29" cy="26.5" rx="2.4" ry="3.2" fill={ink} />
+        <circle cx={thinking ? 20 : 19.9} cy={thinking ? 24.4 : 25.3} r="0.95" fill="var(--color-paper)" />
+        <circle cx={thinking ? 30 : 29.9} cy={thinking ? 24.4 : 25.3} r="0.95" fill="var(--color-paper)" />
+      </g>
+
+      {/* Joues */}
+      <ellipse cx="14.8" cy="31" rx="2" ry="1.2" fill="var(--color-pink)" />
+      <ellipse cx="33.2" cy="31" rx="2" ry="1.2" fill="var(--color-pink)" />
+
+      {/* Bouche */}
+      {thinking ? (
+        <ellipse cx="24" cy="33" rx="1.6" ry="1.8" fill={ink} />
+      ) : (
+        <>
+          <path d="M20.6 31.6 Q24 36.4 27.4 31.6 Z" fill={ink} stroke={ink} strokeWidth="1.2" strokeLinejoin="round" />
+          <path d="M22.4 33.9 Q24 35.2 25.6 33.9 Q24 33.1 22.4 33.9 Z" fill="var(--color-pink)" />
+        </>
+      )}
+
+      {/* Petit cœur flottant */}
+      <path
+        className={a('sparky-heart')}
+        d="M8 13 C3.6 10.2 3.6 5.6 6.1 5.6 C7.1 5.6 7.7 6.2 8 6.9 C8.3 6.2 8.9 5.6 9.9 5.6 C12.4 5.6 12.4 10.2 8 13 Z"
+        fill="var(--color-emerald)"
+        stroke={ink}
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -189,10 +251,10 @@ function TypingIndicator() {
 }
 
 /* ── Avatar assistant ── */
-function AssistantAvatar() {
+function AssistantAvatar({ mood = 'happy' }: { mood?: SparkyMood }) {
   return (
-    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-mustard">
-      <ChatbotIcon className="h-4 w-4 text-ink" />
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-paper">
+      <ChatbotIcon className="h-6 w-6" mood={mood} animated={mood === 'thinking'} />
     </div>
   );
 }
@@ -357,8 +419,8 @@ export function Chatbot() {
           <div className="flex items-center justify-between gap-2 border-b-2 border-ink bg-ink px-4 py-3">
             <div className="flex items-center gap-2.5">
               {/* Logo animé dans le header */}
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-mustard bg-mustard/20">
-                <ChatbotIcon className="h-5 w-5 text-mustard" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-mustard bg-paper">
+                <ChatbotIcon className="h-7 w-7" animated />
               </div>
               <div>
                 <p className="font-display text-sm font-black leading-tight text-paper">{ASSISTANT_NAME}</p>
@@ -451,7 +513,7 @@ export function Chatbot() {
             {/* Indicateur "le bot écrit" */}
             {loading && (
               <div className="flex items-end gap-2">
-                <AssistantAvatar />
+                <AssistantAvatar mood="thinking" />
                 <TypingIndicator />
               </div>
             )}
@@ -495,13 +557,13 @@ export function Chatbot() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? `Fermer ${ASSISTANT_NAME}` : `Ouvrir ${ASSISTANT_NAME}`}
-        className="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-ink shadow-[4px_4px_0_var(--color-mustard)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[6px_6px_0_var(--color-mustard)] press"
+        className="group fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-ink shadow-[4px_4px_0_var(--color-mustard)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[6px_6px_0_var(--color-mustard)] press"
       >
         {open ? (
           <X className="h-7 w-7 text-paper" />
         ) : (
           <>
-            <ChatbotIcon className="h-9 w-9 text-mustard" />
+            <ChatbotIcon className="h-12 w-12" animated />
             {/* Badge de non-lus */}
             {unread > 0 && (
               <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-ink bg-pink text-[9px] font-black text-pink-foreground">

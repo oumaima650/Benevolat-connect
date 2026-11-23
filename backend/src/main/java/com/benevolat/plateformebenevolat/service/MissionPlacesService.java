@@ -20,7 +20,8 @@ import java.util.List;
  * - Mission.nbPlaces              = places principales RESTANTES (pas le total).
  * - Mission.nbPlacesListeAttente  = places restantes en liste d'attente.
  * - Capacité totale               = inscrits confirmés + nbPlaces.
- * - Capacité de la liste d'attente = capacité totale (autant de places d'attente que de places).
+ * - Capacité de la liste d'attente = en attente + nbPlacesListeAttente (choisie par l'association,
+ *   0 = pas de liste d'attente). Une promotion libère une place d'attente.
  */
 @Service
 @RequiredArgsConstructor
@@ -41,6 +42,12 @@ public class MissionPlacesService {
         return m.getNbPlaces() != null ? Math.max(0, m.getNbPlaces()) : 0;
     }
 
+    /** Capacité totale de la liste d'attente (à lire AVANT de modifier une inscription). */
+    public int capaciteAttente(Mission m) {
+        int restantesAttente = m.getNbPlacesListeAttente() != null ? Math.max(0, m.getNbPlacesListeAttente()) : 0;
+        return restantesAttente + countAttente(m.getIdMission());
+    }
+
     public int capaciteTotale(Mission m) {
         return countConfirmes(m.getIdMission()) + placesRestantes(m);
     }
@@ -56,6 +63,15 @@ public class MissionPlacesService {
      */
     @Transactional
     public List<Inscription> recalculer(Mission m) {
+        return recalculer(m, capaciteAttente(m));
+    }
+
+    /**
+     * @param capaciteAttente capacité de la liste d'attente, lue avant le changement d'inscription
+     *                        en cours (sinon l'inscription ajoutée/retirée fausserait le calcul)
+     */
+    @Transactional
+    public List<Inscription> recalculer(Mission m, int capaciteAttente) {
         int restantes = placesRestantes(m);
 
         List<Inscription> attente = inscriptionRepository
@@ -84,10 +100,8 @@ public class MissionPlacesService {
         }
         inscriptionRepository.saveAll(attente);
 
-        int confirmes = countConfirmes(m.getIdMission());
-        int total = confirmes + restantes;
         m.setNbPlaces(restantes);
-        m.setNbPlacesListeAttente(Math.max(0, total - resteAttente.size()));
+        m.setNbPlacesListeAttente(Math.max(0, capaciteAttente - resteAttente.size()));
 
         StatutMission s = m.getStatut();
         if (s == StatutMission.PUBLIEE && restantes == 0) {

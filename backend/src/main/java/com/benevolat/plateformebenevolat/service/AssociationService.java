@@ -171,7 +171,9 @@ public class AssociationService {
         mission.setDateFin(dateFin);
         int places = req.getNbPlaces() != null ? req.getNbPlaces() : 0;
         mission.setNbPlaces(places);
-        mission.setNbPlacesListeAttente(places); // liste d'attente = même capacité que les places
+        // Capacité de la liste d'attente choisie par l'association (défaut : autant que de places)
+        mission.setNbPlacesListeAttente(req.getNbPlacesListeAttente() != null
+                ? Math.max(0, req.getNbPlacesListeAttente()) : places);
         mission.setStatut(statut);
         mission.setAssociation(asso);
         mission.setDomaine(domaine);
@@ -218,6 +220,15 @@ public class AssociationService {
                         "Impossible : " + confirmes + " bénévole(s) déjà confirmé(s), le nombre de places ne peut pas être inférieur.");
             }
             mission.setNbPlaces(req.getNbPlaces() - confirmes);
+        }
+        if (req.getNbPlacesListeAttente() != null) {
+            // capacité TOTALE de la liste d'attente ; en BDD on stocke les places d'attente restantes
+            int enAttente = missionPlacesService.countAttente(missionId);
+            if (req.getNbPlacesListeAttente() < enAttente) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Impossible : " + enAttente + " bénévole(s) déjà en liste d'attente, la capacité ne peut pas être inférieure.");
+            }
+            mission.setNbPlacesListeAttente(req.getNbPlacesListeAttente() - enAttente);
         }
 
         if (req.getDateDebut() != null) {
@@ -491,6 +502,7 @@ public class AssociationService {
                 .nbPlacesRestantes(restantes)
                 .nbInscritsConfirmes(nbConfirmes)
                 .nbListeAttente(missionPlacesService.countAttente(m.getIdMission()))
+                .nbPlacesListeAttente(missionPlacesService.capaciteAttente(m))
                 .nbRenfortDemande(m.getNbRenfortDemande())
                 .statut(m.getStatut() != null ? m.getStatut().name() : "BROUILLON")
                 .domaineId(m.getDomaine() != null ? m.getDomaine().getIdDomaine() : null)

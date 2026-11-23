@@ -66,6 +66,7 @@ export type MissionDashboard = {
   nbPlacesTotal?: number;
   nbInscritsConfirmes: number;
   nbListeAttente: number;      // nombre de bénévoles en liste d'attente
+  nbPlacesListeAttente?: number; // capacité totale de la liste d'attente
   nbPlacesRestantes: number;   // places principales encore libres
   nbRenfortDemande?: number;
   statut: string;
@@ -89,6 +90,7 @@ export type MissionFormData = {
   dateDebut: string;
   dateFin?: string | null;
   nbPlaces: number;
+  nbPlacesListeAttente?: number | null; // capacité de la liste d'attente (0 = aucune)
   competenceIds?: number[] | null;
   statut?: string | null;
 };
