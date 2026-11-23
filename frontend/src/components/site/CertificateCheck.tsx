@@ -42,7 +42,7 @@ export function CertificateCheck() {
   };
 
   return (
-    <section id="certificat" className="border-b-4 border-ink bg-ink text-paper py-16 lg:py-24">
+    <section id="certificat" className="scroll-mt-20 border-b-4 border-ink bg-ink text-paper py-16 lg:py-24">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 lg:grid-cols-[1fr_1.1fr] lg:items-center">
 
         {/* ── Gauche : texte + formulaire ── */}

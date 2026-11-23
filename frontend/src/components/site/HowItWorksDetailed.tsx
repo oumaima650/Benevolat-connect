@@ -494,7 +494,7 @@ function SectionBenevole({ nomAffiche }: { nomAffiche: string }) {
   ];
 
   return (
-    <section id="comment-ca-marche" className="border-b-4 border-ink bg-muted py-14 lg:py-20">
+    <section id="comment-ca-marche" className="scroll-mt-20 border-b-4 border-ink bg-muted py-14 lg:py-20">
       <div className="mx-auto max-w-6xl px-5">
         <Reveal>
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Pour les bénévoles</p>

@@ -74,7 +74,7 @@ export function MissionSearch({ limite, titre = "Trouvez votre mission" }: { lim
   };
 
   return (
-    <section id="recherche" className="border-b-4 border-ink bg-paper">
+    <section id="recherche" className="scroll-mt-20 border-b-4 border-ink bg-paper">
       <div className="mx-auto max-w-6xl px-5 py-14 lg:py-20">
         <Reveal>
           <h2 className="text-3xl sm:text-4xl">{titre}</h2>
