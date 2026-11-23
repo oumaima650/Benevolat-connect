@@ -5,6 +5,7 @@ import com.benevolat.plateformebenevolat.entity.StatutUtilisateur;
 import com.benevolat.plateformebenevolat.entity.StatutValidation;
 import com.benevolat.plateformebenevolat.repository.AssociationRepository;
 import com.benevolat.plateformebenevolat.service.AssociationService;
+import com.benevolat.plateformebenevolat.service.EmailCampagneService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ public class AssociationController {
 
     private final AssociationRepository associationRepository;
     private final AssociationService associationService;
+    private final EmailCampagneService emailCampagneService;
 
     /* ── Public : liste des associations validées et actives (chaque carte mène à leur profil public) ── */
     @GetMapping
@@ -157,5 +159,27 @@ public class AssociationController {
             Authentication auth,
             @PathVariable Long id) {
         return ResponseEntity.ok(associationService.getImagesMission(auth.getName(), id));
+    }
+
+    /* ── Envoi d'emails aux bénévoles inscrits aux missions de l'association ── */
+
+    @GetMapping("/me/emails/destinataires")
+    public ResponseEntity<List<EmailDtos.Destinataire>> destinatairesEmails(Authentication auth) {
+        return ResponseEntity.ok(emailCampagneService.destinatairesAssociation(auth.getName()));
+    }
+
+    @PostMapping("/me/emails/rediger")
+    public ResponseEntity<EmailDtos.RedactionResponse> redigerEmail(
+            Authentication auth,
+            @Valid @RequestBody EmailDtos.RedactionRequest request) {
+        return ResponseEntity.ok(emailCampagneService.redigerAssociation(auth.getName(), request.consigne()));
+    }
+
+    @PostMapping("/me/emails/envoyer")
+    public ResponseEntity<EmailDtos.EnvoiResultat> envoyerEmails(
+            Authentication auth,
+            @Valid @RequestBody EmailDtos.EnvoiRequest request) {
+        return ResponseEntity.ok(emailCampagneService.envoyerAssociation(
+                auth.getName(), request.destinataireIds(), request.sujet(), request.message()));
     }
 }

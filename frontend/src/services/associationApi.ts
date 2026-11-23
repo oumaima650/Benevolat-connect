@@ -221,6 +221,27 @@ export async function getCertificatApercuUrl(certificatId: number): Promise<stri
   return URL.createObjectURL(await res.blob());
 }
 
+/* ── Envoi d'emails aux bénévoles inscrits ── */
+
+export type DestinataireEmail = { id: number; nom: string | null; email: string };
+export type EnvoiResultatEmail = { envoyes: number; echecs: number; erreurs: string[] };
+export type RedactionEmail = { sujet: string | null; contenu: string | null; fallback: boolean };
+
+export const getDestinatairesEmail = () =>
+  request<DestinataireEmail[]>("/api/associations/me/emails/destinataires");
+
+export const redigerEmail = (consigne: string) =>
+  request<RedactionEmail>("/api/associations/me/emails/rediger", {
+    method: "POST",
+    body: JSON.stringify({ consigne }),
+  });
+
+export const envoyerEmails = (destinataireIds: number[], sujet: string, message: string) =>
+  request<EnvoiResultatEmail>("/api/associations/me/emails/envoyer", {
+    method: "POST",
+    body: JSON.stringify({ destinataireIds, sujet, message }),
+  });
+
 /* ── Compatibilité avec l'ancien associationApi ── */
 
 export type AssociationBackend = {

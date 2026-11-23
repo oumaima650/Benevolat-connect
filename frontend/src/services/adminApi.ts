@@ -79,6 +79,11 @@ export type MissionAdmin = {
   createdAt: string;
 };
 
+/** Destinataire sélectionnable dans la fenêtre d'envoi d'emails. */
+export type DestinataireEmail = { id: number; nom: string | null; email: string };
+export type EnvoiResultatEmail = { envoyes: number; echecs: number; erreurs: string[] };
+export type RedactionEmail = { sujet: string | null; contenu: string | null; fallback: boolean };
+
 const patch = <T,>(path: string, body?: unknown) =>
   apiRequest<T>(path, body ? { method: "PATCH", body: JSON.stringify(body) } : { method: "PATCH" });
 
@@ -113,5 +118,19 @@ export const adminApi = {
     apiRequest<{ message: string }>(`/api/missions/${id}/signaler`, {
       method: "POST",
       body: JSON.stringify({ motif }),
+    }),
+
+  /** Envoi d'emails ciblés. */
+  destinatairesEmails: (role: "BENEVOLE" | "ASSOCIATION") =>
+    apiRequest<DestinataireEmail[]>(`/api/admin/emails/destinataires?role=${role}`),
+  redigerEmail: (consigne: string) =>
+    apiRequest<RedactionEmail>("/api/admin/emails/rediger", {
+      method: "POST",
+      body: JSON.stringify({ consigne }),
+    }),
+  envoyerEmails: (destinataireIds: number[], sujet: string, message: string) =>
+    apiRequest<EnvoiResultatEmail>("/api/admin/emails/envoyer", {
+      method: "POST",
+      body: JSON.stringify({ destinataireIds, sujet, message }),
     }),
 };

@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, Navigate, useNavigate, useMatchRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
-  LayoutDashboard, Building2, Users, Flag, Bell, Menu, LogOut, ShieldCheck,
+  LayoutDashboard, Building2, Users, Flag, Bell, Menu, LogOut, ShieldCheck, Mail,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import logoImage from '@/assets/logo.png';
@@ -9,6 +9,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useUnreadNotifications } from '@/hooks/use-unread-notifications';
 import { adminApi, ADMIN_CHANGED } from '@/services/adminApi';
+import { EmailComposer } from '@/components/dashboard/EmailComposer';
 
 export const Route = createFileRoute('/admin')({
   component: AdminLayout,
@@ -24,7 +25,7 @@ const NAV_ITEMS = [
   { label: 'Notifications', to: '/admin/notifications', icon: Bell, exact: false, badge: 'notifications' },
 ] as const;
 
-function SidebarContent({ onClose, compteurs }: { onClose?: () => void; compteurs: Compteurs }) {
+function SidebarContent({ onClose, compteurs, onOpenEmail }: { onClose?: () => void; compteurs: Compteurs; onOpenEmail: () => void }) {
   const matchRoute = useMatchRoute();
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -32,6 +33,11 @@ function SidebarContent({ onClose, compteurs }: { onClose?: () => void; compteur
   function handleLogout() {
     onClose?.();
     navigate({ to: '/' }).then(logout);
+  }
+
+  function handleOpenEmail() {
+    onClose?.();
+    onOpenEmail();
   }
 
   return (
@@ -51,7 +57,7 @@ function SidebarContent({ onClose, compteurs }: { onClose?: () => void; compteur
           {NAV_ITEMS.map(({ label, to, icon: Icon, exact, badge }) => {
             const isActive = !!matchRoute({ to, fuzzy: !exact });
             const valeur = badge ? compteurs[badge] : 0;
-            return (
+            const item = (
               <li key={to}>
                 <Link
                   to={to}
@@ -74,6 +80,23 @@ function SidebarContent({ onClose, compteurs }: { onClose?: () => void; compteur
                 </Link>
               </li>
             );
+            return (
+              <Fragment key={to}>
+                {item}
+                {to === '/admin/missions' && (
+                  <li>
+                    <button
+                      onClick={handleOpenEmail}
+                      type="button"
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-ink/70 transition-colors hover:bg-muted hover:text-ink"
+                    >
+                      <Mail className="h-4 w-4 shrink-0" />
+                      <span>Envoyer un email</span>
+                    </button>
+                  </li>
+                )}
+              </Fragment>
+            );
           })}
         </ul>
       </nav>
@@ -94,6 +117,7 @@ function SidebarContent({ onClose, compteurs }: { onClose?: () => void; compteur
 
 function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
   const { user } = useAuth();
   const estAdmin = user?.role === 'ADMIN';
   const notifications = useUnreadNotifications(estAdmin);
@@ -124,14 +148,16 @@ function AdminLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-paper">
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r-2 border-ink bg-paper lg:flex lg:flex-col">
-        <SidebarContent compteurs={compteurs} />
+        <SidebarContent compteurs={compteurs} onOpenEmail={() => setEmailOpen(true)} />
       </aside>
 
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent side="left" className="w-60 border-r-2 border-ink bg-paper p-0">
-          <SidebarContent compteurs={compteurs} onClose={() => setSidebarOpen(false)} />
+          <SidebarContent compteurs={compteurs} onOpenEmail={() => setEmailOpen(true)} onClose={() => setSidebarOpen(false)} />
         </SheetContent>
       </Sheet>
+
+      <EmailComposer mode="admin" open={emailOpen} onOpenChange={setEmailOpen} />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b-2 border-ink bg-paper px-4 lg:px-6">

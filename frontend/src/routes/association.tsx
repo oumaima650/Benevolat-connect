@@ -1,9 +1,9 @@
 import { createFileRoute, Outlet, Link, Navigate, useNavigate, useMatchRoute } from '@tanstack/react-router';
-import { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import {
   LayoutDashboard, ClipboardList, PlusCircle, Users, Zap,
   FileText, Bell, Building2, Menu, LogOut, ChevronDown,
-  AlertTriangle, Lock,
+  AlertTriangle, Lock, Mail,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { UserAvatar } from '@/components/common/UserAvatar';
@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { getMyProfile } from '@/services/associationApi';
 import { useUnreadNotifications } from '@/hooks/use-unread-notifications';
 import { ValidationContext, type ValidationStatus } from '@/context/ValidationContext';
+import { EmailComposer } from '@/components/dashboard/EmailComposer';
 export { useValidation } from '@/context/ValidationContext';
 
 export const Route = createFileRoute('/association')({
@@ -35,11 +36,12 @@ const NAV_ITEMS = [
 ] as const;
 
 function SidebarContent({
-  onClose, validationStatus, nonLues,
+  onClose, validationStatus, nonLues, onOpenEmail,
 }: {
   onClose?: () => void;
   validationStatus: ValidationStatus;
   nonLues: number;
+  onOpenEmail: () => void;
 }) {
   const matchRoute = useMatchRoute();
   const { logout } = useAuth();
@@ -51,6 +53,11 @@ function SidebarContent({
     // Naviguer d'abord vers l'accueil, puis vider la session :
     // évite que le layout redirige vers /login pendant le rendu
     navigate({ to: '/' }).then(logout);
+  }
+
+  function handleOpenEmail() {
+    onClose?.();
+    onOpenEmail();
   }
 
   return (
@@ -87,38 +94,66 @@ function SidebarContent({
 
             if (locked) {
               return (
-                <li key={to}>
-                  <span className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink/30 cursor-not-allowed select-none">
-                    <Icon className="h-4 w-4 shrink-0 opacity-40" />
-                    <span className="flex-1">{label}</span>
-                    <Lock className="h-3 w-3 opacity-40" />
-                  </span>
-                </li>
+                <Fragment key={to}>
+                  <li>
+                    <span className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink/30 cursor-not-allowed select-none">
+                      <Icon className="h-4 w-4 shrink-0 opacity-40" />
+                      <span className="flex-1">{label}</span>
+                      <Lock className="h-3 w-3 opacity-40" />
+                    </span>
+                  </li>
+                  {to === '/association/inscrits' && (
+                    <li>
+                      <button
+                        onClick={handleOpenEmail}
+                        type="button"
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-ink/70 transition-colors hover:bg-muted hover:text-ink"
+                      >
+                        <Mail className="h-4 w-4 shrink-0" />
+                        <span>Envoyer un email</span>
+                      </button>
+                    </li>
+                  )}
+                </Fragment>
               );
             }
 
             return (
-              <li key={to}>
-                <Link
-                  to={to}
-                  onClick={onClose}
-                  className={cn(
-                    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
-                    isActive
-                      ? 'border-l-4 border-ink bg-emerald text-emerald-foreground'
-                      : 'text-ink/70 hover:bg-muted hover:text-ink',
-                  )}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="flex-1">{label}</span>
-                  {badge != null && badge > 0 && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full border border-ink bg-pink px-1 text-[10px] font-bold text-ink">
-                      {badge > 99 ? '99+' : badge}
-                    </span>
-                  )}
-                </Link>
-              </li>
+              <Fragment key={to}>
+                <li>
+                  <Link
+                    to={to}
+                    onClick={onClose}
+                    className={cn(
+                      'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
+                      isActive
+                        ? 'border-l-4 border-ink bg-emerald text-emerald-foreground'
+                        : 'text-ink/70 hover:bg-muted hover:text-ink',
+                    )}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1">{label}</span>
+                    {badge != null && badge > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full border border-ink bg-pink px-1 text-[10px] font-bold text-ink">
+                        {badge > 99 ? '99+' : badge}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+                {to === '/association/inscrits' && (
+                  <li>
+                    <button
+                      onClick={handleOpenEmail}
+                      type="button"
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-ink/70 transition-colors hover:bg-muted hover:text-ink"
+                    >
+                      <Mail className="h-4 w-4 shrink-0" />
+                      <span>Envoyer un email</span>
+                    </button>
+                  </li>
+                )}
+              </Fragment>
             );
           })}
         </ul>
@@ -141,6 +176,7 @@ function SidebarContent({
 
 function AssociationLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
   const [validationStatus, setValidationStatus] = useState<ValidationStatus>(null);
   const [motifRefus, setMotifRefus] = useState<string | null>(null);
   const { user, logout } = useAuth();
@@ -169,15 +205,17 @@ function AssociationLayout() {
       <div className="flex h-screen overflow-hidden bg-paper">
         {/* Desktop Sidebar */}
         <aside className="hidden w-60 shrink-0 border-r-2 border-ink bg-paper lg:flex lg:flex-col h-screen sticky top-0">
-          <SidebarContent validationStatus={validationStatus} nonLues={nonLues} />
+          <SidebarContent validationStatus={validationStatus} nonLues={nonLues} onOpenEmail={() => setEmailOpen(true)} />
         </aside>
 
         {/* Mobile Sidebar */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent side="left" className="w-60 p-0 border-r-2 border-ink bg-paper">
-            <SidebarContent validationStatus={validationStatus} nonLues={nonLues} onClose={() => setSidebarOpen(false)} />
+            <SidebarContent validationStatus={validationStatus} nonLues={nonLues} onOpenEmail={() => setEmailOpen(true)} onClose={() => setSidebarOpen(false)} />
           </SheetContent>
         </Sheet>
+
+        <EmailComposer mode="association" open={emailOpen} onOpenChange={setEmailOpen} />
 
         {/* Main */}
         <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
