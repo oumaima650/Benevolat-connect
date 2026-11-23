@@ -76,6 +76,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { AuthModalProvider } from "@/context/AuthModalContext";
 import { AuthModals } from "@/components/auth/AuthModals";
 import { Toaster } from "@/components/ui/sonner";
+import { Chatbot } from "@/components/common/Chatbot";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -98,6 +99,7 @@ function RootComponent() {
           <AuthModals />
           <Outlet />
           <Toaster richColors position="top-right" />
+          <Chatbot />
         </AuthModalProvider>
       </AuthProvider>
     </QueryClientProvider>

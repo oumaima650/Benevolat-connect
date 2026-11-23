@@ -34,7 +34,25 @@ public class AdminInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (administrateurRepository.count() > 0) return;
+        // Si un admin existe déjà avec le bon email → rien à faire
+        if (administrateurRepository.findByEmail(adminEmail).isPresent()) {
+            log.info("Compte administrateur déjà présent : {}", adminEmail);
+            return;
+        }
+
+        // Si un admin existe avec un autre email (ex. valeur par défaut) → le mettre à jour
+        if (administrateurRepository.count() > 0) {
+            Administrateur existing = administrateurRepository.findAll().get(0);
+            String oldEmail = existing.getEmail();
+            existing.setEmail(adminEmail);
+            existing.setMotDePasseHash(passwordEncoder.encode(adminPassword));
+            existing.setStatut(StatutUtilisateur.ACTIF);
+            administrateurRepository.save(existing);
+            log.info("Compte administrateur mis à jour : {} → {}", oldEmail, adminEmail);
+            return;
+        }
+
+        // Sinon : créer un nouveau compte admin
         if (userRepository.existsByEmail(adminEmail)) {
             log.warn("Impossible de créer l'administrateur : l'e-mail {} est déjà utilisé par un autre compte.", adminEmail);
             return;

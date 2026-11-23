@@ -10,4 +10,15 @@ import java.util.List;
 public interface ImageParticipationRepository extends JpaRepository<ImageParticipation, Long> {
 
     List<ImageParticipation> findByInscription_IdInscriptionOrderByDatePublicationDesc(Long inscriptionId);
+
+    /** Toutes les images de participation d'un bénévole, avec mission et association. */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT ip FROM ImageParticipation ip
+        JOIN FETCH ip.inscription i
+        JOIN FETCH i.mission m
+        JOIN FETCH m.association a
+        WHERE i.benevole.idUtilisateur = :benevoleId
+        ORDER BY ip.datePublication DESC
+    """)
+    List<ImageParticipation> findByBenevoleId(@org.springframework.data.repository.query.Param("benevoleId") Long benevoleId);
 }

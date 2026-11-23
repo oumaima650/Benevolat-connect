@@ -194,8 +194,10 @@ function BenevoleLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto">
+          <div className="w-full px-4 py-6 sm:px-6 sm:py-8">
+            <Outlet />
+          </div>
         </main>
       </div>
       <Toaster richColors position="top-right" />

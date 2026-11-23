@@ -32,6 +32,7 @@ public class BenevoleProfileService {
     private final MissionService missionService;
     private final GamificationService gamificationService;
     private final RecommandationService recommandationService;
+    private final ImageParticipationRepository imageParticipationRepository;
 
     @Transactional(readOnly = true)
     public Map<String, Object> getProfile(String email) {
@@ -64,13 +65,38 @@ public class BenevoleProfileService {
         return result;
     }
 
-    /** Profil public : identité réduite, niveau, bannière et badges décrochés. */
+    /** Profil public : identité réduite, niveau, bannière, badges décrochés et missions réalisées. */
     @Transactional(readOnly = true)
     public ProfilPublicDto profilPublic(Long id) {
         Benevole b = benevoleRepository.findById(id)
                 .filter(x -> x.getStatut() == StatutUtilisateur.ACTIF)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profil introuvable"));
         GamificationDto g = gamificationService.profil(id);
+
+        // Images de participation publiées par le bénévole, groupées par mission (une seule par mission)
+        List<ProfilPublicDto.MissionParticipeeDto> missionsParticipees =
+                imageParticipationRepository.findByBenevoleId(id)
+                        .stream()
+                        // une seule image par mission (la plus récente, déjà triée DESC)
+                        .collect(java.util.LinkedHashMap<Long, ProfilPublicDto.MissionParticipeeDto>::new,
+                                (map, ip) -> {
+                                    Mission m = ip.getInscription().getMission();
+                                    if (!map.containsKey(m.getIdMission())) {
+                                        map.put(m.getIdMission(), new ProfilPublicDto.MissionParticipeeDto(
+                                                m.getIdMission(),
+                                                m.getTitre(),
+                                                m.getAssociation().getNom(),
+                                                ip.getUrl(),
+                                                ip.getDescription(),
+                                                m.getDateDebut() != null ? m.getDateDebut().toLocalDate().toString() : null
+                                        ));
+                                    }
+                                },
+                                java.util.LinkedHashMap::putAll)
+                        .values()
+                        .stream()
+                        .toList();
+
         return new ProfilPublicDto(
                 b.getIdUtilisateur(),
                 b.getPrenom(),
@@ -83,7 +109,9 @@ public class BenevoleProfileService {
                 g.niveau(),
                 g.nomNiveau(),
                 g.theme(),
-                g.badges().stream().filter(GamificationDto.BadgeDto::obtenu).toList());
+                g.badges().stream().filter(GamificationDto.BadgeDto::obtenu).toList(),
+                missionsParticipees
+        );
     }
 
     @Transactional(readOnly = true)

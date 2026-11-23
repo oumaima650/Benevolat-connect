@@ -330,7 +330,7 @@ function ProfilBenevole() {
 
   /* ── skeleton ── */
   if (loading) return (
-    <div className="mx-auto w-full max-w-7xl space-y-6">
+    <div className="w-full space-y-6">
       <Skeleton className="h-10 w-64" />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-4 space-y-6">
@@ -347,7 +347,7 @@ function ProfilBenevole() {
 
   /* ═══════════════════════ RENDU ═══════════════════════ */
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8">
+    <div className="w-full space-y-8">
       {/* ── En-tête de la page ── */}
       <div className="border-b-2 border-ink pb-6">
         <h1 className="font-display text-3xl font-black text-ink">Mon profil bénévole</h1>
