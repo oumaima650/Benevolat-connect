@@ -7,11 +7,11 @@ import { useAuthModal } from "@/context/AuthModalContext";
 import { UserAvatar } from "@/components/common/UserAvatar";
 
 const liens = [
-  { label: "Accueil",               to: "/" as const },
-  { label: "Missions",              to: "/missions" as const },
-  { label: "Associations",          to: "/associations" as const },
-  { label: "Comment ça marche",     to: "/comment-ca-marche" as const },
-  { label: "Vérifier un certificat", to: "/certificat" as const },
+  { label: "Accueil", hash: "accueil" },
+  { label: "Missions", hash: "recherche" },
+  { label: "Associations", hash: "associations" },
+  { label: "Comment ça marche", hash: "comment-ca-marche" },
+  { label: "Vérifier un certificat", hash: "certificat" },
 ];
 
 export function Header() {
@@ -43,7 +43,9 @@ export function Header() {
           {liens.map((lien) => (
             <Link
               key={lien.label}
-              to={lien.to}
+              to="/"
+              hash={lien.hash}
+              hashScrollIntoView={{ behavior: "smooth", block: "start" }}
               className="text-sm font-semibold text-foreground transition-colors hover:text-pink"
             >
               {lien.label}
@@ -112,7 +114,9 @@ export function Header() {
             {liens.map((lien) => (
               <Link
                 key={lien.label}
-                to={lien.to}
+                to="/"
+                hash={lien.hash}
+                hashScrollIntoView={{ behavior: "smooth", block: "start" }}
                 onClick={() => setOuvert(false)}
                 className="rounded-lg px-3 py-2.5 text-base font-semibold hover:bg-muted"
               >

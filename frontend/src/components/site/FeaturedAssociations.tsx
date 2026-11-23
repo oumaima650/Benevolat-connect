@@ -101,7 +101,7 @@ export function FeaturedAssociations() {
   }, []);
 
   return (
-    <section className="border-b-4 border-ink bg-muted">
+    <section id="associations" className="scroll-mt-20 border-b-4 border-ink bg-muted">
       <div className="mx-auto max-w-6xl px-5 py-14 lg:py-20">
         <Reveal className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
