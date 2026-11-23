@@ -49,9 +49,17 @@ public class LlmClient {
      * Appelle l'API avec le modèle principal, puis le modèle de secours si nécessaire.
      */
     public LlmResponse chat(String systemPrompt, List<Map<String, String>> messages) {
+        return chat(systemPrompt, messages, 300, 0.2);
+    }
+
+    /**
+     * Variante paramétrable (utilisée pour la rédaction d'emails : réponse plus longue, plus créative).
+     */
+    public LlmResponse chat(String systemPrompt, List<Map<String, String>> messages,
+                            int maxTokens, double temperature) {
         // 1er essai — modèle principal
         try {
-            String result = callApi(model, systemPrompt, messages);
+            String result = callApi(model, systemPrompt, messages, maxTokens, temperature);
             if (result != null && !result.isBlank()) {
                 return new LlmResponse(result, false);
             }
@@ -63,7 +71,7 @@ public class LlmClient {
 
         // 2e essai — modèle de secours
         try {
-            String result = callApi(modelFallback, systemPrompt, messages);
+            String result = callApi(modelFallback, systemPrompt, messages, maxTokens, temperature);
             if (result != null && !result.isBlank()) {
                 return new LlmResponse(result, false);
             }
@@ -74,7 +82,8 @@ public class LlmClient {
         return new LlmResponse("L'assistant est momentanément indisponible. Consultez la FAQ.", true);
     }
 
-    private String callApi(String selectedModel, String systemPrompt, List<Map<String, String>> messages)
+    private String callApi(String selectedModel, String systemPrompt, List<Map<String, String>> messages,
+                           int maxTokens, double temperature)
             throws Exception {
 
         List<Map<String, String>> allMessages = new ArrayList<>();
@@ -84,15 +93,15 @@ public class LlmClient {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("model", selectedModel);
         body.put("messages", allMessages);
-        body.put("temperature", 0.2);
-        body.put("max_tokens", 300);
+        body.put("temperature", temperature);
+        body.put("max_tokens", maxTokens);
         // Désactiver le mode "thinking" des modèles gpt-oss Groq (économise les tokens)
         if (selectedModel.startsWith("openai/gpt-oss")) {
             body.put("reasoning_effort", "low");
         }
 
         HttpRequest req = HttpRequest.newBuilder(URI.create(apiUrl + "/chat/completions"))
-                .timeout(Duration.ofSeconds(8))
+                .timeout(Duration.ofSeconds(maxTokens > 400 ? 25 : 8))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(body)))

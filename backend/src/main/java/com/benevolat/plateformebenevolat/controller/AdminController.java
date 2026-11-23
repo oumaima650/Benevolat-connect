@@ -1,7 +1,10 @@
 package com.benevolat.plateformebenevolat.controller;
 
 import com.benevolat.plateformebenevolat.dto.AdminDtos.*;
+import com.benevolat.plateformebenevolat.dto.EmailDtos;
 import com.benevolat.plateformebenevolat.service.AdminService;
+import com.benevolat.plateformebenevolat.service.EmailCampagneService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +19,7 @@ import java.util.Map;
 public class AdminController {
 
     private final AdminService adminService;
+    private final EmailCampagneService emailCampagneService;
 
     /** F34 : statistiques globales. */
     @GetMapping("/stats")
@@ -79,5 +83,25 @@ public class AdminController {
     @PatchMapping("/missions/{id}/retablir")
     public MissionAdmin retablir(@PathVariable Long id) {
         return adminService.retablirMission(id);
+    }
+
+    /* ─── Envoi d'emails ciblés ─── */
+
+    /** Destinataires disponibles : role=BENEVOLE (défaut) ou role=ASSOCIATION. */
+    @GetMapping("/emails/destinataires")
+    public List<EmailDtos.Destinataire> destinatairesEmails(@RequestParam(required = false) String role) {
+        return emailCampagneService.destinatairesAdmin(role);
+    }
+
+    /** Rédaction assistée par IA à partir d'une consigne. */
+    @PostMapping("/emails/rediger")
+    public EmailDtos.RedactionResponse redigerEmail(@Valid @RequestBody EmailDtos.RedactionRequest request) {
+        return emailCampagneService.redigerAdmin(request.consigne());
+    }
+
+    @PostMapping("/emails/envoyer")
+    public EmailDtos.EnvoiResultat envoyerEmails(@Valid @RequestBody EmailDtos.EnvoiRequest request) {
+        return emailCampagneService.envoyerAdmin(
+                request.destinataireIds(), request.sujet(), request.message());
     }
 }

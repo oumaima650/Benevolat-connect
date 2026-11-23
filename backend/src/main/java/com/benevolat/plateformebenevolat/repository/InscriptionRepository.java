@@ -1,5 +1,6 @@
 package com.benevolat.plateformebenevolat.repository;
 
+import com.benevolat.plateformebenevolat.entity.Benevole;
 import com.benevolat.plateformebenevolat.entity.Inscription;
 import com.benevolat.plateformebenevolat.entity.StatutInscription;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -58,6 +59,14 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
                          @Param("statuts") List<StatutInscription> statuts);
 
     List<Inscription> findByBenevole_IdUtilisateurAndMission_IdMissionIn(Long benevoleId, Collection<Long> missionIds);
+
+    /** Bénévoles inscrits (hors annulations) à au moins une mission d'une association donnée. */
+    @Query("""
+            SELECT DISTINCT i.benevole FROM Inscription i
+            WHERE i.mission.association.email = :email
+              AND i.statut <> com.benevolat.plateformebenevolat.entity.StatutInscription.ANNULEE
+            """)
+    List<Benevole> findBenevolesInscritsByAssociation(@Param("email") String email);
 
     @Query("""
             SELECT COUNT(i) > 0 FROM Inscription i
